@@ -19,10 +19,10 @@ This application is built using the **Symfony framework** and aims to demonstrat
 ## 🛠️ Technologies Used
 
 - **PHP 8.1+**
-- **Symfony 6.4**
+- **Symfony 6.4 / Twig**
 - **Composer**
 - **MySQL**
-- **HTML5 / CSS3**
+- **HTML5 / TailWind **
 - **Git & GitHub**
 - **Symfony CLI**
 
