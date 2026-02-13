@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Admin | FeelSafe{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Feather Icons CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        :root {
+            --brand-admin: #0ea5e9;
+            --brand-admin-soft: #f0f9ff;
+            --brand-admin-dark: #0369a1;
+        }
+        
+        /* Custom scrollbar */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    
+    {% block stylesheets %}   
+      <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
+{% endblock %}
+    {% block javascripts_head %}{% endblock %}
+</head>
+<body class="bg-gray-50">
+    <div
+        x-data="{
+            sidebarOpen: window.innerWidth >= 1024,
+            currentPath: window.location.pathname
+        }"
+        x-init="
+            $nextTick(() => $el.removeAttribute('x-cloak'));
+            window.addEventListener('resize', () => {
+                sidebarOpen = window.innerWidth >= 1024;
+            });
+        "
+        x-cloak
+        class="flex min-h-screen"
+    >
+        <!-- Mobile overlay -->
+        <div x-show="sidebarOpen && window.innerWidth < 1024" 
+             @click="sidebarOpen = false"
+             class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+             x-transition.opacity></div>
+
+        <!-- Sidebar -->
+        <aside x-show="sidebarOpen || window.innerWidth >= 1024"
+               x-transition:enter="transition ease-out duration-300"
+               x-transition:enter-start="-translate-x-full"
+               x-transition:enter-end="translate-x-0"
+               x-transition:leave="transition ease-in duration-300"
+               x-transition:leave-start="translate-x-0"
+               x-transition:leave-end="-translate-x-full"
+               class="fixed lg:sticky top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 z-50 lg:z-0 flex flex-col">
+            
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                            <span class="text-white font-bold">F</span>
+                        </div>
+                        <span class="text-lg font-bold text-gray-900">FeelSafe</span>
+                    </div>
+                    <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">ADMIN</span>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto sidebar-scroll p-4">
+                <!-- Main Navigation -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">Navigation</h3>
+                    <div class="space-y-1">
+                        <a href="{{ path('admin_home') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_home' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="bar-chart-2" class="w-4 h-4"></i>
+                            <span>Tableau de bord</span>
+                        </a>
+                        <a href="{{ path('admin_security') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_security' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="shield" class="w-4 h-4"></i>
+                            <span>Sécurité & Profil</span>
+                        </a>
+                        <a href="{{ path('admin_journal_index') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_journal_index' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="book-open" class="w-4 h-4"></i>
+                            <span>Journal émotionnel</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Accompagnement -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">Accompagnement</h3>
+                    <div class="space-y-1">
+                        <a href="{{ path('admin_wellness') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_wellness' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="heart" class="w-4 h-4"></i>
+                            <span>Bien-être</span>
+                        </a>
+                        <a href="{{ path('admin_emergency') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_emergency' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="alert-triangle" class="w-4 h-4"></i>
+                            <span>Urgence</span>
+                        </a>
+                        <a href="{{ path('admin_forum') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_forum' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="users" class="w-4 h-4"></i>
+                            <span>Communauté</span>
+                        </a>
+                             <a href="{{ path('admin_support') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_support' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="life-buoy" class="w-4 h-4"></i>
+                            <span>Rendez-vous</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Administration -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">Administration</h3>
+                    <div class="space-y-1">
+
+                        <a href="{{ path('admin_profile') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_profile' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="user" class="w-4 h-4"></i>
+                            <span>Profil détaillé</span>
+                        </a>
+                        <a href="{{ path('admin_settings') }}" 
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_settings' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                            <i data-feather="settings" class="w-4 h-4"></i>
+                            <span>Paramètres</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- User Profile -->
+            <div class="border-t border-gray-100 p-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i data-feather="user" class="w-5 h-5 text-blue-600"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">Administrateur</p>
+                        <p class="text-xs text-gray-500 truncate">admin@feelsafe.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 min-w-0">
+            <!-- Mobile header -->
+            <div class="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <button @click="sidebarOpen = true" class="p-2 rounded-lg hover:bg-gray-100">
+                    <i data-feather="menu" class="w-5 h-5 text-gray-600"></i>
+                </button>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                        <span class="text-white font-bold">F</span>
+                    </div>
+                    <span class="font-semibold text-gray-900">Admin Panel</span>
+                </div>
+                <div class="w-9"></div> <!-- Spacer for alignment -->
+            </div>
+
+            <!-- Page Content -->
+            <div class="p-4 lg:p-8">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Feather Icons initialization -->
+    <script>
+        document.addEventListener('alpine:init', function() {
+            setTimeout(function() {
+                if (typeof feather !== 'undefined') {
+                    try {
+                        feather.replace();
+                    } catch (error) {
+                        console.warn('Feather Icons could not replace some elements:', error.message);
+                    }
+                }
+            }, 100);
+        });
+        
+        // Update icons when sidebar state changes
+        document.addEventListener('alpine:initialized', () => {
+    Alpine.effect(() => {
+        // Cette fonction s'exécutera quand sidebarOpen change
+        setTimeout(() => {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }, 150);
+    });
+});
+    </script>
+    
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

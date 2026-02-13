@@ -1,0 +1,17 @@
+{
+  "name": "feelsafe",
+  "version": "1.0.0",
+  "description": "FeelSafe - Mental Wellness Platform",
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.38",
+    "autoprefixer": "^10.4.19"
+  },
+  "dependencies": {
+    "feather-icons": "^4.29.1"
+  },
+  "scripts": {
+    "dev": "tailwindcss -i ./assets/styles/app.css -o ./public/build/app.css --watch",
+    "build": "tailwindcss -i ./assets/styles/app.css -o ./public/build/app.css --minify"
+  }
+}

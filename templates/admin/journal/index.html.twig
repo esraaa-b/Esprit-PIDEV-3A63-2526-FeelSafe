@@ -1,0 +1,891 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Admin – Journaux émotionnels{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+        <link rel="stylesheet" href="{{ asset('css/admin-modal.css') }}">
+
+    
+    <style>
+    /* ===== ADMIN UTILITIES ===== */
+    :root {
+        --primary: #22c55e;
+        --primary-light: rgba(34, 197, 94, 0.12);
+        --danger: #ef4444;
+        --danger-light: rgba(239, 68, 68, 0.12);
+        --muted: #64748b;
+        --muted-light: #f8fafc;
+        --border: #e2e8f0;
+        --card: #ffffff;
+        --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+        --radius: 16px;
+        --radius-sm: 8px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .space-y-8 > * + * { margin-top: 2rem; }
+
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .gap-2 { gap: .5rem; }
+    .gap-3 { gap: .75rem; }
+
+    .text-sm { font-size: .875rem; }
+    .text-xs { font-size: .75rem; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+
+    .text-muted-foreground { color: var(--muted); }
+    .text-primary { color: var(--primary); }
+
+    .rounded-md { border-radius: var(--radius-sm); }
+    .rounded-lg { border-radius: 12px; }
+    .rounded-xl { border-radius: var(--radius); }
+    .rounded-full { border-radius: 999px; }
+
+    .border { border: 1px solid var(--border); }
+    .border-border { border-color: var(--border); }
+
+    .bg-card { background: var(--card); }
+    .bg-muted { background: var(--muted-light); }
+
+    .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+    .shadow-lg { box-shadow: var(--shadow); }
+
+    /* ===== TABLE STYLES ===== */
+    .table-container {
+        overflow: hidden;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: var(--card);
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+    }
+
+    .table-container:hover {
+        box-shadow: var(--shadow-hover);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 16px 20px;
+        text-align: left;
+        vertical-align: middle;
+        transition: var(--transition);
+    }
+
+    th {
+        background: linear-gradient(135deg, var(--muted-light) 0%, #f1f5f9 100%);
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--border);
+    }
+
+    tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: var(--transition);
+        animation: fadeInUp 0.4s ease-out backwards;
+    }
+
+    tbody tr:nth-child(even) {
+        background: rgba(241, 245, 249, 0.3);
+    }
+
+    tbody tr:hover {
+        background: rgba(34, 197, 94, 0.05);
+        transform: translateX(4px);
+    }
+
+    tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    /* Emotion badge */
+    .emotion-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        background: linear-gradient(135deg, var(--primary-light) 0%, rgba(34, 197, 94, 0.08) 100%);
+        color: var(--primary);
+        box-shadow: 0 2px 4px rgba(34, 197, 94, 0.1);
+        transition: var(--transition);
+    }
+
+    .emotion-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(34, 197, 94, 0.15);
+    }
+
+    /* Image preview */
+    td img {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 2px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    td img:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Audio player */
+    audio {
+        width: 140px;
+        height: 32px;
+        border-radius: 20px;
+        outline: none;
+        transition: var(--transition);
+    }
+
+    audio:hover {
+        transform: translateY(-1px);
+    }
+
+    audio::-webkit-media-controls-panel {
+        background: var(--muted-light);
+        border-radius: 20px;
+    }
+
+    /* Action buttons */
+    .admin-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: var(--transition);
+        border: none;
+        cursor: pointer;
+        min-width: 100px;
+    }
+
+    .admin-action i {
+        font-size: 0.875rem;
+    }
+
+    .admin-action.edit {
+        background: linear-gradient(135deg, var(--primary-light) 0%, rgba(34, 197, 94, 0.08) 100%);
+        color: var(--primary);
+        box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15);
+    }
+
+    .admin-action.edit:hover {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.12) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(34, 197, 94, 0.2);
+    }
+
+    .admin-action.delete {
+        background: linear-gradient(135deg, var(--danger-light) 0%, rgba(239, 68, 68, 0.08) 100%);
+        color: var(--danger);
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.15);
+    }
+
+    .admin-action.delete:hover {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.12) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(239, 68, 68, 0.2);
+    }
+
+  /* ===== MODAL DE CONFIRMATION SIMPLE ===== */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
+}
+
+.admin-modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.admin-modal-header {
+    padding: 20px 24px 0;
+}
+
+.admin-modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.admin-modal-subtitle {
+    font-size: 0.85rem;
+    color: #ef4444;
+}
+
+.admin-modal-body {
+    padding: 20px 24px;
+}
+
+.admin-modal-user {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.admin-modal-email {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.admin-modal-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.admin-modal-emotion {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    color: #334155;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.admin-modal-warning {
+    font-size: 0.85rem;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.admin-modal-footer {
+    padding: 16px 24px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.admin-modal-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: none;
+}
+
+.admin-modal-btn-cancel {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.admin-modal-btn-cancel:hover {
+    background: #e2e8f0;
+}
+
+.admin-modal-btn-delete {
+    background: #ef4444;
+    color: white;
+}
+
+.admin-modal-btn-delete:hover {
+    background: #dc2626;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+    /* Flash messages */
+    .flash-message {
+        position: relative;
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        overflow: hidden;
+    }
+
+    .flash-message.success {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border-left: 4px solid var(--primary);
+    }
+
+    .flash-message::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: var(--primary);
+        animation: progressBar 3s linear forwards;
+    }
+
+    .flash-message.flash-hide {
+        animation: slideOutRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    }
+
+    /* Content cell */
+    .content-cell {
+        position: relative;
+        max-width: 300px;
+    }
+
+    .content-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.4;
+        color: #475569;
+        transition: var(--transition);
+    }
+
+    .content-preview:hover {
+        color: #1e293b;
+    }
+
+    /* Empty state */
+    .empty-state {
+        padding: 60px 40px;
+        text-align: center;
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 16px;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .empty-state p {
+        color: #94a3b8;
+        font-size: 1.125rem;
+        margin-top: 8px;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+    }
+
+    @keyframes progressBar {
+        from {
+            width: 100%;
+        }
+        to {
+            width: 0%;
+        }
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    /* Header animation */
+    .page-header {
+        animation: fadeInDown 0.5s ease-out;
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Staggered animation for table rows */
+    tbody tr:nth-child(1) { animation-delay: 0.1s; }
+    tbody tr:nth-child(2) { animation-delay: 0.2s; }
+    tbody tr:nth-child(3) { animation-delay: 0.3s; }
+    tbody tr:nth-child(4) { animation-delay: 0.4s; }
+    tbody tr:nth-child(5) { animation-delay: 0.5s; }
+    tbody tr:nth-child(n+6) { animation-delay: 0.6s; }
+
+    /* Loading skeleton */
+    .loading-row td {
+        padding: 16px 20px;
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 4px;
+        height: 20px;
+    }
+
+    @keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between page-header">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">
+                Journaux émotionnels
+            </h1>
+            <p class="text-muted-foreground text-sm mt-2">
+                <i class="fas fa-book-open mr-1"></i>
+                Gestion des journaux utilisateurs
+            </p>
+        </div>
+        <div class="text-sm text-muted-foreground">
+            <i class="fas fa-filter mr-1"></i>
+            {{ journals|length }} journal{{ journals|length > 1 ? 'aux' : 'al' }}
+        </div>
+    </div>
+
+    <!-- Flash messages -->
+    {% for message in app.flashes('success') %}
+        <div class="flash-message success">
+            <i class="fas fa-check-circle mr-2"></i>
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <!-- Filter form -->
+    <form method="get" class="flex items-center gap-3 bg-card border rounded-xl p-4 shadow-sm">
+        <!-- 🔎 Email Search -->
+        <div class="flex flex-col">
+            <label class="text-xs text-muted-foreground mb-1">Recherche par email</label>
+            <input type="text"
+                   name="email"
+                   value="{{ filters.email ?? '' }}"
+                   placeholder="ex: user@email.com"
+                   class="border rounded-md px-3 py-2 text-sm w-64">
+        </div>
+
+        <!-- 🎯 Emotion Filter -->
+        <div class="flex flex-col">
+            <label class="text-xs text-muted-foreground mb-1">Filtrer par émotion</label>
+            <select name="emotion" class="border rounded-md px-3 py-2 text-sm w-48">
+                <option value="">Toutes</option>
+                {% for e in emotions %}
+                    <option value="{{ e.value }}"
+                        {{ filters.emotion == e.value ? 'selected' }}>
+                        {{ e.value|capitalize }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-end gap-2">
+            <button class="admin-action edit" type="submit">
+                <i class="fas fa-search"></i>
+                Rechercher
+            </button>
+            <a href="{{ path('admin_journal_index') }}" class="admin-action delete">
+                <i class="fas fa-rotate-left"></i>
+                Reset
+            </a>
+        </div>
+    </form>
+
+    <!-- Table -->
+    <div class="table-container">
+        <table class="min-w-full text-sm">
+            <thead class="bg-muted text-muted-foreground">
+                <tr>
+                    <th class="px-4 py-4 text-left font-semibold">
+                        <i class="fas fa-user mr-2"></i>Utilisateur
+                    </th>
+                    <th class="px-4 py-4 text-left font-semibold">
+                        <i class="fas fa-heart mr-2"></i>Émotion
+                    </th>
+                    <th class="px-4 py-4 text-left font-semibold">
+                        <i class="fas fa-file-alt mr-2"></i>Contenu
+                    </th>
+                    <th class="px-4 py-4 text-left font-semibold">
+                        <i class="fas fa-image mr-2"></i>Image
+                    </th>
+                    <th class="px-4 py-4 text-left font-semibold">
+                        <i class="fas fa-music mr-2"></i>Audio
+                    </th>
+                    <th class="px-4 py-4 text-left font-semibold">
+                        <i class="fas fa-calendar-alt mr-2"></i>Date
+                    </th>
+                    <th class="px-4 py-4 text-center font-semibold">
+                        <i class="fas fa-cogs mr-2"></i>Actions
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-border">
+                {% for journal in journals %}
+                    <tr class="hover:bg-muted/40 transition">
+                        
+                        <!-- User -->
+                        <td class="px-4 py-4 font-medium">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <i class="fas fa-user text-primary text-sm"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">{{ journal.utilisateur.email ?? '—' }}</div>
+                                    {% if journal.utilisateur %}
+                                        <div class="text-xs text-muted-foreground">ID: {{ journal.utilisateur.id }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Emotion -->
+                        <td class="px-4 py-4">
+                            {% set emotion = journal.emotion %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium {{ emotion.color() }}">
+                                <span class="text-sm">{{ emotion.icon() }}</span>
+                                {{ emotion.label() }}
+                            </span>
+                        </td>
+                        
+                        <!-- Content -->
+                        <td class="px-4 py-4 max-w-xs content-cell">
+                            <div class="content-preview" title="{{ journal.contenu ?? '' }}">
+                                {{ journal.contenu|default('—')|slice(0, 100) }}{{ journal.contenu|default('')|length > 100 ? '...' : '' }}
+                            </div>
+                        </td>
+
+                        <!-- Image -->
+                        <td class="px-4 py-4">
+                            {% if journal.image %}
+                                <img src="{{ asset('uploads/journals/images/' ~ journal.image) }}"
+                                     alt="Journal image"
+                                     class="journal-image"
+                                     onclick="openImageModal(this.src)">
+                            {% else %}
+                                <div class="flex items-center gap-2 text-muted-foreground text-xs">
+                                    <i class="fas fa-image"></i>
+                                    <span>Aucune</span>
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Audio -->
+                        <td class="px-4 py-4">
+                            {% if journal.audio %}
+                                <audio controls class="audio-player" preload="none">
+                                    <source src="{{ asset('uploads/journals/audio/' ~ journal.audio) }}">
+                                </audio>
+                            {% else %}
+                                <div class="flex items-center gap-2 text-muted-foreground text-xs">
+                                    <i class="fas fa-volume-mute"></i>
+                                    <span>Aucun</span>
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- Date -->
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="font-medium">{{ journal.dateCreation|date('d/m/Y') }}</span>
+                                <span class="text-xs text-muted-foreground">{{ journal.dateCreation|date('H:i') }}</span>
+                            </div>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-4 py-4">
+                            <div class="flex justify-center gap-3">
+                                <a href="#"
+                                   class="admin-action edit open-modal"
+                                   data-url="{{ path('admin_journal_edit', {id: journal.id}) }}">
+                                    <i class="fas fa-edit"></i>
+                                    Modifier
+                                </a>
+
+                                <!-- Bouton Supprimer avec modal personnalisé -->
+                                <button type="button"
+                                        class="admin-action delete open-delete-modal"
+                                        data-id="{{ journal.id }}"
+                                        data-url="{{ path('admin_journal_delete', {id: journal.id}) }}"
+                                        data-email="{{ journal.utilisateur.email ?? 'Utilisateur inconnu' }}"
+                                        data-emotion="{{ journal.emotion.value|capitalize }}"
+                                        data-date="{{ journal.dateCreation|date('d/m/Y H:i') }}"
+                                        data-token="{{ csrf_token('delete' ~ journal.id) }}">
+                                    <i class="fas fa-trash"></i>
+                                    Supprimer
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-book-open"></i>
+                                <p class="text-lg font-medium text-muted-foreground">Aucun journal émotionnel trouvé.</p>
+                                <p class="text-sm text-muted-foreground mt-2">Les journaux apparaîtront ici une fois créés.</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Flash messages auto-hide
+    const flashes = document.querySelectorAll('.flash-message');
+    flashes.forEach(flash => {
+        setTimeout(() => {
+            flash.classList.add('flash-hide');
+            setTimeout(() => flash.remove(), 500);
+        }, 3000);
+    });
+});
+
+// ===== MODAL DE CONFIRMATION SUPPRESSION =====
+document.addEventListener('click', function(e) {
+    const deleteBtn = e.target.closest('.open-delete-modal');
+    if (!deleteBtn) return;
+    
+    e.preventDefault();
+    
+    const url = deleteBtn.dataset.url;
+    const userEmail = deleteBtn.dataset.email;
+    const emotion = deleteBtn.dataset.emotion;
+    const date = deleteBtn.dataset.date;
+    const token = deleteBtn.dataset.token;
+    
+    const existingModal = document.querySelector('.admin-modal-overlay');
+    if (existingModal) existingModal.remove();
+    
+    const modal = document.createElement('div');
+    modal.className = 'admin-modal-overlay';
+    modal.innerHTML = `
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <div class="admin-modal-title">Confirmer la suppression</div>
+                <div class="admin-modal-subtitle">Cette action est irréversible</div>
+            </div>
+            
+            <div class="admin-modal-body">
+                <div class="admin-modal-user">
+                    <div class="admin-modal-email">${userEmail}</div>
+                    <div class="admin-modal-meta">
+                        <span><i class="fas fa-calendar-alt"></i> ${date}</span>
+                    </div>
+                    <span class="admin-modal-emotion">${emotion}</span>
+                </div>
+                
+                <div class="admin-modal-warning">
+                    Cette action supprimera définitivement le journal et tous ses fichiers associés.
+                </div>
+            </div>
+            
+            <div class="admin-modal-footer">
+                <button type="button" class="admin-modal-btn admin-modal-btn-cancel" data-close-modal>
+                    Annuler
+                </button>
+                
+                <form method="post" action="${url}" style="display: inline;">
+                    <input type="hidden" name="_token" value="${token}">
+                    <button type="submit" class="admin-modal-btn admin-modal-btn-delete">
+                        Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+});
+
+// Fermeture du modal de suppression
+document.addEventListener('click', function(e) {
+    if (e.target.closest('[data-close-modal]') || e.target.classList.contains('admin-modal-overlay')) {
+        const modal = document.querySelector('.admin-modal-overlay');
+        if (modal) modal.remove();
+    }
+});
+
+// Fermeture avec Echap
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.querySelector('.admin-modal-overlay');
+        if (modal) modal.remove();
+    }
+});
+
+// ===== MODAL D'ÉDITION =====
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.open-modal');
+    if (!btn) return;
+
+    e.preventDefault();
+
+    const existingModal = document.querySelector('[data-modal]');
+    if (existingModal) existingModal.remove();
+
+    try {
+        const response = await fetch(btn.dataset.url);
+        const html = await response.text();
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        // ✅ Vérifier si la fonction existe avant de l'appeler
+        if (typeof window.initEmotionButtons === 'function') {
+            setTimeout(() => window.initEmotionButtons(), 50);
+        } else {
+            console.warn('initEmotionButtons non définie, tentative dans 200ms');
+            setTimeout(() => {
+                if (typeof window.initEmotionButtons === 'function') {
+                    window.initEmotionButtons();
+                }
+            }, 200);
+        }
+    } catch (err) {
+        console.error('Modal load failed', err);
+    }
+});
+// Fermeture du modal d'édition
+document.addEventListener('click', (e) => {
+    if (e.target.hasAttribute('data-close')) {
+        const modal = e.target.closest('[data-modal]');
+        if (modal) modal.remove();
+    }
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.remove();
+    }
+});
+
+// ===== CODE POUR LES ÉMOTIONS DANS LE MODAL D'ÉDITION =====
+// TRÈS IMPORTANT - Ne pas supprimer !
+document.addEventListener('click', function(e) {
+    const label = e.target.closest('.emotion-label');
+    if (!label) return;
+    
+    e.preventDefault();
+    
+    document.querySelectorAll('.emotion-label').forEach(l => {
+        l.style.background = '#f8fff8';
+        l.style.color = '#3a5a3a';
+        l.style.borderColor = '#d8e8d8';
+    });
+    
+    const value = label.dataset.value;
+    const colors = {
+        'tres_bien': '#2b5e2b',
+        'bien': '#3b7a3b',
+        'neutre': '#b8a83b',
+        'pas_bien': '#b85a5a',
+        'tres_mal': '#b33a3a'
+    };
+    
+    label.style.background = colors[value];
+    label.style.color = 'white';
+    label.style.borderColor = colors[value];
+    
+    const radioId = label.getAttribute('for');
+    if (radioId) {
+        const radio = document.getElementById(radioId);
+        if (radio) radio.checked = true;
+    }
+});
+</script>
+
+{% endblock %}

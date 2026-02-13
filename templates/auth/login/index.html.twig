@@ -1,0 +1,162 @@
+{% extends 'auth/auth_base.html.twig' %}
+
+{% block body %}
+<div class="min-h-screen flex">
+    <!-- Left Panel - Branding -->
+    <div class="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('/images/hero-wellness.jpg')] bg-cover bg-center opacity-20"></div>
+        <div class="relative z-10 flex flex-col justify-center px-12 text-primary-foreground">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-12 h-12 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
+                    <i data-feather="heart" class="w-7 h-7"></i>
+                </div>
+                <span class="text-3xl font-serif font-bold">FeelSafe</span>
+            </div>
+            <h1 class="text-4xl font-serif font-bold mb-6 leading-tight text-balance">
+                Votre espace de bien-être mental en toute sécurité
+            </h1>
+            <p class="text-lg opacity-90 mb-8 leading-relaxed">
+                Rejoignez une communauté bienveillante et prenez soin de votre santé mentale avec des outils adaptés à vos besoins.
+            </p>
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <i data-feather="shield" class="w-5 h-5"></i>
+                    <span>Confidentialité garantie</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i data-feather="star" class="w-5 h-5"></i>
+                    <span>Accompagnement personnalisé</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel - Login Form -->
+    <div class="flex-1 flex items-center justify-center p-8 bg-background">
+        <div class="w-full max-w-md">
+            <!-- Mobile Logo -->
+            <div class="lg:hidden flex items-center gap-2 mb-8 justify-center">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                    <i data-feather="heart" class="w-6 h-6 text-primary-foreground"></i>
+                </div>
+                <span class="text-2xl font-serif font-bold text-foreground">FeelSafe</span>
+            </div>
+
+            <div class="border-0 shadow-lg rounded-lg bg-card p-6">
+                <div class="space-y-1 pb-6">
+                    <h2 class="text-2xl font-serif font-bold">Connexion</h2>
+                    <p class="text-muted-foreground text-sm">
+                        Entrez vos identifiants pour accéder à votre espace
+                    </p>
+                </div>
+                <div class="mb-6">
+                    <form method="post" action="{{ path('app_login') }}" class="space-y-4">
+                        {% if error %}
+                            <div class="p-3 rounded-lg bg-red-100 text-red-700 text-sm">
+                                {{ error.messageKey|trans(error.messageData, 'security') }}
+                            </div>
+                        {% endif %}
+
+                        <div class="space-y-2">
+                            <label for="email" class="block text-sm font-medium text-foreground">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                value="{{ last_username }}"
+                                name="_username"
+                                id="_username"
+                                class="w-full h-11 px-3 py-2 border rounded-md"
+                                placeholder="votre@email.com"
+                                required
+                                autofocus
+                            >
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="password" class="block text-sm font-medium text-foreground">
+                                    Mot de passe
+                                </label>
+                                <a
+                                    href="{{ path('app_forgot_password') }}"
+                                    class="text-sm text-primary hover:underline"
+                                >
+                                    Mot de passe oublié?
+                                </a>
+                            </div>
+                            <div class="relative">
+                                <input
+                                    type="password"
+                                    name="_password"
+                                    id="_password"
+                                    class="w-full h-11 px-3 py-2 border rounded-md pr-10"
+                                    placeholder="••••••••"
+                                    required
+                                >
+                                <button
+                                    type="button"
+                                    onclick="togglePassword()"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <i id="password-toggle-icon" data-feather="eye" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                        <button
+                            type="submit"
+                            class="w-full h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
+                        >
+                            Se connecter
+                        </button>
+                    </form>
+                </div>
+                <div class="flex flex-col gap-4 pt-0">
+                    <div class="relative w-full">
+                        <div class="absolute inset-0 flex items-center">
+                            <span class="w-full border-t"></span>
+                        </div>
+                        <div class="relative flex justify-center text-xs uppercase">
+                            <span class="bg-card px-2 text-muted-foreground">ou</span>
+                        </div>
+                    </div>
+                    <p class="text-center text-sm text-muted-foreground">
+                        Pas encore de compte? 
+                        <a href="{{ path('app_register') }}" class="text-primary font-medium hover:underline">
+                            Créer un compte
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordInput = document.getElementById('_password');
+    const icon = document.getElementById('password-toggle-icon');
+
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.setAttribute('data-feather', 'eye-off');
+    } else {
+        passwordInput.type = 'password';
+        icon.setAttribute('data-feather', 'eye');
+    }
+
+    // Re-render feather icons
+    if (window.feather) {
+        feather.replace();
+    }
+}
+</script>
+<script src="https://unpkg.com/feather-icons"></script>
+<script>
+    feather.replace();
+</script>
+
+{% endblock %}

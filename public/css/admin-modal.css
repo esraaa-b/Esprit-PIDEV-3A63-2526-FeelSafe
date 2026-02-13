@@ -1,0 +1,269 @@
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45); /* elegant dark blur */
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* ===== MODAL CARD ===== */
+.modal-card {
+    background: #ffffff;
+    width: 640px;
+    max-width: 95%;
+    border-radius: 20px;
+    padding: 28px 32px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+    animation: modalFade 0.25s ease-out;
+}
+
+/* ===== HEADER ===== */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.modal-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.modal-header button {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #64748b;
+}
+
+.modal-header button:hover {
+    color: #ef4444;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.modal-card label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #334155;
+}
+
+.modal-card select,
+.modal-card textarea,
+.modal-card input[type="file"] {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+}
+
+.modal-card textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.modal-card input:focus,
+.modal-card textarea:focus,
+.modal-card select:focus {
+    outline: none;
+    border-color: #4a9b8c;
+    box-shadow: 0 0 0 2px rgba(74, 155, 140, 0.2);
+}
+
+/* ===== CHECKBOXES ===== */
+.modal-card input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* ===== ACTIONS ===== */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.modal-actions button {
+    background: #4a9b8c;
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-actions button:hover {
+    background: #3b8276;
+}
+
+/* ===== ANIMATION ===== */
+@keyframes modalFade {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+.flash-message {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #166534;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Fade out animation */
+.flash-hide {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+   .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.modal-card {
+    background: white;
+    width: 600px;
+    max-width: 90%;
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+.admin-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+/* Remove file options */
+.remove-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 0.9rem;
+}
+
+.remove-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #dc2626;
+    cursor: pointer;
+}
+
+.remove-option label {
+    cursor: pointer;
+    user-select: none;
+}
+.modal-actions button {
+    background: #4a9b8c;
+    color: white;
+    padding: 10px 22px;
+    border-radius: 999px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-actions button:hover {
+    background: #3e8b7e;
+}
+       /* ===== ADMIN UTILITIES ===== */
+        .space-y-8 > * + * { margin-top: 2rem; }
+
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: .5rem; }
+
+        .text-sm { font-size: .875rem; }
+        .text-xs { font-size: .75rem; }
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+
+        .text-muted-foreground { color: #64748b; }
+        .text-primary { color: #22c55e; }
+
+        .rounded-md { border-radius: 8px; }
+        .rounded-lg { border-radius: 12px; }
+        .rounded-xl { border-radius: 16px; }
+        .rounded-full { border-radius: 999px; }
+
+        .border { border: 1px solid #e2e8f0; }
+        .border-border { border-color: #e2e8f0; }
+
+        .bg-card { background: #ffffff; }
+        .bg-muted { background: #f1f5f9; }
+
+        .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: #f1f5f9;
+        }
+
+        td img {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 10px;
+        }

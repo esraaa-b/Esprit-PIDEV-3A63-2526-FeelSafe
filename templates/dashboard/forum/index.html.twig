@@ -1,0 +1,256 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="space-y-8">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-serif font-bold text-foreground">Communauté</h1>
+                <p class="text-muted-foreground mt-1">
+                    Échangez avec une communauté bienveillante et soutenante
+                </p>
+            </div>
+            <button type="button"
+                    @click="$dispatch('open-dialog', {id: 'new-topic'})"
+                    class="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nouveau sujet
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">2.4k</p>
+                        <p class="text-xs text-muted-foreground">Membres</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-2/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">156</p>
+                        <p class="text-xs text-muted-foreground">Sujets</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-4/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">1.2k</p>
+                        <p class="text-xs text-muted-foreground">Réactions</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-1/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">89</p>
+                        <p class="text-xs text-muted-foreground">Actifs aujourd'hui</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" 
+                       placeholder="Rechercher un sujet..." 
+                       class="w-full h-10 pl-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                {% for cat in categories %}
+                    <button type="button"
+                            class="inline-flex items-center justify-center px-3 py-1.5 text-sm rounded-lg border border-input hover:bg-secondary hover:text-secondary-foreground transition-colors
+                                   {% if cat.id == 'all' %}bg-primary text-primary-foreground border-primary{% endif %}">
+                        {{ cat.name }}
+                        <span class="ml-1 text-xs opacity-70">({{ cat.count }})</span>
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Topics List -->
+        <div class="space-y-4">
+            {% for topic in topics %}
+                <div class="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow cursor-pointer">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-medium shrink-0">
+                            {{ topic.author|first }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        {% if topic.pinned %}
+                                            <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2l5.5 9h-11L12 2z"></path>
+                                                <path d="M17 12v7a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-7"></path>
+                                                <path d="M9 22h6"></path>
+                                            </svg>
+                                        {% endif %}
+                                        <h3 class="font-semibold text-foreground hover:text-primary transition-colors">
+                                            {{ topic.title }}
+                                        </h3>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-sm text-muted-foreground">{{ topic.author }}</span>
+                                        <span class="text-muted-foreground">-</span>
+                                        <span class="px-2 py-1 text-xs rounded bg-secondary text-secondary-foreground">
+                                            {{ topic.category }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-muted-foreground text-sm mt-2 line-clamp-2">{{ topic.excerpt }}</p>
+                            <div class="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    {{ topic.replies }}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                    {{ topic.likes }}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    {{ topic.views }}
+                                </span>
+                                <span class="flex items-center gap-1 ml-auto">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    {{ topic.lastReply }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Community Guidelines -->
+        <div class="bg-secondary/50 rounded-lg border border-border p-6">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-foreground">Règles de la communauté</h3>
+                    <p class="text-sm text-muted-foreground mt-1">
+                        Notre communauté est un espace bienveillant. Soyez respectueux, soutenants et n'hésitez pas à signaler tout contenu inapproprié. Ensemble, nous créons un environnement sécurisant pour tous.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Topic Modal -->
+<div x-data="{ newTopicOpen: false }"
+     x-on:open-dialog.window="if ($event.detail.id === 'new-topic') newTopicOpen = true"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     x-show="newTopicOpen"
+     style="display: none;">
+    
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-foreground/50" @click="newTopicOpen = false"></div>
+    
+    <!-- Dialog -->
+    <div class="relative bg-card rounded-lg border border-border w-full max-w-lg shadow-lg"
+         @click.outside="newTopicOpen = false">
+        
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-serif font-bold text-foreground">Créer un nouveau sujet</h2>
+                <button @click="newTopicOpen = false" class="p-2 hover:bg-secondary rounded-lg transition-colors">
+                    <svg class="w-5 h-5 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <p class="text-muted-foreground mb-6">
+                Partagez vos pensées ou posez une question à la communauté
+            </p>
+            
+            <div class="space-y-4">
+                <div>
+                    <input type="text" 
+                           placeholder="Titre du sujet" 
+                           class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <select class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground">
+                        <option value="">Choisir une catégorie</option>
+                        <option value="anxiety">Anxiété</option>
+                        <option value="depression">Dépression</option>
+                        <option value="stress">Stress</option>
+                        <option value="relationships">Relations</option>
+                        <option value="self-care">Auto-soins</option>
+                    </select>
+                </div>
+                <div>
+                    <textarea placeholder="Écrivez votre message..." 
+                              class="w-full min-h-32 px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button @click="newTopicOpen = false"
+                            class="px-4 py-2 rounded-lg border border-input hover:bg-secondary hover:text-secondary-foreground transition-colors">
+                        Annuler
+                    </button>
+                    <button class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                        Publier
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
