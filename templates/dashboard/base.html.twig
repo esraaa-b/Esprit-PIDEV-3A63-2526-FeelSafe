@@ -14,15 +14,16 @@
     {% block stylesheets %}{% endblock %}
     {% block javascripts_head %}{% endblock %}
 </head>
-
-<body class="bg-background">
+<body class="bg-background pt-20 lg:pt-32">
     <div class="flex flex-col min-h-screen">
         {% include "components/dashboard_navbar.html.twig" %}
 
-        <main class="flex-1 w-full px-6 py-8 pt-20 lg:pt-20">
+        <main class="flex-1 w-full px-6 py-8">
             {% block content %}{% endblock %}
         </main>
     </div>
+
+
     
     <script>
     document.addEventListener('alpine:init', () => {
