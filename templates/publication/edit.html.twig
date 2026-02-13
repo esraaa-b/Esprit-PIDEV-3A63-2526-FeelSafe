@@ -1,0 +1,147 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Modifier Publication{% endblock %}
+
+{% block content %}
+<style>
+    /* Conteneur principal */
+    .admin-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        max-width: 850px;
+        margin: 20px auto;
+    }
+
+    .card-header {
+        border-bottom: 2px solid #f3f4f6;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-title {
+        font-size: 1.5rem;
+        color: #111827;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    /* Styles du formulaire (appliqués aux éléments dans _form.html.twig) */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        font-size: 14px;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* Gestion de l'image actuelle */
+    .current-image-preview {
+        margin: 10px 0;
+        padding: 10px;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 1px dashed #d1d5db;
+        display: inline-block;
+    }
+
+    /* Actions et Boutons */
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .btn-admin {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        border: none;
+    }
+
+    .btn-admin-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-admin-primary:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+    }
+
+    .btn-admin-outline {
+        background: white;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
+    }
+
+    .btn-admin-outline:hover {
+        background: #f3f4f6;
+    }
+
+    .btn-delete-zone {
+        background: #fef2f2;
+        border: 1px solid #fee2e2;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+</style>
+
+<div class="admin-header" style="margin-bottom: 20px;">
+    <a href="{{ path('app_publication_index') }}" class="btn-admin btn-admin-outline">
+        ← Retour à la liste
+    </a>
+</div>
+
+<div class="admin-card">
+    <div class="card-header">
+        <h2 class="card-title">Modifier la publication #{{ publication.id }}</h2>
+    </div>
+
+    {# On passe les classes CSS au formulaire via les variables #}
+    {{ include('publication/_form.html.twig', {
+        form: form,
+        publication: publication,
+        button_label: 'Enregistrer les modifications'
+    }) }}
+
+    <div class="btn-delete-zone">
+        <p style="color: #991b1b; font-size: 13px; margin-bottom: 10px; font-weight: 600;">
+            Zone de danger : Cette action est irréversible.
+        </p>
+        {{ include('publication/_delete_form.html.twig') }}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,328 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="space-y-8">
+        <!-- Header -->
+        <div>
+            <h1 class="text-3xl font-serif font-bold text-foreground">Bien-être</h1>
+            <p class="text-muted-foreground mt-1">
+                Exercices de respiration, méditation et activités douces
+            </p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4.5 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path>
+                            <path d="M9 7h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2.5"></path>
+                            <path d="M15 15v1a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-1"></path>
+                            <path d="M7 9v4"></path>
+                            <path d="M15 9v4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">{{ completedDays }}</p>
+                        <p class="text-xs text-muted-foreground">Jours cette semaine</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-2/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">{{ totalMinutes }}</p>
+                        <p class="text-xs text-muted-foreground">Minutes pratiquées</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-4/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="8" r="6"></circle>
+                            <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">12</p>
+                        <p class="text-xs text-muted-foreground">Série actuelle</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-1/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">+15%</p>
+                        <p class="text-xs text-muted-foreground">vs semaine dernière</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Progress -->
+        <div class="bg-card rounded-lg border border-border p-6">
+            <h2 class="text-xl font-semibold text-foreground mb-4">Progrès de la semaine</h2>
+            <div class="flex justify-between">
+                {% for day in weeklyProgress %}
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center {{ day.completed ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground' }}">
+                            {% if day.completed %}
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            {% else %}
+                                {{ day.day|first }}
+                            {% endif %}
+                        </div>
+                        <span class="text-xs text-muted-foreground">{{ day.day }}</span>
+                        {% if day.minutes > 0 %}
+                            <span class="text-xs font-medium text-foreground">{{ day.minutes }}m</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div x-data="{ activeTab: 'breathing' }" class="space-y-6">
+            <!-- Tabs Navigation -->
+            <div class="flex flex-wrap gap-2 border-b border-border pb-2">
+                <button @click="activeTab = 'breathing'"
+                        :class="activeTab === 'breathing' 
+                                ? 'border-b-2 border-primary text-primary font-medium' 
+                                : 'text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 transition-colors">
+                    Respiration
+                </button>
+                <button @click="activeTab = 'activities'"
+                        :class="activeTab === 'activities' 
+                                ? 'border-b-2 border-primary text-primary font-medium' 
+                                : 'text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 transition-colors">
+                    Activités
+                </button>
+                <button @click="activeTab = 'tracker'"
+                        :class="activeTab === 'tracker' 
+                                ? 'border-b-2 border-primary text-primary font-medium' 
+                                : 'text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 transition-colors">
+                    Mood Tracker
+                </button>
+            </div>
+
+            <!-- Breathing Tab -->
+            <div x-show="activeTab === 'breathing'" class="space-y-6">
+                <!-- Active Breathing Exercise -->
+                <div class="bg-card rounded-lg border border-border overflow-hidden">
+                    <div class="bg-primary p-8 text-primary-foreground text-center">
+                        <h3 class="text-xl font-semibold mb-2">Respiration 4-7-8</h3>
+                        <p class="text-primary-foreground/80 text-sm mb-8">
+                            Technique de relaxation profonde pour réduire le stress
+                        </p>
+
+                        <!-- Breathing Circle -->
+                        <div x-data="{ 
+                            isBreathing: false, 
+                            breathPhase: 'inhale', 
+                            breathCount: 0, 
+                            timer: 4,
+                            startBreathing() {
+                                this.isBreathing = true;
+                                const phases = { inhale: 4, hold: 7, exhale: 8 };
+                                const nextPhase = { inhale: 'hold', hold: 'exhale', exhale: 'inhale' };
+                                
+                                const interval = setInterval(() => {
+                                    if (!this.isBreathing) {
+                                        clearInterval(interval);
+                                        return;
+                                    }
+                                    
+                                    this.timer--;
+                                    
+                                    if (this.timer <= 0) {
+                                        this.breathPhase = nextPhase[this.breathPhase];
+                                        this.timer = phases[this.breathPhase];
+                                        
+                                        if (this.breathPhase === 'inhale') {
+                                            this.breathCount++;
+                                        }
+                                    }
+                                }, 1000);
+                            },
+                            resetBreathing() {
+                                this.isBreathing = false;
+                                this.breathPhase = 'inhale';
+                                this.breathCount = 0;
+                                this.timer = 4;
+                            }
+                        }" class="space-y-8">
+                            
+                            <div class="relative w-48 h-48 mx-auto">
+                                <div :class="{
+                                    'scale-110': isBreathing && breathPhase === 'inhale',
+                                    'scale-90': isBreathing && breathPhase === 'exhale',
+                                    'scale-100': !isBreathing || breathPhase === 'hold'
+                                }" 
+                                class="absolute inset-0 rounded-full border-4 border-primary-foreground/30 flex items-center justify-center transition-transform duration-1000">
+                                    <div class="text-center">
+                                        <p class="text-5xl font-bold" x-text="timer"></p>
+                                        <p class="text-sm mt-2 capitalize" x-text="
+                                            breathPhase === 'inhale' ? 'Inspirez' :
+                                            breathPhase === 'hold' ? 'Retenez' :
+                                            'Expirez'
+                                        "></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-center gap-4">
+                                <button @click="resetBreathing()" type="button" class="w-10 h-10 rounded-lg bg-primary-foreground/20 text-primary-foreground flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="1 4 1 10 7 10"></polyline>
+                                        <polyline points="23 20 23 14 17 14"></polyline>
+                                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                                    </svg>
+                                </button>
+                                <button @click="isBreathing = !isBreathing; if (isBreathing) startBreathing()" 
+                                        type="button" 
+                                        class="px-8 py-2 rounded-lg bg-primary-foreground text-primary hover:bg-primary-foreground/90 transition-colors font-medium">
+                                    <template x-if="isBreathing">
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="6" y="4" width="4" height="16"></rect>
+                                                <rect x="14" y="4" width="4" height="16"></rect>
+                                            </svg>
+                                            Pause
+                                        </span>
+                                    </template>
+                                    <template x-if="!isBreathing">
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                            </svg>
+                                            Commencer
+                                        </span>
+                                    </template>
+                                </button>
+                            </div>
+
+                            <p x-show="breathCount > 0" class="text-sm text-primary-foreground/80">
+                                Cycles complétés: <span x-text="breathCount"></span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Exercises -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {% for exercise in breathingExercises %}
+                        <div class="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow cursor-pointer">
+                            <div class="{{ exercise.color }} w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                                <svg class="w-6 h-6 text-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4.5 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path>
+                                    <path d="M9 7h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2.5"></path>
+                                    <path d="M15 15v1a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-1"></path>
+                                    <path d="M7 9v4"></path>
+                                    <path d="M15 9v4"></path>
+                                </svg>
+                            </div>
+                            <h3 class="font-semibold text-foreground">{{ exercise.name }}</h3>
+                            <p class="text-sm text-muted-foreground mt-1">{{ exercise.description }}</p>
+                            <div class="flex items-center gap-2 mt-3">
+                                <span class="px-2 py-1 text-xs rounded bg-secondary text-secondary-foreground">
+                                    {{ exercise.duration }}
+                                </span>
+                                <span class="px-2 py-1 text-xs rounded border border-input">
+                                    {{ exercise.level }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Activities Tab -->
+            <div x-show="activeTab === 'activities'" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for activity in activities %}
+                        <div class="bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
+                            <div class="relative h-40 bg-secondary">
+                                <div class="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                                    <svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                </div>
+                                <span class="absolute top-4 left-4 px-2 py-1 text-xs rounded bg-secondary text-secondary-foreground">
+                                    {{ activity.category }}
+                                </span>
+                                <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card to-transparent">
+                                    <h3 class="font-semibold text-foreground text-lg">{{ activity.name }}</h3>
+                                    <div class="flex items-center gap-2 mt-1 text-muted-foreground text-sm">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        <span>{{ activity.duration }}</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Mood Tracker Tab -->
+            <div x-show="activeTab === 'tracker'" class="space-y-6">
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <h2 class="text-xl font-semibold text-foreground">Historique d'humeur</h2>
+                    </div>
+                    <p class="text-muted-foreground mb-6">
+                        Visualisez vos tendances émotionnelles sur les 30 derniers jours
+                    </p>
+                    
+                    <div class="h-48 flex items-end justify-between gap-1">
+                        {% for i in 1..30 %}
+                            {% set height = random(10, 100) %}
+                            {% set color = height > 70 ? 'bg-primary' : (height > 40 ? 'bg-chart-2' : 'bg-destructive') %}
+                            <div class="{{ color }} flex-1 rounded-t-sm opacity-80 hover:opacity-100 transition-opacity cursor-pointer" 
+                                 style="height: {{ height }}%"
+                                 title="Jour {{ i }}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="flex justify-between mt-4 text-xs text-muted-foreground">
+                        <span>Il y a 30 jours</span>
+                        <span>Aujourd'hui</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

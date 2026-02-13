@@ -1,0 +1,289 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Nouvelle publication{% endblock %}
+
+{% block content %}
+<style>
+/* Gardez tout votre CSS ici */
+.publication-form {
+    max-width: 800px;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary, #1a1a1a);
+    margin-bottom: 8px;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #e74c3c;
+}
+
+.optional-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted, #6b7280);
+    background: var(--bg-secondary, #f3f4f6);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary, #1a1a1a);
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-control::placeholder {
+    color: #9ca3af;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--text-muted, #6b7280);
+}
+
+.file-upload-wrapper {
+    position: relative;
+}
+
+.form-control-file {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    color: var(--text-primary, #1a1a1a);
+    background-color: #fff;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.form-control-file:hover {
+    border-color: #3b82f6;
+    background-color: #f9fafb;
+}
+
+.file-upload-preview {
+    position: relative;
+    margin-top: 16px;
+    display: inline-block;
+}
+
+.file-upload-preview img {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    display: block;
+}
+
+.remove-preview {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.remove-preview:hover {
+    background: #dc2626;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn-admin-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-admin-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+@media (max-width: 640px) {
+    .publication-form {
+        max-width: 100%;
+    }
+    
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+    
+    .form-actions .btn-admin {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .file-upload-preview img {
+        max-width: 100%;
+    }
+}
+</style>
+
+<div class="admin-header">
+    <div>
+        <h1>Nouvelle publication</h1>
+        <p style="color: var(--text-muted); margin-top:6px;">
+            Créez et partagez une nouvelle publication sur le forum
+        </p>
+    </div>
+    <a href="{{ path('app_publication_index') }}" class="btn-admin btn-admin-outline">
+        ← Retour à la liste
+    </a>
+</div>
+
+<div class="admin-card">
+    {# 🔥 ACTION CORRIGÉE ICI #}
+    {{ form_start(form, {
+    'action': path('app_publication_new'),
+    'method': 'POST',
+    'attr': {'class': 'publication-form'}
+}) }}
+
+
+
+        
+        <div class="form-group">
+            {{ form_label(form.titre, 'Titre', {'label_attr': {'class': 'form-label required'}}) }}
+            {{ form_widget(form.titre, {
+                'attr': {
+                    'class': 'form-control',
+                    'placeholder': 'Entrez le titre de la publication',
+                    'maxlength': 255
+                }
+            }) }}
+            <small class="form-hint">Maximum 255 caractères</small>
+            {{ form_errors(form.titre) }}
+        </div>
+
+        <div class="form-group">
+            {{ form_label(form.contenu, 'Contenu', {'label_attr': {'class': 'form-label required'}}) }}
+            {{ form_widget(form.contenu, {
+                'attr': {
+                    'class': 'form-control',
+                    'placeholder': 'Rédigez le contenu de votre publication...',
+                    'rows': 8
+                }
+            }) }}
+            <small class="form-hint">Décrivez votre publication en détail</small>
+            {{ form_errors(form.contenu) }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.image.vars.id }}" class="form-label">
+                Image
+                <span class="optional-badge">Optionnel</span>
+            </label>
+            <div class="file-upload-wrapper">
+                {{ form_widget(form.image, {
+                    'attr': {
+                        'class': 'form-control-file',
+                        'accept': 'image/png, image/jpeg, image/jpg, image/gif, image/webp'
+                    }
+                }) }}
+                <div class="file-upload-preview" id="imagePreview" style="display: none;">
+                    <img src="" alt="Aperçu" id="previewImg">
+                    <button type="button" class="remove-preview" onclick="removeImage()">
+                        ✕ Supprimer
+                    </button>
+                </div>
+            </div>
+            <small class="form-hint">Formats acceptés : JPG, PNG, GIF, WEBP (max 5MB)</small>
+            {{ form_errors(form.image) }}
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ path('app_publication_index') }}" class="btn-admin btn-admin-outline">
+                Annuler
+            </a>
+            <button type="submit" class="btn-admin btn-admin-primary">
+                📝 Créer la publication
+            </button>
+        </div>
+
+    {{ form_end(form) }}
+</div>
+
+<script>
+const imageInput = document.querySelector('input[type="file"]');
+if (imageInput) {
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert('⚠️ Le fichier est trop volumineux. Taille maximale : 5MB');
+                this.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function removeImage() {
+    const imageInput = document.querySelector('input[type="file"]');
+    if (imageInput) {
+        imageInput.value = '';
+    }
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+}
+</script>
+{% endblock %}

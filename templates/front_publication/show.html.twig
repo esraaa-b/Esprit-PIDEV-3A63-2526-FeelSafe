@@ -1,0 +1,169 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block title %}{{ publication.titre }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    {# Bouton retour à la liste amélioré #}
+    <div class="mb-4">
+        <a href="{{ path('app_front_publication') }}" 
+           class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors border border-primary/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span class="text-base">Retour à la liste</span>
+        </a>
+    </div>
+
+    {# Publication #}
+    <div class="bg-card p-5 rounded-xl shadow border border-border" style="padding-left: 2rem !important;">
+        <h1 class="text-2xl font-bold mb-2 text-foreground">{{ publication.titre }}</h1>
+        <p class="text-muted-foreground mb-3">{{ publication.contenu }}</p>
+
+        {% if publication.image %}
+            <img src="{{ asset('uploads/' ~ publication.image) }}"
+                 class="w-full h-64 object-cover rounded-lg mb-3">
+        {% endif %}
+
+        <div class="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+            <span>Publié le {{ publication.datePublication|date('d/m/Y') }}</span>
+
+            <!-- Likes -->
+            <span class="flex items-center gap-1">
+                <form method="POST" action="{{ path('app_front_publication_like', {'id': publication.id}) }}" class="inline">
+                    <button type="submit" class="hover:text-green-600 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                    </button>
+                </form>
+                <span>{{ publication.likesCount|default(0) }}</span>
+            </span>
+
+            <!-- Dislikes -->
+            <span class="flex items-center gap-1">
+                <form method="POST" action="{{ path('app_front_publication_dislike', {'id': publication.id}) }}" class="inline">
+                    <button type="submit" class="hover:text-red-600 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                        </svg>
+                    </button>
+                </form>
+                <span>{{ publication.dislikesCount|default(0) }}</span>
+            </span>
+        </div>
+    </div>
+
+    {# Commentaires #}
+    <div class="bg-card p-5 rounded-xl shadow space-y-4 border border-border" style="padding-left: 2rem !important;">
+        <h2 class="text-xl font-semibold text-foreground mb-3">
+            Commentaires ({{ publication.pubCom|length }})
+        </h2>
+
+        {% for commentaire in publication.pubCom %}
+            <div class="border border-border rounded-lg p-3 bg-background space-y-2" style="padding-left: 2rem !important;">
+
+                {# Contenu du commentaire #}
+                <p class="text-foreground">{{ commentaire.contenu }}</p>
+
+                {# Ligne du bas : nom/date + icônes modifier/supprimer #}
+                <div class="flex items-center justify-between text-sm text-muted-foreground">
+
+                    {# Nom et date à gauche #}
+                    <div>
+                        {{ commentaire.user ? commentaire.user.nom : 'Utilisateur' }}
+                        • {{ commentaire.dateCommentaire ? commentaire.dateCommentaire|date('d/m/Y H:i') : '' }}
+                    </div>
+
+                    {# Icônes à droite #}
+                    <div class="flex items-center gap-2">
+
+                        {# Modifier (crayon) - Modal Alpine.js #}
+                        {% if commentaire.user.id == 1 %}
+                            <div x-data="{ open: false }">
+                                <button @click="open = true" class="text-blue-600 hover:text-blue-800 text-sm">
+                                    ✏️
+                                </button>
+                                <div x-show="open" x-cloak
+                                     class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                                    <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-lg relative">
+                                        <h2 class="text-lg font-bold mb-4">Modifier le commentaire</h2>
+                                        <form method="POST" action="{{ path('app_front_commentaire_edit', {id: commentaire.id}) }}" class="space-y-2">
+                                            <textarea name="contenu"
+                                                      rows="4"
+                                                      class="w-full border rounded p-2"
+                                                      required>{{ commentaire.contenu }}</textarea>
+                                            <div class="flex justify-end gap-2">
+                                                <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90">
+                                                    Enregistrer
+                                                </button>
+                                                <button type="button" @click="open = false" class="px-4 py-2 border rounded hover:bg-gray-100">
+                                                    Annuler
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {# Supprimer (poubelle) #}
+                        {% if commentaire.user %}
+                            <form action="{{ path('app_front_commentaire_delete', {id: commentaire.id}) }}"
+                                  method="POST"
+                                  onsubmit="return confirm('Supprimer ce commentaire ?');">
+                                <button type="submit"
+                                        class="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M6 7h12M9 7v10m6-10v10M10 4h4a1 1 0 011 1v2H9V5a1 1 0 011-1z"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+            </div>
+        {% else %}
+            <p class="text-muted-foreground">Aucun commentaire pour le moment.</p>
+        {% endfor %}
+
+        {# Formulaire pour ajouter un commentaire #}
+        <form method="POST"
+              action="{{ path('app_front_commentaire_new', {id: publication.id}) }}"
+              class="mt-4 space-y-2">
+
+            <textarea name="contenu"
+                      rows="3"
+                      class="w-full border border-border rounded-lg p-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Écrire un commentaire..."
+                      required></textarea>
+
+            <button type="submit"
+                    class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 inline-flex items-center gap-2 transition">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter
+            </button>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

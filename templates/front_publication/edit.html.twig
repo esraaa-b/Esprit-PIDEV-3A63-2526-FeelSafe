@@ -1,0 +1,61 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block title %}Modifier la publication{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg mt-6">
+
+    <h1 class="text-2xl font-bold mb-6 text-gray-800">Modifier votre publication</h1>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+
+        {# Titre #}
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">Titre</label>
+            <input type="text" name="titre" value="{{ publication.titre }}" 
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="Titre de la publication" required>
+        </div>
+
+        {# Contenu #}
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">Contenu</label>
+            <textarea name="contenu" rows="5" 
+                      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Écrivez quelque chose..." required>{{ publication.contenu }}</textarea>
+        </div>
+
+        {# Image #}
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">Image (optionnelle)</label>
+            <input type="file" name="image" class="block w-full text-gray-700">
+            {% if publication.image %}
+                <p class="mt-2 text-sm text-gray-500">Image actuelle :</p>
+                <img src="{{ asset('uploads/' ~ publication.image) }}" alt="Image actuelle" 
+                     class="w-40 h-40 object-cover mt-2 rounded-lg border border-gray-200 shadow-sm">
+            {% endif %}
+        </div>
+
+        <div class="pt-4 flex gap-4">
+    <button type="submit"
+            class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-all shadow">
+        <!-- Icône Mettre à jour -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16V4H4zm8 4v4m0 0v4m0-4h4m-4 0H8"/>
+        </svg>
+        <span>Mettre à jour</span>
+    </button>
+
+    <a href="{{ path('app_front_publication') }}"
+       class="flex-1 flex items-center justify-center gap-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 rounded-lg transition-all shadow">
+        <!-- Icône Annuler -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        <span>Annuler</span>
+    </a>
+</div>
+
+    </form>
+</div>
+{% endblock %}

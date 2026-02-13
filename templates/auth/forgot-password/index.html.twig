@@ -1,0 +1,99 @@
+{% extends 'auth/auth_base.html.twig' %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center p-8 bg-background">
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="flex items-center gap-2 mb-8 justify-center">
+            <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                <i data-feather="heart" class="w-6 h-6 text-primary-foreground"></i>
+            </div>
+            <span class="text-2xl font-serif font-bold text-foreground">FeelSafe</span>
+        </div>
+
+        <div class="border-0 shadow-lg rounded-lg bg-card p-6">
+            {% if not is_submitted %}
+                <!-- Form State -->
+                <div class="space-y-1 pb-6">
+                    <h2 class="text-2xl font-serif font-bold">Mot de passe oublié?</h2>
+                    <p class="text-muted-foreground text-sm">
+                        Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe
+                    </p>
+                </div>
+                
+                <div class="mb-6">
+                    <form method="post" action="{{ path('app_forgot_password_submit') }}" class="space-y-4">
+                        {% if error %}
+                            <div class="p-3 rounded-lg bg-red-100 text-red-700 text-sm">
+                                {{ error }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="space-y-2">
+                            <label for="email" class="block text-sm font-medium text-foreground">
+                                Email
+                            </label>
+                            <div class="relative">
+                                <i data-feather="mail" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    id="email"
+                                    value="{{ email }}"
+                                    class="w-full h-11 px-3 py-2 pl-10 border rounded-md"
+                                    placeholder="votre@email.com"
+                                    required
+                                >
+                            </div>
+                        </div>
+                        
+                        <button
+                            type="submit"
+                            class="w-full h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            {% if isLoading %}disabled{% endif %}
+                        >
+                            {% if isLoading %}
+                                <i data-feather="loader" class="w-4 h-4 mr-2 animate-spin inline"></i>
+                                Envoi en cours...
+                            {% else %}
+                                Envoyer le lien
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <!-- Success State -->
+                <div class="pt-8 pb-6">
+                    <div class="text-center space-y-4">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                            <i data-feather="check-circle" class="w-8 h-8 text-primary"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-serif font-semibold mb-2">Email envoyé!</h3>
+                            <p class="text-muted-foreground text-sm">
+                                Si un compte existe avec l'email <span class="font-medium text-foreground">{{ email }}</span>, vous recevrez un lien de réinitialisation.
+                            </p>
+                        </div>
+                        <button
+                            onclick="window.location.reload()"
+                            class="w-full h-11 border border-input bg-transparent rounded-md font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                        >
+                            Renvoyer l'email
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="pt-0">
+                <a 
+                    href="{{ path('app_login') }}"
+                    class="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mx-auto justify-center"
+                >
+                    <i data-feather="arrow-left" class="w-4 h-4"></i>
+                    Retour à la connexion
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

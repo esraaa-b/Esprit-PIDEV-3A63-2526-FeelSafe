@@ -1,0 +1,105 @@
+
+
+{{ form_start(form, {
+
+    'attr': {
+
+        'class': 'admin-form',
+
+        'novalidate': 'novalidate'
+
+    }
+
+}) }}
+
+
+
+<div class="form-group">
+
+    {{ form_label(form.titre, 'Titre de la publication', {'label_attr': {'class': 'form-label'}}) }}
+
+    {{ form_widget(form.titre, {'attr': {'class': 'form-control', 'placeholder': 'Ex: Mon superbe article'}}) }}
+
+    <div class="form-error-message">{{ form_errors(form.titre) }}</div>
+
+</div>
+
+
+
+<div class="form-group">
+
+    {{ form_label(form.contenu, 'Contenu', {'label_attr': {'class': 'form-label'}}) }}
+
+    {{ form_widget(form.contenu, {'attr': {'class': 'form-control', 'rows': '6', 'placeholder': 'Rédigez ici...'}}) }}
+
+    <div class="form-error-message">{{ form_errors(form.contenu) }}</div>
+
+</div>
+
+
+
+<div class="form-group">
+
+    {{ form_label(form.image, 'Image de mise en avant', {'label_attr': {'class': 'form-label'}}) }}
+
+    
+
+    {% if publication.image %}
+
+        <div class="current-image-preview" style="margin-bottom: 15px; padding: 10px; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; display: inline-block;">
+
+            <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">Image actuelle :</p>
+
+            <img src="{{ asset('uploads/' ~ publication.image) }}" alt="Current Image" style="max-width: 150px; border-radius: 6px; display: block;"/>
+
+        </div>
+
+    {% endif %}
+
+
+
+    {{ form_widget(form.image, {'attr': {'class': 'form-control'}}) }}
+
+    <div class="form-error-message">{{ form_errors(form.image) }}</div>
+
+    <small style="color: #6b7280; display: block; margin-top: 5px;">Formats acceptés : JPG, PNG, WEBP (Max 5Mo)</small>
+
+</div>
+
+
+
+<div class="form-group" style="background: #f3f4f6; padding: 12px; border-radius: 8px;">
+
+    <label class="form-label" style="margin-bottom: 2px;">Date de publication</label>
+
+    <p style="margin: 0; color: #4b5563; font-size: 14px;">
+
+        <i class="fas fa-calendar-alt"></i> 
+
+        {{ publication.datePublication ? publication.datePublication|date('d/m/Y à H:i') : 'Générée automatiquement à l\'enregistrement' }}
+
+    </p>
+
+</div>
+
+
+
+<div class="form-actions" style="margin-top:30px; display: flex; gap: 10px; align-items: center;">
+
+    <button class="btn-admin btn-admin-primary" type="submit">
+
+        {{ button_label|default('Enregistrer') }}
+
+    </button>
+
+    <a href="{{ path('app_publication_index') }}" class="btn-admin btn-admin-outline">
+
+        Annuler
+
+    </a>
+
+</div>
+
+
+
+{{ form_end(form) }}

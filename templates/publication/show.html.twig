@@ -1,0 +1,33 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Publication Details{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="card-header">
+        <h2 class="card-title">Publication Details</h2>
+    </div>
+
+    <div class="admin-card-content" style="display: grid; gap: 12px; line-height: 1.5;">
+        <div><strong>Id:</strong> {{ publication.id }}</div>
+        <div><strong>Titre:</strong> {{ publication.titre }}</div>
+        <div><strong>Contenu:</strong> {{ publication.contenu }}</div>
+        <div>
+            <strong>Image:</strong>
+            {% if publication.image %}
+                <img src="{{ asset('uploads/' ~ publication.image) }}" alt="Publication Image" style="max-width:200px; border-radius:8px;">
+            {% else %}
+                <span class="status-inactive">No image</span>
+            {% endif %}
+        </div>
+        <div><strong>DatePublication:</strong> {{ publication.datePublication ? publication.datePublication|date('Y-m-d H:i:s') : '—' }}</div>
+    </div>
+
+    <div class="card-header" style="margin-top: 20px; gap: 12px;">
+        <a href="{{ path('app_publication_index') }}" class="btn-admin btn-admin-outline">← Back to list</a>
+        <a href="{{ path('app_publication_edit', {'id': publication.id}) }}" class="btn-admin">Edit</a>
+
+        {{ include('publication/_delete_form.html.twig', {'class': 'btn-admin btn-admin-outline'}) }}
+    </div>
+</div>
+{% endblock %}
