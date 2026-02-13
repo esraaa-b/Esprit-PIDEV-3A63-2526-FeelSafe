@@ -1,0 +1,266 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="space-y-8">
+        <!-- Flash Messages -->
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="p-4 rounded-lg {% if label == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <!-- Header -->
+        <div>
+            <h1 class="text-3xl font-serif font-bold text-foreground">Mon Profil</h1>
+            <p class="text-muted-foreground mt-1">
+                Consultez et gérez votre profil utilisateur
+            </p>
+        </div>
+
+        <!-- Profile Card -->
+        <div class="bg-card rounded-lg border border-border overflow-hidden">
+            <!-- Cover Image -->
+            <div class="relative h-32 bg-primary rounded-t-lg overflow-hidden">
+                <div class="absolute inset-0 flex items-center justify-center text-primary-foreground/20">
+                    <svg class="w-32 h-32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Profile Info -->
+            <div class="px-6 pb-6">
+                <div class="flex flex-col md:flex-row md:items-end gap-4 -mt-12 relative">
+                    <!-- Avatar -->
+                    <div class="w-24 h-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-medium border-4 border-card">
+                        {{ user.prenom|first|upper }}
+                    </div>
+                    
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h2 class="text-2xl font-serif font-bold text-foreground">
+                                {{ user.fullName }}
+                            </h2>
+                            <span class="px-2 py-1 text-xs rounded bg-primary text-primary-foreground">
+                                Membre {{ user.hasRole('ROLE_ADMIN') ? 'Admin' : (user.hasRole('ROLE_PROFESSIONNEL') ? 'Professionnel' : 'Premium') }}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                                {{ user.email }}
+                            </span>
+                            {% if user.telephone %}
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                                {{ user.telephone }}
+                            </span>
+                            {% endif %}
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Membre depuis {{ user.dateCreation|date('d/m/Y') }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ path('app_security') }}" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Modifier le profil
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% for stat in stats %}
+                <div class="bg-card rounded-lg p-6 border border-border">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            {% if stat.icon == 'calendar' %}
+                                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                            {% elseif stat.icon == 'book' %}
+                                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+                                    <path d="M8 11h8"></path>
+                                    <path d="M8 6h8"></path>
+                                </svg>
+                            {% elseif stat.icon == 'clock' %}
+                                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            {% elseif stat.icon == 'heart' %}
+                                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-foreground">{{ stat.value }}</p>
+                            <p class="text-xs text-muted-foreground">{{ stat.label }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Progress -->
+        <div class="bg-card rounded-lg border border-border p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+                <h2 class="text-xl font-semibold text-foreground">Progression globale</h2>
+            </div>
+            <p class="text-muted-foreground mb-6">
+                Votre parcours de bien-être
+            </p>
+            
+            <div class="space-y-6">
+                <!-- XP Progress -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-foreground">Niveau 5</span>
+                        <span class="text-sm text-muted-foreground">2,450 / 3,000 XP</span>
+                    </div>
+                    <div class="h-3 w-full bg-secondary rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full" style="width: 82%"></div>
+                    </div>
+                    <p class="text-xs text-muted-foreground mt-2">
+                        Plus que 550 XP pour atteindre le niveau 6
+                    </p>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl bg-secondary/50">
+                        <p class="text-sm text-muted-foreground">Score bien-être</p>
+                        <p class="text-2xl font-bold text-foreground mt-1">72%</p>
+                        <p class="text-xs text-primary mt-1">+5% cette semaine</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-secondary/50">
+                        <p class="text-sm text-muted-foreground">Série actuelle</p>
+                        <p class="text-2xl font-bold text-foreground mt-1">12 jours</p>
+                        <p class="text-xs text-primary mt-1">Record: 21 jours</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-secondary/50">
+                        <p class="text-sm text-muted-foreground">Rang communauté</p>
+                        <p class="text-2xl font-bold text-foreground mt-1">#156</p>
+                        <p class="text-xs text-primary mt-1">Top 10%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="bg-card rounded-lg border border-border p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-5 h-5 text-chart-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="6"></circle>
+                    <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path>
+                </svg>
+                <h2 class="text-xl font-semibold text-foreground">Badges et récompenses</h2>
+            </div>
+            <p class="text-muted-foreground mb-6">
+                Vos accomplissements sur la plateforme
+            </p>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% for achievement in achievements %}
+                    <div class="p-4 rounded-xl text-center transition-all {{ achievement.earned ? 'bg-primary/10 border-2 border-primary/20' : 'bg-secondary/50 opacity-50' }}">
+                        <div class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center {{ achievement.earned ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground' }}">
+                            {% if achievement.icon == 'book' %}
+                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+                                    <path d="M8 11h8"></path>
+                                    <path d="M8 6h8"></path>
+                                </svg>
+                            {% elseif achievement.icon == 'flame' %}
+                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                                </svg>
+                            {% elseif achievement.icon == 'heart' %}
+                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            {% elseif achievement.icon == 'star' %}
+                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <h4 class="font-medium text-foreground">{{ achievement.name }}</h4>
+                        <p class="text-xs text-muted-foreground mt-1">{{ achievement.description }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Security -->
+            <div class="bg-card rounded-lg border border-border p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-foreground">Sécurité du compte</h3>
+                        <p class="text-sm text-muted-foreground">Gérez vos paramètres de sécurité</p>
+                    </div>
+                    <a href="{{ path('app_security') }}" class="px-4 py-2 rounded-lg border border-input hover:bg-secondary hover:text-secondary-foreground transition-colors">
+                        Gérer
+                    </a>
+                </div>
+            </div>
+
+            <!-- Export Data -->
+            <div class="bg-card rounded-lg border border-border p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-chart-2/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-chart-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-foreground">Exporter mes données</h3>
+                        <p class="text-sm text-muted-foreground">Téléchargez vos données</p>
+                    </div>
+                    <a href="{{ path('app_profile_export') }}" class="px-4 py-2 rounded-lg border border-input hover:bg-secondary hover:text-secondary-foreground transition-colors">
+                        Exporter
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

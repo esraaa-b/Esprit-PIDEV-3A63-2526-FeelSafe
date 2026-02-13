@@ -1,0 +1,24 @@
+# config/services.yaml
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # Controllers
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    # Repositories
+    App\Repository\:
+        resource: '../src/Repository/'
+
+    # CSRF Token Manager
+    Symfony\Component\Security\Csrf\CsrfTokenManagerInterface: '@security.csrf.token_manager'

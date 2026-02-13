@@ -1,0 +1,533 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Tableau de bord - Administration{% endblock %}
+
+{% block content %}
+
+<div class="admin-header">
+    <div>
+        <h1>Tableau de bord</h1>
+        <p style="color: var(--text-muted); margin-top: 8px;">
+            Vue d'ensemble de l'activité de la plateforme
+        </p>
+    </div>
+</div>
+
+<!-- SECTION PROFIL ADMIN -->
+<div class="admin-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; margin-bottom: 32px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 700; border: 3px solid rgba(255, 255, 255, 0.3);">
+                {{ app.user.prenom|slice(0, 1)|upper }}{{ app.user.nom|slice(0, 1)|upper }}
+            </div>
+            <div>
+                <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; margin-bottom: 4px;">
+                    👑 Administrateur
+                </div>
+                <h2 style="font-size: 28px; font-weight: 800; margin: 0 0 8px 0;">
+                    {{ app.user.fullName }}
+                </h2>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 14px; opacity: 0.95;">
+                    <span>📧 {{ app.user.email }}</span>
+                    {% if app.user.telephone %}
+                        <span>📱 {{ app.user.telephone }}</span>
+                    {% endif %}
+                    <span>📅 Inscrit le {{ app.user.dateCreation|date('d/m/Y') }}</span>
+                </div>
+            </div>
+        </div>
+        <button onclick="openAdminProfileModal()"
+                style="padding: 14px 24px; background: white; color: #8b5cf6; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);"
+                onmouseover="this.style.transform='translateY(-3px) scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.3)'"
+                onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.2)'">
+            ✏️ Modifier mon profil
+        </button>
+    </div>
+</div>
+
+<!-- Statistiques -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 32px;">
+    <div class="admin-card" style="background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);">
+        <h3 style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Total utilisateurs</h3>
+        <div style="font-size: 36px; font-weight: 800; color: var(--brand-admin); margin: 12px 0;">
+            {{ stats.total_users|default(0) }}
+        </div>
+        <small style="color: var(--text-light); font-size: 12px; display: block; margin-top: 8px;">
+            {{ stats.total_clients|default(0) }} clients · 
+            {{ stats.total_professionnels|default(0) }} pros · 
+            {{ stats.total_admins|default(0) }} admins
+        </small>
+    </div>
+    <div class="admin-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);">
+        <h3 style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Clients</h3>
+        <div style="font-size: 36px; font-weight: 800; color: #16a34a; margin: 12px 0;">{{ stats.total_clients|default(0) }}</div>
+        <small style="color: var(--text-light); font-size: 12px;">Utilisateurs clients</small>
+    </div>
+    <div class="admin-card" style="background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);">
+        <h3 style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Professionnels</h3>
+        <div style="font-size: 36px; font-weight: 800; color: #f59e0b; margin: 12px 0;">{{ stats.total_professionnels|default(0) }}</div>
+        <small style="color: var(--text-light); font-size: 12px;">Professionnels actifs</small>
+    </div>
+    <div class="admin-card" style="background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);">
+        <h3 style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Administrateurs</h3>
+        <div style="font-size: 36px; font-weight: 800; color: #8b5cf6; margin: 12px 0;">{{ stats.total_admins|default(0) }}</div>
+        <small style="color: var(--text-light); font-size: 12px;">Admins système</small>
+    </div>
+</div>
+
+<!-- Table utilisateurs -->
+<div class="admin-card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+        <div>
+            <h2 class="card-title">Gestion des utilisateurs</h2>
+            <p class="card-subtitle">Liste complète des utilisateurs inscrits sur la plateforme</p>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <input type="text" id="searchInput" placeholder="🔍 Rechercher un utilisateur..."
+                   style="padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; min-width: 250px; transition: all 0.2s;"
+                   onkeyup="filterTable()">
+            <button onclick="openCreateModal()"
+                    style="padding: 10px 20px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;"
+                    onmouseover="this.style.background='#7c3aed'; this.style.transform='translateY(-2px)'"
+                    onmouseout="this.style.background='#8b5cf6'; this.style.transform='translateY(0)'">
+                ➕ Créer un utilisateur
+            </button>
+            <a href="{{ path('admin_users_export_csv') }}"
+               style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;"
+               onmouseover="this.style.background='#059669'; this.style.transform='translateY(-2px)'"
+               onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)'">
+                📥 Exporter CSV
+            </a>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table id="usersTable" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border); text-align: left;">
+                    <th style="padding: 14px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">ID</th>
+                    <th style="padding: 14px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">Utilisateur</th>
+                    <th style="padding: 14px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">Email</th>
+                    <th style="padding: 14px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">Téléphone</th>
+                    <th style="padding: 14px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">Rôle</th>
+                    <th style="padding: 14px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">Statut</th>
+                    <th style="padding: 14px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;">Inscription</th>
+                    <th style="padding: 14px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% if users is defined and users|length > 0 %}
+                {% for user in users %}
+                <tr style="border-bottom: 1px solid var(--border); transition: all 0.2s ease;"
+                    data-user-id="{{ user.id }}"
+                    data-edit-token="{{ csrf_tokens['edit_' ~ user.id] }}"
+                    data-delete-token="{{ csrf_tokens['delete_' ~ user.id] }}"
+                    data-user-nom="{{ user.nom }}"
+                    data-user-prenom="{{ user.prenom }}"
+                    data-user-email="{{ user.email }}"
+                    data-user-telephone="{{ user.telephone|default('') }}"
+                    data-user-roles='{{ user.roles|json_encode|raw }}'
+                    data-user-statut="{{ user.statut }}"
+                    onmouseover="this.style.background='var(--hover)'; this.style.transform='scale(1.005)'"
+                    onmouseout="this.style.background='transparent'; this.style.transform='scale(1)'">
+                    <td style="padding: 16px 12px; font-size: 14px; font-weight: 600; color: var(--text-main);">#{{ user.id }}</td>
+                    <td style="padding: 16px 12px; font-size: 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);">
+                                {{ user.prenom|slice(0, 1)|upper }}{{ user.nom|slice(0, 1)|upper }}
+                            </div>
+                            <div style="font-weight: 600; color: var(--text-main);">{{ user.prenom }} {{ user.nom }}</div>
+                        </div>
+                    </td>
+                    <td style="padding: 16px 12px; font-size: 14px; color: var(--text-muted);">
+                        <a href="mailto:{{ user.email }}" style="color: inherit; text-decoration: none;">{{ user.email }}</a>
+                    </td>
+                    <td style="padding: 16px 12px; font-size: 14px; color: var(--text-muted);">{{ user.telephone|default('-') }}</td>
+                    <td style="padding: 16px 12px; font-size: 14px;">
+                        {% if user.isAdmin() %}
+                            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.2);">👑 Admin</span>
+                        {% elseif user.isProfessionnel() %}
+                            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);">💼 Professionnel</span>
+                        {% else %}
+                            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(34, 197, 94, 0.1); color: #16a34a; border: 1px solid rgba(34, 197, 94, 0.2);">👤 Client</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 16px 12px; font-size: 14px;">
+                        {% if user.statut == 'actif' %}
+                            <span class="status-badge status-active">
+                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a; margin-right: 6px;"></span>Actif
+                            </span>
+                        {% else %}
+                            <span class="status-badge status-inactive">
+                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; margin-right: 6px;"></span>Inactif
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 16px 12px; font-size: 13px; color: var(--text-muted);">
+                        {{ user.dateCreation ? user.dateCreation|date('d/m/Y à H:i') : '-' }}
+                    </td>
+                    <td style="padding: 16px 12px; text-align: center;">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            {% if app.user and user.id != app.user.id %}
+                                <button onclick="openEditModal(this.closest('tr'))"
+                                        style="padding: 8px 14px; background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;"
+                                        onmouseover="this.style.background='rgba(14, 165, 233, 0.2)'; this.style.transform='translateY(-2px)'"
+                                        onmouseout="this.style.background='rgba(14, 165, 233, 0.1)'; this.style.transform='translateY(0)'">
+                                    ✏️ Modifier
+                                </button>
+                                <button onclick="openDeleteModal(this.closest('tr'))"
+                                        style="padding: 8px 14px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;"
+                                        onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'; this.style.transform='translateY(-2px)'"
+                                        onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.transform='translateY(0)'">
+                                    🗑️ Supprimer
+                                </button>
+                            {% else %}
+                                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; background: var(--brand-admin-soft); color: var(--brand-admin); border: 1px solid rgba(14, 165, 233, 0.2);">
+                                    👤 Vous
+                                </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" style="padding: 60px 20px; text-align: center;">
+                        <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.5;">📭</div>
+                        <div style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">Aucun utilisateur trouvé</div>
+                        <div style="font-size: 14px; color: var(--text-muted);">La liste des utilisateurs est vide pour le moment.</div>
+                    </td>
+                </tr>
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ============================================================
+   ➕ MODAL CRÉATION D'UTILISATEUR
+   ============================================================ #}
+<div id="createModal" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeCreateModal()"></div>
+    <div class="modal-content" style="max-width: 620px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border-radius: 16px 16px 0 0;">
+            <h2 style="font-size: 24px; font-weight: 700; color: white; margin: 0;">➕ Créer un utilisateur</h2>
+            <button type="button" onclick="closeCreateModal()" class="modal-close" style="color: white;">✕</button>
+        </div>
+        <form action="{{ path('admin_security_user_create') }}" method="POST" novalidate>
+            <input type="hidden" name="_token" value="{{ csrf_tokens.user_create }}">
+            <div class="modal-body">
+                <div style="display: grid; gap: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <label class="form-label">Prénom *</label>
+                            <input type="text" name="prenom" class="form-input" placeholder="Jean">
+                        </div>
+                        <div>
+                            <label class="form-label">Nom *</label>
+                            <input type="text" name="nom" class="form-input" placeholder="Dupont">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Email *</label>
+                        <input type="text" name="email" class="form-input" placeholder="jean.dupont@exemple.fr">
+                    </div>
+                    <div>
+                        <label class="form-label">Téléphone</label>
+                        <input type="text" name="telephone" class="form-input" placeholder="+33 6 00 00 00 00">
+                    </div>
+                    <div>
+                        <label class="form-label">Mot de passe * <small style="font-weight:400; color:var(--text-muted);">(min. 6 caractères)</small></label>
+                        <div style="position: relative;">
+                            <input type="password" name="mot_de_passe" id="create_password" class="form-input" placeholder="••••••••" style="padding-right: 48px;">
+                            <button type="button" onclick="toggleCreatePassword()"
+                                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); line-height: 1;"
+                                    title="Afficher / masquer">👁️</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Rôle *</label>
+                        <select name="roles[]" class="form-input" multiple>
+                            <option value="ROLE_CLIENT" selected>👤 Client</option>
+                            <option value="ROLE_PROFESSIONNEL">💼 Professionnel</option>
+                            <option value="ROLE_ADMIN">👑 Administrateur</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 12px; display: block; margin-top: 4px;">Maintenez Ctrl / Cmd pour plusieurs rôles</small>
+                    </div>
+                    <div>
+                        <label class="form-label">Statut *</label>
+                        <select name="statut" class="form-input">
+                            <option value="actif">✅ Actif</option>
+                            <option value="inactif">⏸️ Inactif</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeCreateModal()" class="btn-secondary">❌ Annuler</button>
+                <button type="submit"
+                        style="padding: 12px 24px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;"
+                        onmouseover="this.style.background='#7c3aed'; this.style.transform='translateY(-2px)'"
+                        onmouseout="this.style.background='#8b5cf6'; this.style.transform='translateY(0)'">
+                    ➕ Créer le compte
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ============================================================
+   👤 MODAL PROFIL ADMIN
+   ============================================================ #}
+<div id="adminProfileModal" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeAdminProfileModal()"></div>
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border-radius: 16px 16px 0 0;">
+            <h2 style="font-size: 24px; font-weight: 700; margin: 0;">👤 Mon profil administrateur</h2>
+            <button type="button" onclick="closeAdminProfileModal()" class="modal-close" style="color: white;">✕</button>
+        </div>
+        <form action="{{ path('admin_profile_edit') }}" method="POST" novalidate>
+            <input type="hidden" name="_token" value="{{ csrf_tokens.admin_profile }}">
+            <div class="modal-body">
+                <div style="display: grid; gap: 20px;">
+                    <div>
+                        <label class="form-label">Prénom *</label>
+                        <input type="text" name="prenom" value="{{ app.user.prenom }}" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Nom *</label>
+                        <input type="text" name="nom" value="{{ app.user.nom }}" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Email *</label>
+                        <input type="text" name="email" value="{{ app.user.email }}" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Téléphone</label>
+                        <input type="text" name="telephone" value="{{ app.user.telephone }}" class="form-input">
+                    </div>
+                    <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <span style="font-size: 24px;">ℹ️</span>
+                            <span style="font-weight: 600; color: #8b5cf6;">Informations</span>
+                        </div>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-muted);">
+                            <li>Votre rôle : <strong>Administrateur</strong></li>
+                            <li>ID utilisateur : <strong>#{{ app.user.id }}</strong></li>
+                            <li>Membre depuis : <strong>{{ app.user.dateCreation|date('d/m/Y') }}</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeAdminProfileModal()" class="btn-secondary">❌ Annuler</button>
+                <button type="submit" class="btn-primary">💾 Enregistrer les modifications</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ============================================================
+   ✏️ MODAL ÉDITION UTILISATEUR
+   ============================================================ #}
+<div id="editModal" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeEditModal()"></div>
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 style="font-size: 24px; font-weight: 700; color: var(--text-main); margin: 0;">✏️ Modifier l'utilisateur</h2>
+            <button type="button" onclick="closeEditModal()" class="modal-close">✕</button>
+        </div>
+        <form id="editForm" method="POST" novalidate>
+            <input type="hidden" name="_token" id="edit_csrf_token">
+            <div class="modal-body">
+                <div style="display: grid; gap: 20px;">
+                    <div>
+                        <label class="form-label">Prénom *</label>
+                        <input type="text" name="prenom" id="edit_prenom" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Nom *</label>
+                        <input type="text" name="nom" id="edit_nom" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Email *</label>
+                        <input type="text" name="email" id="edit_email" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Téléphone</label>
+                        <input type="text" name="telephone" id="edit_telephone" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Rôle *</label>
+                        <select name="roles[]" id="edit_roles" class="form-input" multiple>
+                            <option value="ROLE_CLIENT">Client</option>
+                            <option value="ROLE_PROFESSIONNEL">Professionnel</option>
+                            <option value="ROLE_ADMIN">Administrateur</option>
+                        </select>
+                        <small style="color: var(--text-muted); font-size: 12px; display: block; margin-top: 4px;">Maintenez Ctrl/Cmd pour plusieurs rôles</small>
+                    </div>
+                    <div>
+                        <label class="form-label">Statut *</label>
+                        <select name="statut" id="edit_statut" class="form-input">
+                            <option value="actif">Actif</option>
+                            <option value="inactif">Inactif</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeEditModal()" class="btn-secondary">❌ Annuler</button>
+                <button type="submit" class="btn-primary">💾 Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ============================================================
+   🗑️ MODAL SUPPRESSION
+   ============================================================ #}
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeDeleteModal()"></div>
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h2 style="font-size: 24px; font-weight: 700; color: #ef4444; margin: 0;">⚠️ Confirmer la suppression</h2>
+            <button type="button" onclick="closeDeleteModal()" class="modal-close">✕</button>
+        </div>
+        <form id="deleteForm" method="POST" novalidate>
+            <input type="hidden" name="_token" id="delete_csrf_token">
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 64px; margin-bottom: 16px;">🗑️</div>
+                    <p style="font-size: 16px; color: var(--text-main); margin-bottom: 8px;">Êtes-vous sûr de vouloir supprimer l'utilisateur</p>
+                    <p style="font-size: 20px; font-weight: 700; color: var(--text-main); margin: 16px 0;"><span id="delete_user_name"></span></p>
+                    <p style="font-size: 14px; color: var(--text-muted);">Cette action est irréversible.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeDeleteModal()" class="btn-secondary">❌ Annuler</button>
+                <button type="submit" class="btn-danger">🗑️ Supprimer définitivement</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .modal {
+        position: fixed; top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay {
+        position: absolute; top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+    }
+    .modal-content {
+        position: relative; background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        width: 90%; max-height: 90vh; overflow-y: auto;
+        animation: slideUp 0.3s ease; z-index: 10001;
+    }
+    .modal-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 24px; border-bottom: 1px solid var(--border);
+    }
+    .modal-close {
+        background: none; border: none; font-size: 24px;
+        color: var(--text-muted); cursor: pointer;
+        padding: 4px 8px; transition: all 0.2s; border-radius: 4px;
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.2); color: var(--text-main); }
+    .modal-body  { padding: 24px; }
+    .modal-footer {
+        display: flex; justify-content: flex-end; gap: 12px;
+        padding: 24px; border-top: 1px solid var(--border);
+    }
+    .form-label { display: block; font-weight: 600; font-size: 14px; color: var(--text-main); margin-bottom: 8px; }
+    .form-input {
+        width: 100%; padding: 12px 16px;
+        border: 1px solid var(--border); border-radius: 8px;
+        font-size: 14px; transition: all 0.2s;
+        font-family: inherit; box-sizing: border-box;
+    }
+    .form-input:focus { border-color: var(--brand-admin); outline: none; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
+    select.form-input[multiple] { min-height: 120px; }
+    .btn-primary {
+        padding: 12px 24px; background: var(--brand-admin); color: white;
+        border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+        cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary:hover { background: #0284c7; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(14,165,233,0.3); }
+    .btn-secondary {
+        padding: 12px 24px; background: white; color: var(--text-main);
+        border: 1px solid var(--border); border-radius: 8px;
+        font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-secondary:hover { background: var(--hover); }
+    .btn-danger {
+        padding: 12px 24px; background: #ef4444; color: white;
+        border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+        cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-danger:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    tbody tr { transform-origin: center; }
+    tbody a[href^="mailto:"]:hover { color: var(--brand-admin) !important; text-decoration: underline; }
+    #searchInput:focus { border-color: var(--brand-admin); outline: none; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
+</style>
+
+<script>
+function openCreateModal()       { document.getElementById('createModal').style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+function closeCreateModal()      { document.getElementById('createModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+function toggleCreatePassword()  { const i = document.getElementById('create_password'); i.type = i.type === 'password' ? 'text' : 'password'; }
+
+function openAdminProfileModal() { document.getElementById('adminProfileModal').style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+function closeAdminProfileModal(){ document.getElementById('adminProfileModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+
+function filterTable() {
+    const filter = document.getElementById('searchInput').value.toLowerCase();
+    const rows   = document.getElementById('usersTable').getElementsByTagName('tr');
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        let found = false;
+        for (let j = 0; j < cells.length; j++) { if (cells[j].textContent.toLowerCase().includes(filter)) { found = true; break; } }
+        rows[i].style.display = found ? '' : 'none';
+    }
+}
+
+function openEditModal(row) {
+    const roles = JSON.parse(row.dataset.userRoles);
+    document.getElementById('edit_nom').value        = row.dataset.userNom;
+    document.getElementById('edit_prenom').value     = row.dataset.userPrenom;
+    document.getElementById('edit_email').value      = row.dataset.userEmail;
+    document.getElementById('edit_telephone').value  = row.dataset.userTelephone;
+    document.getElementById('edit_statut').value     = row.dataset.userStatut;
+    document.getElementById('edit_csrf_token').value = row.dataset.editToken;
+    document.getElementById('editForm').action       = '/admin/security/user/' + row.dataset.userId + '/update';
+    Array.from(document.getElementById('edit_roles').options).forEach(o => { o.selected = roles.includes(o.value); });
+    document.getElementById('editModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function closeEditModal() { document.getElementById('editModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+
+function openDeleteModal(row) {
+    document.getElementById('delete_user_name').textContent = row.dataset.userPrenom + ' ' + row.dataset.userNom;
+    document.getElementById('delete_csrf_token').value      = row.dataset.deleteToken;
+    document.getElementById('deleteForm').action            = '/admin/security/user/' + row.dataset.userId + '/delete';
+    document.getElementById('deleteModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeCreateModal(); closeEditModal(); closeDeleteModal(); closeAdminProfileModal(); }
+});
+</script>
+
+{% endblock %}

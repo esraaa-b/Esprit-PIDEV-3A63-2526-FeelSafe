@@ -1,0 +1,140 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Créer un utilisateur{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Créer un utilisateur</h1>
+            <p class="text-gray-600">Ajouter un nouveau compte à la plateforme</p>
+        </div>
+        <a href="{{ path('admin_users_list') }}" class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Retour
+        </a>
+    </div>
+</div>
+
+{# Messages flash #}
+{% for type, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="mb-4 p-4 rounded-lg {% if type == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endfor %}
+
+<div class="bg-white rounded-lg shadow-sm p-8 border border-gray-100">
+    <form method="post" class="space-y-6">
+        {# Informations personnelles #}
+        <div class="border-b border-gray-200 pb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Informations personnelles</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="prenom" class="block text-sm font-medium text-gray-700 mb-2">Prénom *</label>
+                    <input type="text" id="prenom" name="prenom" required 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="nom" class="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
+                    <input type="text" id="nom" name="nom" required 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        {# Contact #}
+        <div class="border-b border-gray-200 pb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Contact</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                    <input type="email" id="email" name="email" required 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="telephone" class="block text-sm font-medium text-gray-700 mb-2">Téléphone</label>
+                    <input type="tel" id="telephone" name="telephone" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        {# Sécurité #}
+        <div class="border-b border-gray-200 pb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Sécurité</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Mot de passe *</label>
+                    <input type="password" id="password" name="password" required minlength="6"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
+                </div>
+                
+                <div>
+                    <label for="password_confirm" class="block text-sm font-medium text-gray-700 mb-2">Confirmer le mot de passe *</label>
+                    <input type="password" id="password_confirm" name="password_confirm" required minlength="6"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        {# Rôle #}
+        <div class="pb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Rôle et permissions</h3>
+            
+            <div>
+                <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Rôle *</label>
+                <select id="role" name="role" required 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">-- Sélectionnez un rôle --</option>
+                    <option value="ROLE_CLIENT">👤 Client</option>
+                    <option value="ROLE_PROFESSIONNEL">🏥 Professionnel de santé</option>
+                    <option value="ROLE_ADMIN">👨‍💼 Administrateur</option>
+                </select>
+            </div>
+        </div>
+
+        {# Boutons #}
+        <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+            <a href="{{ path('admin_users_list') }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                Annuler
+            </a>
+            <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Créer l'utilisateur
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Validation du formulaire
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('password_confirm').value;
+    
+    if (password !== confirm) {
+        e.preventDefault();
+        alert('❌ Les mots de passe ne correspondent pas !');
+        return false;
+    }
+    
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('❌ Le mot de passe doit contenir au moins 6 caractères !');
+        return false;
+    }
+});
+</script>
+{% endblock %}

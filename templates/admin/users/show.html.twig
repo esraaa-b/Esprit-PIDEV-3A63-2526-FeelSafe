@@ -1,0 +1,128 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ user.fullName }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ user.prenom }} {{ user.nom }}</h1>
+            <p class="text-gray-600">{{ user.email }}</p>
+        </div>
+        <a href="{{ path('admin_users_list') }}" class="text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Retour à la liste
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {# Informations principales #}
+    <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Informations personnelles</h2>
+            
+            <dl class="grid grid-cols-2 gap-4">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Nom complet</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ user.fullName }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Email</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ user.email }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Téléphone</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ user.telephone ?? 'Non renseigné' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Date d'inscription</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ user.dateCreation|date('d/m/Y à H:i') }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Informations système</h2>
+            
+            <dl class="grid grid-cols-1 gap-4">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">ID Utilisateur</dt>
+                    <dd class="mt-1 text-sm text-gray-900">#{{ user.id }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Rôles</dt>
+                    <dd class="mt-1">
+                        {% for role in user.roles %}
+                            {% if role != 'ROLE_USER' %}
+                                <span class="inline-block px-2 py-1 text-xs rounded bg-gray-100 text-gray-800 mr-1">{{ role }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+
+    {# Sidebar #}
+    <div class="space-y-6">
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Statut</h2>
+            
+            {% if user.statut == 'actif' %}
+                <span class="px-3 py-1 inline-flex text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                    ✓ Compte actif
+                </span>
+            {% else %}
+                <span class="px-3 py-1 inline-flex text-sm font-semibold rounded-full bg-red-100 text-red-800">
+                    ✗ Compte inactif
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Rôle</h2>
+            
+            {% if 'ROLE_ADMIN' in user.roles %}
+                <span class="px-3 py-1 inline-flex text-sm font-semibold rounded-full bg-purple-100 text-purple-800">
+                    👨‍💼 Administrateur
+                </span>
+            {% elseif 'ROLE_PROFESSIONNEL' in user.roles %}
+                <span class="px-3 py-1 inline-flex text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                    🏥 Professionnel
+                </span>
+            {% else %}
+                <span class="px-3 py-1 inline-flex text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+                    👤 Client
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Actions</h2>
+            
+            <div class="space-y-3">
+                <form method="post" action="{{ path('admin_users_toggle_status', {'id': user.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
+                    <button type="submit" class="w-full px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium text-sm">
+                        {% if user.statut == 'actif' %}
+                            Désactiver le compte
+                        {% else %}
+                            Activer le compte
+                        {% endif %}
+                    </button>
+                </form>
+
+                <form method="post" action="{{ path('admin_users_delete', {'id': user.id}) }}" onsubmit="return confirm('⚠️ Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                    <button type="submit" class="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium text-sm">
+                        Supprimer l'utilisateur
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

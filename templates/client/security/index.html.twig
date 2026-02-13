@@ -1,0 +1,220 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="space-y-8">
+        <!-- Flash Messages -->
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="p-4 rounded-lg {% if label == 'success' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <!-- Header -->
+        <div>
+            <h1 class="text-3xl font-serif font-bold text-foreground">Sécurité & Profil</h1>
+            <p class="text-muted-foreground mt-1">
+                Gérez votre compte et vos paramètres de confidentialité
+            </p>
+        </div>
+
+        <!-- Tabs -->
+        <div x-data="{ activeTab: 'profile' }" class="space-y-6">
+            <div class="flex gap-2 border-b border-border">
+                <button @click="activeTab = 'profile'"
+                        :class="activeTab === 'profile' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 border-b-2 font-medium transition-colors">
+                    Profil
+                </button>
+                <button @click="activeTab = 'security'"
+                        :class="activeTab === 'security' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 border-b-2 font-medium transition-colors">
+                    Sécurité
+                </button>
+                <button @click="activeTab = 'privacy'"
+                        :class="activeTab === 'privacy' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 border-b-2 font-medium transition-colors">
+                    Confidentialité
+                </button>
+            </div>
+
+            <!-- Profile Tab -->
+            <div x-show="activeTab === 'profile'" class="space-y-6">
+                <form method="post" action="{{ path('app_profile_edit') }}" class="bg-card rounded-lg border border-border p-6">
+                    <h2 class="text-lg font-semibold text-foreground mb-6">Informations personnelles</h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Avatar -->
+                        {% if user.prenom %}
+                        <div class="flex items-center gap-6">
+                            <div class="relative">
+                                <div class="w-24 h-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-medium">
+                                    {{ user.prenom|first|upper }}
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-foreground">{{ user.fullName }}</h3>
+                                <p class="text-sm text-muted-foreground">{{ user.email }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Form Fields - SANS required, SANS validation HTML -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Prénom</label>
+                                <input type="text" 
+                                       name="prenom"
+                                       value="{{ user.prenom }}"
+                                       class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Nom</label>
+                                <input type="text" 
+                                       name="nom"
+                                       value="{{ user.nom }}"
+                                       class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Email</label>
+                                <input type="text" 
+                                       name="email"
+                                       value="{{ user.email }}"
+                                       class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Téléphone</label>
+                                <input type="text" 
+                                       name="telephone"
+                                       value="{{ user.telephone }}"
+                                       class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('profile-edit') }}">
+
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                                Enregistrer les modifications
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Security Tab -->
+            <div x-show="activeTab === 'security'" class="space-y-6">
+                <!-- Change Password - SANS required, SANS minlength -->
+                <form method="post" action="{{ path('app_security_password') }}" class="bg-card rounded-lg border border-border p-6">
+                    <h2 class="text-lg font-semibold text-foreground mb-6">Changer le mot de passe</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Mot de passe actuel</label>
+                            <input type="password" 
+                                   name="current_password"
+                                   class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Nouveau mot de passe</label>
+                            <input type="password" 
+                                   name="new_password"
+                                   class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Confirmer le nouveau mot de passe</label>
+                            <input type="password" 
+                                   name="confirm_password"
+                                   class="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <input type="hidden" name="_token" value="{{ csrf_token('change-password') }}">
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                                Changer le mot de passe
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Privacy Tab -->
+            <div x-show="activeTab === 'privacy'" class="space-y-6">
+                <form method="post" action="{{ path('app_security_privacy') }}" class="bg-card rounded-lg border border-border p-6">
+                    <h2 class="text-lg font-semibold text-foreground mb-6">Paramètres de confidentialité</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between py-3 border-b border-border">
+                            <div>
+                                <p class="font-medium text-foreground">Profil public</p>
+                                <p class="text-sm text-muted-foreground">Rendre votre profil visible par les autres membres</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" 
+                                       name="visibilite_profil"
+                                       class="sr-only peer" 
+                                       {{ user.confidentialite and user.confidentialite.visibiliteProfil == 'public' ? 'checked' : '' }}>
+                                <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between py-3 border-b border-border">
+                            <div>
+                                <p class="font-medium text-foreground">Partager mes données</p>
+                                <p class="text-sm text-muted-foreground">Permettre aux professionnels de voir vos progrès</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" 
+                                       name="partage_donnees"
+                                       class="sr-only peer"
+                                       {{ user.confidentialite and user.confidentialite.partageDonnees ? 'checked' : '' }}>
+                                <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <p class="font-medium text-foreground">Notifications email</p>
+                                <p class="text-sm text-muted-foreground">Recevoir des notifications par email</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" 
+                                       name="notifications_email"
+                                       class="sr-only peer" 
+                                       {{ user.confidentialite and user.confidentialite.notificationsEmail ? 'checked' : '' }}>
+                                <div class="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="_token" value="{{ csrf_token('update-privacy') }}">
+
+                    <div class="flex justify-end mt-6">
+                        <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Data Management -->
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <div class="space-y-3">
+                        <form method="post" action="{{ path('app_profile_delete') }}" 
+                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete-account') }}">
+                            <button type="submit" class="w-full px-4 py-3 text-left border border-destructive text-destructive rounded-lg hover:bg-destructive/10 transition-colors flex items-center justify-between">
+                                <span class="font-medium">Supprimer mon compte</span>
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
