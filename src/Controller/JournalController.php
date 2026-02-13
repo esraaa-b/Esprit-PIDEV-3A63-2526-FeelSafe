@@ -10,8 +10,6 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use App\Enum\EmotionEnum;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-
 class JournalController extends AbstractController
 {
     private $params;
