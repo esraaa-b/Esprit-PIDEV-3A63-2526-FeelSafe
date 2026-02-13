@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FeelSafe{% endblock %}</title>
+    
+    {% block stylesheets %}
+        <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+    {% endblock %}
+</head>
+<body>
+    {% block body %}{% endblock %}
+    
+    {% block javascripts %}
+        <script src="https://unpkg.com/feather-icons"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                feather.replace();
+            });
+        </script>
+    {% endblock %}
+</body>
+</html>

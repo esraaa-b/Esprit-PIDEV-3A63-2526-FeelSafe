@@ -1,0 +1,72 @@
+{# templates/dashboard/base.html.twig #}
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}FeelSafe - Tableau de bord{% endblock %}</title>
+        
+        {# Feather Icons CDN #}
+        <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+        
+        {# Your Tailwind CSS #}
+        <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+        
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts_head %}{% endblock %}
+    </head>
+    <body class="bg-background">
+               <div
+                x-data="{
+                    sidebarOpen: false,
+                    currentPath: window.location.pathname
+                }"
+                x-init="
+                    sidebarOpen = window.innerWidth >= 1024;
+                    $nextTick(() => $el.removeAttribute('x-cloak'));
+                    window.addEventListener('resize', () => {
+                    sidebarOpen = window.innerWidth >= 1024;
+                    });
+                "
+                x-cloak
+                class="flex min-h-screen"
+                >
+            {# Include just the sidebar/mobile header #}
+            {% include "components/dashboard_navbar.html.twig" %}
+            
+            {# Main Content Area #}
+              <main class="flex-1 p-6 pt-20 lg:pt-6">
+                <div class="pt-16 lg:pt-0">
+                    <div class="p-6 lg:p-8">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        {# Alpine.js for interactivity #}
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+        
+        {# Feather icons initialization #}
+        <script>
+        document.addEventListener('alpine:init', function() {
+            setTimeout(function() {
+                if (typeof feather !== 'undefined') {
+                    try {
+                        feather.replace();
+                    } catch (error) {
+                        console.warn('Feather Icons could not replace some elements:', error.message);
+                    }
+                }
+            }, 100);
+        });
+        </script>
+        
+        {% block javascripts %}{% endblock %}
+    </body>
+    <style>
+  [x-cloak] {
+    display: none !important;
+  }
+</style>
+</html>

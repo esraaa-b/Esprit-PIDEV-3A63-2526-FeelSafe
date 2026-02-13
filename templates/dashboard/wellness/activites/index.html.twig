@@ -1,0 +1,185 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <a href="{{ path('app_wellness') }}" class="text-muted-foreground hover:text-foreground transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </a>
+                    <span class="text-sm text-muted-foreground">Bien-être</span>
+                </div>
+                <h1 class="text-3xl font-serif font-bold text-foreground">Catalogue d'activités</h1>
+                <p class="text-muted-foreground mt-1">
+                    Découvrez toutes nos activités pour votre bien-être
+                </p>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-card rounded-lg border border-border p-6">
+            <form method="get" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Type Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">Type d'activité</label>
+                        <select name="type" class="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">Tous les types</option>
+                            {% for type in types %}
+                                <option value="{{ type }}" {% if currentType == type %}selected{% endif %}>
+                                    {{ type }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Level Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">Niveau</label>
+                        <select name="niveau" class="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">Tous les niveaux</option>
+                            <option value="facile" {% if currentNiveau == 'facile' %}selected{% endif %}>Facile</option>
+                            <option value="modere" {% if currentNiveau == 'modere' %}selected{% endif %}>Modéré</option>
+                            <option value="difficile" {% if currentNiveau == 'difficile' %}selected{% endif %}>Difficile</option>
+                        </select>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">Catégorie</label>
+                        <select name="categorie" class="w-full px-4 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">Toutes les catégories</option>
+                            {% for categorie in categories %}
+                                <option value="{{ categorie }}" {% if currentCategorie == categorie %}selected{% endif %}>
+                                    {{ categorie }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button type="submit" class="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Filtrer
+                    </button>
+                    {% if currentType or currentNiveau or currentCategorie %}
+                        <a href="{{ path('app_wellness_activites') }}" class="px-6 py-2 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors">
+                            Réinitialiser
+                        </a>
+                    {% endif %}
+                    <span class="text-sm text-muted-foreground ml-auto">
+                        {{ activites|length }} activité{{ activites|length > 1 ? 's' : '' }} trouvée{{ activites|length > 1 ? 's' : '' }}
+                    </span>
+                </div>
+            </form>
+        </div>
+
+        <!-- Activities Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for activite in activites %}
+                <a href="{{ path('app_wellness_activite_show', {'id': activite.id}) }}" class="block group">
+                    <div class="bg-card rounded-lg border border-border overflow-hidden h-full hover:shadow-lg transition-all duration-300">
+                        <!-- Image -->
+                        <div class="relative h-48 overflow-hidden">
+                            {% if activite.imageUrl %}
+                                <img src="{{ activite.imageUrl }}" alt="{{ activite.nomActivite }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            {% else %}
+                                <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-chart-2/20 flex items-center justify-center">
+                                    <svg class="w-16 h-16 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                            <div class="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent"></div>
+                            
+                            <!-- Badges -->
+                            <div class="absolute top-3 left-3 right-3 flex items-start justify-between">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full backdrop-blur-sm bg-primary/90 text-primary-foreground">
+                                    {{ activite.typeActivite }}
+                                </span>
+                                {% if activite.estPredefinie %}
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full backdrop-blur-sm bg-chart-4/90 text-card flex items-center gap-1">
+                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                                        </svg>
+                                        Recommandée
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-5">
+                            <h3 class="font-semibold text-foreground text-lg group-hover:text-primary transition-colors mb-2">
+                                {{ activite.nomActivite }}
+                            </h3>
+                            <p class="text-sm text-muted-foreground line-clamp-2 mb-4">
+                                {{ activite.description }}
+                            </p>
+                            
+                            <!-- Meta Info -->
+                            <div class="flex flex-wrap items-center gap-2 mb-4">
+                                {% if activite.categorie %}
+                                    <span class="px-2 py-1 text-xs rounded bg-secondary text-secondary-foreground">
+                                        {{ activite.categorie }}
+                                    </span>
+                                {% endif %}
+                                {% if activite.niveauDifficulte %}
+                                    <span class="px-2 py-1 text-xs rounded border border-input 
+                                        {% if activite.niveauDifficulte.value == 'facile' %}
+                                            text-chart-2 border-chart-2
+                                        {% elseif activite.niveauDifficulte.value == 'modere' %}
+                                            text-chart-4 border-chart-4
+                                        {% else %}
+                                            text-destructive border-destructive
+                                        {% endif %}">
+                                        {{ activite.niveauDifficulte.value|capitalize }}
+                                    </span>
+                                {% endif %}
+                                {% if activite.dureeSuggeree %}
+                                    <span class="px-2 py-1 text-xs rounded bg-primary/10 text-primary flex items-center gap-1">
+                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        {{ activite.dureeSuggeree }} min
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Action -->
+                            <div class="flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all">
+                                <span>Voir l'activité</span>
+                                <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            {% else %}
+                <div class="col-span-3 text-center py-16">
+                    <svg class="w-20 h-20 mx-auto text-muted-foreground/30 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-foreground mb-2">Aucune activité trouvée</h3>
+                    <p class="text-muted-foreground mb-4">Essayez de modifier vos filtres</p>
+                    <a href="{{ path('app_wellness_activites') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                        Réinitialiser les filtres
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

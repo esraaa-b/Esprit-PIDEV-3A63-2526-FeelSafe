@@ -1,0 +1,688 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Détails Activité{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header-detail animate__animated animate__fadeInDown">
+                <div class="header-overlay"></div>
+                <div class="header-content">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="activity-badges mb-3">
+                                {% if activite.estPredefinie %}
+                                    <span class="badge-detail badge-primary">
+                                        <i class="fas fa-star me-1"></i>
+                                        Prédéfinie
+                                    </span>
+                                {% endif %}
+                                <span class="badge-detail badge-{{ activite.estActive ? 'success' : 'secondary' }}">
+                                    <i class="fas fa-{{ activite.estActive ? 'check' : 'times' }}-circle me-1"></i>
+                                    {{ activite.estActive ? 'Active' : 'Inactive' }}
+                                </span>
+                            </div>
+                            <h1 class="display-5 fw-bold text-white mb-2">{{ activite.nomActivite }}</h1>
+                            <p class="text-white-50 mb-0">
+                                <i class="fas fa-tag me-2"></i>{{ activite.typeActivite }}
+                                {% if activite.categorie %}
+                                    <i class="fas fa-folder ms-3 me-2"></i>{{ activite.categorie }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('admin_wellness_activites_edit', {'id': activite.id}) }}" class="btn-action-header btn-warning">
+                                <i class="fas fa-edit me-2"></i>
+                                Modifier
+                            </a>
+                            <a href="{{ path('admin_wellness_activites') }}" class="btn-action-header btn-light">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Retour
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu -->
+    <div class="row g-4">
+        <!-- Colonne Gauche -->
+        <div class="col-lg-8">
+            <!-- Statistiques rapides -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="stat-box animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                        <div class="stat-icon bg-primary">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>{{ activite.sessions|length }}</h3>
+                            <p>Sessions totales</p>
+                        </div>
+                    </div>
+                </div>
+                {% if activite.dureeSuggeree %}
+                    <div class="col-md-4">
+                        <div class="stat-box animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                            <div class="stat-icon bg-success">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>{{ activite.dureeSuggeree }}</h3>
+                                <p>Minutes suggérées</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if activite.niveauDifficulte %}
+                    <div class="col-md-4">
+                        <div class="stat-box animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                            <div class="stat-icon bg-{{ activite.niveauDifficulte.value == 'facile' ? 'success' : (activite.niveauDifficulte.value == 'modere' ? 'warning' : 'danger') }}">
+                                <i class="fas fa-signal"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>{{ activite.niveauDifficulte.value|capitalize }}</h3>
+                                <p>Niveau</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            {% if activite.description %}
+                <div class="detail-card mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                    <div class="detail-card-header">
+                        <i class="fas fa-align-left me-2"></i>
+                        <h5>Description</h5>
+                    </div>
+                    <div class="detail-card-body">
+                        <p class="text-description">{{ activite.description }}</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Objectif émotionnel -->
+            {% if activite.objectifEmotionnel %}
+                <div class="detail-card mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.5s;">
+                    <div class="detail-card-header">
+                        <i class="fas fa-bullseye me-2"></i>
+                        <h5>Objectif émotionnel</h5>
+                    </div>
+                    <div class="detail-card-body">
+                        <div class="objective-box">
+                            <i class="fas fa-heart text-danger"></i>
+                            <p>{{ activite.objectifEmotionnel }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Instructions détaillées -->
+            {% if activite.instructionsDetaillees %}
+                <div class="detail-card mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.6s;">
+                    <div class="detail-card-header">
+                        <i class="fas fa-list-ol me-2"></i>
+                        <h5>Instructions détaillées</h5>
+                    </div>
+                    <div class="detail-card-body">
+                        <div class="instructions-content">
+                            {{ activite.instructionsDetaillees|nl2br }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Sessions associées -->
+            <div class="detail-card animate__animated animate__fadeInUp" style="animation-delay: 0.7s;">
+                <div class="detail-card-header">
+                    <i class="fas fa-history me-2"></i>
+                    <h5>Sessions récentes</h5>
+                    <span class="badge bg-primary ms-auto">{{ activite.sessions|length }}</span>
+                </div>
+                <div class="detail-card-body p-0">
+                    {% if activite.sessions is not empty %}
+                        <div class="sessions-list-compact">
+                            {% for session in activite.sessions|slice(0, 5) %}
+                                <div class="session-item-compact">
+                                    <div class="session-user-info">
+                                        <div class="user-avatar-small">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <h6>{{ session.utilisateur.nom }} {{ session.utilisateur.prenom }}</h6>
+                                            <small class="text-muted">{{ session.dateDebut|date('d/m/Y à H:i') }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-{{ session.statutSession.value == 'completee' ? 'success' : (session.statutSession.value == 'en_cours' ? 'warning' : 'secondary') }}">
+                                        {{ session.statutSession.value|replace({'_': ' '})|capitalize }}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if activite.sessions|length > 5 %}
+                            <div class="text-center p-3 border-top">
+                                <a href="{{ path('admin_wellness_sessions') }}" class="btn-link-modern">
+                                    Voir toutes les sessions
+                                    <i class="fas fa-arrow-right ms-2"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state-small">
+                            <i class="fas fa-inbox"></i>
+                            <p>Aucune session pour cette activité</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne Droite -->
+        <div class="col-lg-4">
+            <!-- Image -->
+            <div class="detail-card mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="detail-card-header">
+                    <i class="fas fa-image me-2"></i>
+                    <h5>Image</h5>
+                </div>
+                <div class="detail-card-body p-0">
+                    {% if activite.imageUrl %}
+                        <div class="activity-image-large">
+                            <img src="{{ activite.imageUrl }}" alt="{{ activite.nomActivite }}">
+                        </div>
+                    {% else %}
+                        <div class="activity-image-placeholder-large">
+                            <i class="fas fa-dumbbell"></i>
+                            <p>Aucune image</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informations système -->
+            <div class="detail-card mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                <div class="detail-card-header">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <h5>Informations</h5>
+                </div>
+                <div class="detail-card-body">
+                    <div class="info-list">
+                        <div class="info-item-detail">
+                            <i class="fas fa-calendar-plus text-primary"></i>
+                            <div>
+                                <small>Créée le</small>
+                                <p>{{ activite.dateCreation|date('d/m/Y à H:i') }}</p>
+                            </div>
+                        </div>
+                        {% if activite.creePar %}
+                            <div class="info-item-detail">
+                                <i class="fas fa-user text-success"></i>
+                                <div>
+                                    <small>Créée par</small>
+                                    <p>{{ activite.creePar.nom }} {{ activite.creePar.prenom }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="info-item-detail">
+                            <i class="fas fa-fingerprint text-info"></i>
+                            <div>
+                                <small>ID</small>
+                                <p>#{{ activite.id }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-card animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <h6 class="mb-3">
+                    <i class="fas fa-tools me-2"></i>
+                    Actions
+                </h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ path('admin_wellness_activites_edit', {'id': activite.id}) }}" class="btn-action btn-warning-action">
+                        <i class="fas fa-edit me-2"></i>
+                        Modifier l'activité
+                    </a>
+                    <button type="button" class="btn-action btn-danger-action" onclick="confirmDelete()">
+                        <i class="fas fa-trash me-2"></i>
+                        Supprimer l'activité
+                    </button>
+                    <form method="post" id="deleteForm" action="{{ path('admin_wellness_activites_delete', {'id': activite.id}) }}" style="display:none;"></form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Header Detail */
+.page-header-detail {
+    position: relative;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+}
+
+.header-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,50 Q300,100 600,50 T1200,50 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.05)"/></svg>') no-repeat bottom;
+    background-size: cover;
+}
+
+.header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.badge-detail {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    backdrop-filter: blur(10px);
+}
+
+.badge-primary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.badge-success {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+}
+
+.badge-secondary {
+    background: rgba(100, 116, 139, 0.9);
+    color: white;
+}
+
+.btn-action-header {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    border: none;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    color: white;
+}
+
+.btn-light {
+    background: white;
+    color: #475569;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-light:hover {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+/* Stat Box */
+.stat-box {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.bg-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.bg-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.stat-info h3 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+    color: #1e293b;
+}
+
+.stat-info p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+/* Detail Card */
+.detail-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.detail-card-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+}
+
+.detail-card-header i {
+    color: #667eea;
+    font-size: 1.2rem;
+}
+
+.detail-card-header h5 {
+    margin: 0;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.detail-card-body {
+    padding: 2rem;
+}
+
+.text-description {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #475569;
+    margin: 0;
+}
+
+.objective-box {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 12px;
+    border-left: 4px solid #f59e0b;
+}
+
+.objective-box i {
+    font-size: 2rem;
+}
+
+.objective-box p {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #92400e;
+}
+
+.instructions-content {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+    line-height: 1.8;
+    color: #475569;
+}
+
+/* Activity Image */
+.activity-image-large {
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+}
+
+.activity-image-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.activity-image-placeholder-large {
+    width: 100%;
+    height: 300px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.activity-image-placeholder-large i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.activity-image-placeholder-large p {
+    margin: 0;
+    opacity: 0.7;
+}
+
+/* Info List */
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.info-item-detail {
+    display: flex;
+    gap: 1rem;
+}
+
+.info-item-detail i {
+    font-size: 1.5rem;
+    margin-top: 0.25rem;
+}
+
+.info-item-detail small {
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 0.25rem;
+}
+
+.info-item-detail p {
+    margin: 0;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Sessions List Compact */
+.sessions-list-compact {
+    display: flex;
+    flex-direction: column;
+}
+
+.session-item-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s ease;
+}
+
+.session-item-compact:last-child {
+    border-bottom: none;
+}
+
+.session-item-compact:hover {
+    background: #f8fafc;
+}
+
+.session-user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.session-user-info h6 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.empty-state-small {
+    padding: 3rem;
+    text-align: center;
+    color: #cbd5e1;
+}
+
+.empty-state-small i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state-small p {
+    margin: 0;
+}
+
+.btn-link-modern {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.btn-link-modern:hover {
+    color: #764ba2;
+    transform: translateX(3px);
+}
+
+/* Actions Card */
+.actions-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.actions-card h6 {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.btn-action {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-warning-action {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.btn-warning-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+    color: white;
+}
+
+.btn-danger-action {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.btn-danger-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+.animate__animated {
+    animation-duration: 0.6s;
+}
+
+@media (max-width: 992px) {
+    .page-header-detail {
+        padding: 2rem 1.5rem;
+    }
+    
+    .header-content .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+</style>
+
+<script>
+function confirmDelete() {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette activité ? Toutes les sessions associées seront également supprimées.')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+{% endblock %}

@@ -1,0 +1,20 @@
+security:
+  password_hashers:
+    App\Entity\Utilisateur: auto
+
+  providers:
+    app_user_provider:
+      entity:
+        class: App\Entity\Utilisateur
+        property: email
+
+  firewalls:
+    main:
+      lazy: true
+      provider: app_user_provider
+      form_login:
+        login_path: app_login
+        check_path: app_login
+        default_target_path: app_home
+      logout:
+        path: /logout
