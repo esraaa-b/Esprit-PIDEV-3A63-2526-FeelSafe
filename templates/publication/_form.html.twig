@@ -1,0 +1,131 @@
+{# templates/publication/_form.html.twig #}
+{{ form_start(form, {
+    'attr': {
+        'class': 'space-y-6',
+        'novalidate': 'novalidate',
+        'id': 'publication-form'
+    }
+}) }}
+
+    <div class="space-y-4">
+        {# Titre #}
+        <div>
+            {{ form_label(form.titre, 'Titre de la publication', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-1'}}) }}
+            {{ form_widget(form.titre, {
+                'attr': {
+                    'class': 'block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder-gray-400',
+                    'placeholder': 'Entrez un titre captivant...'
+                }
+            }) }}
+            {% if form_errors(form.titre)|length > 0 %}
+                <div class="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <i data-feather="alert-circle" class="w-3 h-3"></i>
+                    {{ form_errors(form.titre) }}
+                </div>
+            {% endif %}
+        </div>
+
+        {# Contenu #}
+        <div>
+            {{ form_label(form.contenu, 'Contenu', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-1'}}) }}
+            {{ form_widget(form.contenu, {
+                'attr': {
+                    'class': 'block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder-gray-400',
+                    'rows': '8',
+                    'placeholder': 'Rédigez le contenu ici...'
+                }
+            }) }}
+            {% if form_errors(form.contenu)|length > 0 %}
+                <div class="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <i data-feather="alert-circle" class="w-3 h-3"></i>
+                    {{ form_errors(form.contenu) }}
+                </div>
+            {% endif %}
+        </div>
+
+        {# Image #}
+        <div class="bg-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-400 transition-colors group">
+            {{ form_label(form.image, 'Image de mise en avant', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-3'}}) }}
+            
+            <div class="flex flex-col items-center justify-center space-y-4">
+                {# preview area #}
+                <div id="image-preview-container" class="relative {% if not publication.image %}hidden{% endif %}">
+                    <img id="image-preview-element" 
+                         src="{{ publication.image ? asset('uploads/' ~ publication.image) : '' }}" 
+                         alt="Aperçu" 
+                         class="max-h-48 rounded-lg shadow-md border border-white">
+                    <button type="button" 
+                            onclick="clearImageInput()" 
+                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors">
+                        <i data-feather="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div id="upload-placeholder" class="text-center {% if publication.image %}hidden{% endif %}">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm group-hover:scale-110 transition-transform">
+                        <i data-feather="image" class="w-6 h-6 text-gray-400"></i>
+                    </div>
+                    <p class="text-xs text-gray-500">Cliquez pour sélectionner une image (JPG, PNG, WEBP)</p>
+                </div>
+
+                <div class="w-full max-w-xs">
+                    {{ form_widget(form.image, {
+                        'attr': {
+                            'class': 'block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer',
+                            'onchange': 'handleImagePreview(this)'
+                        }
+                    }) }}
+                </div>
+            </div>
+            
+            {% if form_errors(form.image)|length > 0 %}
+                <div class="mt-2 text-sm text-red-600 text-center">
+                    {{ form_errors(form.image) }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Actions #}
+    <div class="pt-6 border-t border-gray-100 flex items-center justify-end gap-4">
+        <a href="{{ path('app_publication_index') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2 transition-colors">
+            Annuler
+        </a>
+        <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-lg shadow-blue-200 transition-all active:scale-95">
+            <i data-feather="check-circle" class="w-4 h-4"></i>
+            {{ button_label|default('Enregistrer') }}
+        </button>
+    </div>
+
+{{ form_end(form) }}
+
+<script>
+    function handleImagePreview(input) {
+        const preview = document.getElementById('image-preview-element');
+        const container = document.getElementById('image-preview-container');
+        const placeholder = document.getElementById('upload-placeholder');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                container.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                if (typeof feather !== 'undefined') feather.replace();
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function clearImageInput() {
+        const input = document.querySelector('input[type="file"]');
+        const preview = document.getElementById('image-preview-element');
+        const container = document.getElementById('image-preview-container');
+        const placeholder = document.getElementById('upload-placeholder');
+        
+        input.value = '';
+        preview.src = '';
+        container.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+    }
+</script>

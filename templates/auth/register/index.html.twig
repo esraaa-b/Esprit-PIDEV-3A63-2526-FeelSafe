@@ -1,0 +1,265 @@
+{% extends 'auth/auth_base.html.twig' %}
+
+{% block body %}
+<div class="min-h-screen flex">
+    <!-- Left Panel - Branding -->
+    <div class="hidden lg:flex lg:w-1/2 bg-accent relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('/images/community.jpg')] bg-cover bg-center opacity-30"></div>
+        <div class="relative z-10 flex flex-col justify-center px-12 text-accent-foreground">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-12 h-12 rounded-xl bg-accent-foreground/20 flex items-center justify-center">
+                    <i data-feather="heart" class="w-7 h-7"></i>
+                </div>
+                <span class="text-3xl font-serif font-bold">FeelSafe</span>
+            </div>
+            <h1 class="text-4xl font-serif font-bold mb-6 leading-tight text-balance">
+                Commencez votre parcours vers le bien-être
+            </h1>
+            <p class="text-lg opacity-90 mb-8 leading-relaxed">
+                Créez votre compte gratuit et accédez à tous nos outils de santé mentale et de bien-être émotionnel.
+            </p>
+            <div class="space-y-3">
+                {% for feature in [
+                    "Journal émotionnel personnel",
+                    "Exercices de relaxation",
+                    "Communauté bienveillante",
+                    "Support professionnel"
+                ] %}
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 rounded-full bg-accent-foreground/20 flex items-center justify-center">
+                            <i data-feather="check" class="w-3 h-3"></i>
+                        </div>
+                        <span>{{ feature }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel - Register Form -->
+    <div class="flex-1 flex items-center justify-center p-8 bg-background">
+        <div class="w-full max-w-md">
+            <!-- Mobile Logo -->
+            <div class="lg:hidden flex items-center gap-2 mb-8 justify-center">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                    <i data-feather="heart" class="w-6 h-6 text-primary-foreground"></i>
+                </div>
+                <span class="text-2xl font-serif font-bold text-foreground">FeelSafe</span>
+            </div>
+
+            <div class="border-0 shadow-lg rounded-lg bg-card p-6">
+                <div class="space-y-1 pb-4">
+                    <h2 class="text-2xl font-serif font-bold">Créer un compte</h2>
+                    <p class="text-muted-foreground text-sm">
+                        Remplissez les informations ci-dessous pour vous inscrire
+                    </p>
+                </div>
+                <div class="mb-6">
+                    <form method="post" action="{{ path('app_register_submit') }}" class="space-y-4">
+                        {% if error %}
+                            <div class="p-3 rounded-lg bg-red-100 text-red-700 text-sm">
+                                {{ error }}
+                            </div>
+                        {% endif %}
+
+                        <div class="space-y-2">
+                            <label for="name" class="block text-sm font-medium text-foreground">
+                                Nom complet
+                            </label>
+                            <input
+                                type="text"
+                                name="name"
+                                id="name"
+                                value="{{ name }}"
+                                class="w-full h-11 px-3 py-2 border rounded-md"
+                                placeholder="Jean Dupont"
+                                required
+                            >
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="email" class="block text-sm font-medium text-foreground">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                name="email"
+                                id="email"
+                                value="{{ email }}"
+                                class="w-full h-11 px-3 py-2 border rounded-md"
+                                placeholder="votre@email.com"
+                                required
+                            >
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="password" class="block text-sm font-medium text-foreground">
+                                    Mot de passe
+                                </label>
+                            </div>
+                            <div class="relative">
+                                <input
+                                    type="password"
+                                    name="password"
+                                    id="password"
+                                    class="w-full h-11 px-3 py-2 border rounded-md pr-10"
+                                    placeholder="••••••••"
+                                    required
+                                    oninput="updatePasswordRequirements()"
+                                >
+                                <button
+                                    type="button"
+                                    onclick="togglePassword('password')"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <i id="password-toggle-icon" data-feather="eye" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Password Requirements -->
+                            <div id="password-requirements" class="space-y-1 mt-2 hidden">
+                                <div class="flex items-center gap-2 text-xs">
+                                    <div id="req-length" class="w-4 h-4 rounded-full bg-muted flex items-center justify-center">
+                                        <i data-feather="check" class="w-2.5 h-2.5 hidden"></i>
+                                    </div>
+                                    <span id="req-length-text" class="text-muted-foreground">Au moins 8 caractères</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <div id="req-uppercase" class="w-4 h-4 rounded-full bg-muted flex items-center justify-center">
+                                        <i data-feather="check" class="w-2.5 h-2.5 hidden"></i>
+                                    </div>
+                                    <span id="req-uppercase-text" class="text-muted-foreground">Une lettre majuscule</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <div id="req-number" class="w-4 h-4 rounded-full bg-muted flex items-center justify-center">
+                                        <i data-feather="check" class="w-2.5 h-2.5 hidden"></i>
+                                    </div>
+                                    <span id="req-number-text" class="text-muted-foreground">Un chiffre</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="confirmPassword" class="block text-sm font-medium text-foreground">
+                                Confirmer le mot de passe
+                            </label>
+                            <input
+                                type="password"
+                                name="confirmPassword"
+                                id="confirmPassword"
+                                class="w-full h-11 px-3 py-2 border rounded-md"
+                                placeholder="••••••••"
+                                required
+                            >
+                        </div>
+
+                        <div class="flex items-start gap-2">
+                            <input
+                                type="checkbox"
+                                name="acceptTerms"
+                                id="terms"
+                                class="mt-1"
+                                {{ acceptTerms ? 'checked' : '' }}
+                            >
+                            <label for="terms" class="text-sm font-normal leading-relaxed">
+                                J'accepte les
+                                <a href="#" class="text-primary hover:underline">
+                                    conditions d'utilisation
+                                </a>
+                                et la
+                                <a href="#" class="text-primary hover:underline">
+                                    politique de confidentialité
+                                </a>
+                            </label>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="w-full h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            {% if isLoading %}disabled{% endif %}
+                        >
+                            {% if isLoading %}
+                                <i data-feather="loader" class="w-4 h-4 mr-2 animate-spin inline"></i>
+                                Inscription en cours...
+                            {% else %}
+                                Créer mon compte
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+                <div class="pt-0">
+                    <p class="text-center text-sm text-muted-foreground w-full">
+                        Déjà un compte?
+                        <a href="{{ path('app_login') }}" class="text-primary font-medium hover:underline">
+                            Se connecter
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword(fieldId) {
+        const passwordInput = document.getElementById(fieldId);
+        const icon = document.getElementById('password-toggle-icon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            feather.replace(icon, { name: 'eye-off' });
+        } else {
+            passwordInput.type = 'password';
+            feather.replace(icon, { name: 'eye' });
+        }
+    }
+    
+    function updatePasswordRequirements() {
+        const password = document.getElementById('password').value;
+        const requirementsDiv = document.getElementById('password-requirements');
+        
+        if (password) {
+            requirementsDiv.classList.remove('hidden');
+            
+            // Check length
+            const lengthReq = password.length >= 8;
+            const lengthIcon = document.querySelector('#req-length i');
+            const lengthText = document.getElementById('req-length-text');
+            if (lengthReq) {
+                document.getElementById('req-length').classList.remove('bg-muted');
+                document.getElementById('req-length').classList.add('bg-primary', 'text-primary-foreground');
+                lengthIcon.classList.remove('hidden');
+                lengthText.classList.remove('text-muted-foreground');
+                lengthText.classList.add('text-primary');
+            }
+            
+            // Check uppercase
+            const uppercaseReq = /[A-Z]/.test(password);
+            const uppercaseIcon = document.querySelector('#req-uppercase i');
+            const uppercaseText = document.getElementById('req-uppercase-text');
+            if (uppercaseReq) {
+                document.getElementById('req-uppercase').classList.remove('bg-muted');
+                document.getElementById('req-uppercase').classList.add('bg-primary', 'text-primary-foreground');
+                uppercaseIcon.classList.remove('hidden');
+                uppercaseText.classList.remove('text-muted-foreground');
+                uppercaseText.classList.add('text-primary');
+            }
+            
+            // Check number
+            const numberReq = /[0-9]/.test(password);
+            const numberIcon = document.querySelector('#req-number i');
+            const numberText = document.getElementById('req-number-text');
+            if (numberReq) {
+                document.getElementById('req-number').classList.remove('bg-muted');
+                document.getElementById('req-number').classList.add('bg-primary', 'text-primary-foreground');
+                numberIcon.classList.remove('hidden');
+                numberText.classList.remove('text-muted-foreground');
+                numberText.classList.add('text-primary');
+            }
+        } else {
+            requirementsDiv.classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %}

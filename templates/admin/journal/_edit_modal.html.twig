@@ -1,0 +1,262 @@
+<div class="modal-overlay" data-modal>
+    <div class="modal-card">
+
+        <div class="modal-header">
+            <h2>Modifier le journal</h2>
+            <button type="button" data-close>×</button>
+        </div>
+
+        <div style="padding: 20px; max-height: 80vh; overflow-y: auto;">
+            {{ form_start(form, {
+                action: path('admin_journal_edit', { id: journal.id }),
+                method: 'POST',
+                attr: { enctype: 'multipart/form-data' }
+            }) }}
+
+  {# ÉMOTION - Version qui change de couleur au clic #}
+<div style="margin-bottom: 25px;">
+    <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #2c3e50;">
+        Émotion
+    </label>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        {% for child in form.emotion %}
+            <div style="flex: 0 0 auto;">
+                {{ form_widget(child, {'attr': {'style': 'display: none;'}}) }}
+                
+                <label for="{{ child.vars.id }}" 
+                       class="emotion-label"
+                       data-value="{{ child.vars.value }}"
+                       style="display: flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 30px; cursor: pointer; transition: all 0.2s; border: 1.5px solid; font-size: 14px; font-weight: 500;
+                       {% if child.vars.checked %}
+                           {% if child.vars.value == 'tres_bien' %}background: #2b5e2b; color: white; border-color: #2b5e2b;
+                           {% elseif child.vars.value == 'bien' %}background: #3b7a3b; color: white; border-color: #3b7a3b;
+                           {% elseif child.vars.value == 'neutre' %}background: #b8a83b; color: white; border-color: #b8a83b;
+                           {% elseif child.vars.value == 'pas_bien' %}background: #b85a5a; color: white; border-color: #b85a5a;
+                           {% elseif child.vars.value == 'tres_mal' %}background: #b33a3a; color: white; border-color: #b33a3a;
+                           {% endif %}
+                       {% else %}
+                           background: #f8fff8; color: #3a5a3a; border-color: #d8e8d8;
+                       {% endif %}">
+                    <span style="font-size: 18px;">
+                        {% if child.vars.value == 'tres_bien' %}😊
+                        {% elseif child.vars.value == 'bien' %}🙂
+                        {% elseif child.vars.value == 'neutre' %}😐
+                        {% elseif child.vars.value == 'pas_bien' %}😕
+                        {% elseif child.vars.value == 'tres_mal' %}😢
+                        {% endif %}
+                    </span>
+                    <span>{{ child.vars.label }}</span>
+                </label>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+            {# CONTENU #}
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50;">
+                    Contenu
+                </label>
+                {{ form_widget(form.contenu, {
+                    'attr': {
+                        'style': 'width: 100%; padding: 12px; border: 1px solid #d4e6d4; border-radius: 12px; min-height: 120px; background: #fafffa; font-size: 14px;',
+                        'rows': 4,
+                        'placeholder': 'Écrivez votre contenu ici...'
+                    }
+                }) }}
+            </div>
+
+            {# IMAGE - Votre design pastel #}
+            <div style="margin-bottom: 25px; border-bottom: 1px solid #e0f0e0; padding-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #2c3e50;">
+                    Image
+                </label>
+                
+                {% if journal.image %}
+                    <div style="margin-bottom: 15px; padding: 12px; background: #f8fff8; border: 1px solid #d8e8d8; border-radius: 12px;">
+                        <p style="margin: 0 0 10px 0; font-weight: 500; color: #3a5a3a; font-size: 13px;">🖼️ Image actuelle :</p>
+                        <img src="{{ asset('uploads/journals/images/' ~ journal.image) }}" 
+                             style="max-width: 150px; max-height: 150px; border: 1px solid #c8dcc8; border-radius: 8px;">
+                    </div>
+                {% endif %}
+                
+                <div style="margin-bottom: 10px;">
+                    <label for="{{ form.imageFile.vars.id }}" 
+                           style="display: inline-block; padding: 8px 20px; background: #d4ecd4; color: #2a5a2a; border-radius: 30px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1px solid #b8d8b8; transition: all 0.2s;">
+                        🌿 Choisir une image
+                    </label>
+                    <span id="image-file-name" style="margin-left: 12px; color: #5a7a5a; font-size: 14px;">
+                        Aucun fichier choisi
+                    </span>
+                </div>
+                
+                {{ form_widget(form.imageFile, {
+                    'attr': {
+                        'style': 'display: none;',
+                        'onchange': 'document.getElementById("image-file-name").textContent = this.files[0] ? this.files[0].name : "Aucun fichier choisi";'
+                    }
+                }) }}
+                
+                {% if form.removeImage is defined %}
+                    <div style="margin-top: 12px;">
+                        <label style="display: flex; align-items: center; gap: 6px; color: #b35a5a; cursor: pointer; font-size: 14px;">
+                            {{ form_widget(form.removeImage, {'attr': {'style': 'width: 16px; height: 16px;'}}) }}
+                            <span>🗑️ Supprimer l'image actuelle</span>
+                        </label>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# AUDIO - Votre design pastel #}
+            <div style="margin-bottom: 25px; border-bottom: 1px solid #e0f0e0; padding-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #2c3e50;">
+                    Audio
+                </label>
+                
+                {% if journal.audio %}
+                    <div style="margin-bottom: 15px; padding: 12px; background: #f8fff8; border: 1px solid #d8e8d8; border-radius: 12px;">
+                        <p style="margin: 0 0 10px 0; font-weight: 500; color: #3a5a3a; font-size: 13px;">🎵 Audio actuel :</p>
+                        <audio controls style="width: 100%; border-radius: 30px;">
+                            <source src="{{ asset('uploads/journals/audio/' ~ journal.audio) }}">
+                        </audio>
+                    </div>
+                {% endif %}
+                
+                <div style="margin-bottom: 10px;">
+                    <label for="{{ form.audioFile.vars.id }}" 
+                           style="display: inline-block; padding: 8px 20px; background: #d4ecd4; color: #2a5a2a; border-radius: 30px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1px solid #b8d8b8; transition: all 0.2s;">
+                        🎵 Choisir un audio
+                    </label>
+                    <span id="audio-file-name" style="margin-left: 12px; color: #5a7a5a; font-size: 14px;">
+                        Aucun fichier choisi
+                    </span>
+                </div>
+                
+                {{ form_widget(form.audioFile, {
+                    'attr': {
+                        'style': 'display: none;',
+                        'onchange': 'document.getElementById("audio-file-name").textContent = this.files[0] ? this.files[0].name : "Aucun fichier choisi";'
+                    }
+                }) }}
+                
+                {% if form.removeAudio is defined %}
+                    <div style="margin-top: 12px;">
+                        <label style="display: flex; align-items: center; gap: 6px; color: #b35a5a; cursor: pointer; font-size: 14px;">
+                            {{ form_widget(form.removeAudio, {'attr': {'style': 'width: 16px; height: 16px;'}}) }}
+                            <span>🗑️ Supprimer l'audio actuel</span>
+                        </label>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# BOUTONS - Votre design pastel #}
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+                <button type="button" 
+                        data-close
+                        style="padding: 8px 24px; background: white; color: #5a7a5a; border: 1.5px solid #c8e0c8; border-radius: 30px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">
+                    Annuler
+                </button>
+                <button type="submit" 
+                        style="padding: 8px 24px; background: #c8e0c8; color: #2a4a2a; border: none; border-radius: 30px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; box-shadow: 0 2px 6px rgba(170, 210, 170, 0.3);">
+                    ✨ Enregistrer
+                </button>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+    <script>
+// TEST - Est-ce que ce script s'exécute ?
+console.log('🔥 SCRIPT CHARGÉ !');
+console.log('Nombre de .emotion-label:', document.querySelectorAll('.emotion-label').length);
+
+setTimeout(function() {
+    alert('TEST: Le script est bien exécuté !');
+}, 100);
+</script>
+</div>
+
+<style>
+.emotion-label {
+    user-select: none;
+}
+
+.emotion-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+</style>
+<script>
+// Attendre que le DOM soit prêt ET forcer un délai
+function initEmotionButtons() {
+    const labels = document.querySelectorAll('.emotion-label');
+    console.log('🎯 Initialisation des émotions:', labels.length, 'trouvées');
+    
+    labels.forEach(label => {
+        // Vérifier si déjà initialisé
+        if (label.hasAttribute('data-initialized')) return;
+        label.setAttribute('data-initialized', 'true');
+        
+        label.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Réinitialiser tous les labels
+            document.querySelectorAll('.emotion-label').forEach(l => {
+                l.style.background = '#f8fff8';
+                l.style.color = '#3a5a3a';
+                l.style.borderColor = '#d8e8d8';
+            });
+            
+            // Appliquer la couleur
+            const value = this.dataset.value;
+            const colors = {
+                'tres_bien': '#2b5e2b',
+                'bien': '#3b7a3b',
+                'neutre': '#b8a83b',
+                'pas_bien': '#b85a5a',
+                'tres_mal': '#b33a3a'
+            };
+            
+            this.style.background = colors[value];
+            this.style.color = 'white';
+            this.style.borderColor = colors[value];
+            
+            // Cocher le radio
+            const radioId = this.getAttribute('for');
+            const radio = document.getElementById(radioId);
+            if (radio) {
+                radio.checked = true;
+                console.log('✅ Émotion sélectionnée:', value, 'Radio coché:', radioId);
+            }
+        });
+        
+        console.log('➕ Listener ajouté pour:', label.dataset.value);
+    });
+}
+
+// 1. Exécuter immédiatement
+initEmotionButtons();
+
+// 2. Exécuter après un court délai (pour les chargements AJAX)
+setTimeout(initEmotionButtons, 100);
+setTimeout(initEmotionButtons, 300);
+setTimeout(initEmotionButtons, 500);
+
+// 3. Observer les changements du DOM
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length) {
+            initEmotionButtons();
+        }
+    });
+});
+
+// Démarrer l'observation
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+console.log('🚀 Système d\'émotions initialisé');
+</script>

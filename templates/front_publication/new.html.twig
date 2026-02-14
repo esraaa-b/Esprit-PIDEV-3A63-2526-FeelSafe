@@ -1,0 +1,62 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block title %}Nouvelle publication{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto bg-card rounded-2xl shadow-lg border border-border p-6 space-y-5">
+
+    <h1 class="text-xl font-semibold text-foreground">Quoi de neuf, Israe ?</h1>
+
+    {{ form_start(form, {'attr': {'class': 'space-y-4', 'novalidate': 'novalidate'}}) }}
+
+        {# TITRE #}
+        <div>
+            {{ form_widget(form.titre, {
+                'attr': {
+                    'class': 'w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:outline-none',
+                    'placeholder': 'Titre de votre publication...'
+                }
+            }) }}
+            <div class="text-red-500 text-sm mt-1">
+                {{ form_errors(form.titre) }}
+            </div>
+        </div>
+
+        {# CONTENU #}
+        <div>
+            {{ form_widget(form.contenu, {
+                'attr': {
+                    'class': 'w-full resize-none bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:outline-none',
+                    'placeholder': 'Exprimez-vous...',
+                    'rows': 4
+                }
+            }) }}
+            <div class="text-red-500 text-sm mt-1">
+                {{ form_errors(form.contenu) }}
+            </div>
+        </div>
+
+        {# IMAGE UPLOAD STYLE FACEBOOK #}
+        <div class="border border-dashed border-border rounded-xl p-4 text-center hover:bg-secondary transition">
+            <label class="cursor-pointer flex flex-col items-center gap-2 text-muted-foreground">
+                <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <path d="M21 15l-5-5L5 21"/>
+                </svg>
+                <span>Ajouter une image</span>
+                {{ form_widget(form.image, {'attr': {'class': 'hidden'}}) }}
+            </label>
+            <div class="text-red-500 text-sm mt-1">
+                {{ form_errors(form.image) }}
+            </div>
+        </div>
+
+        {# BOUTON #}
+        <button class="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold hover:bg-primary/90 transition">
+            Publier
+        </button>
+
+    {{ form_end(form) }}
+</div>
+{% endblock %}

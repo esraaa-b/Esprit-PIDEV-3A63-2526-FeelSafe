@@ -1,0 +1,223 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Forum | FeelSafe{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        /* Scoped Admin Styles for Publication */
+        :root {
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --brand-admin: #2563eb;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .admin-header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .admin-card {
+            background-color: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 24px;
+        }
+
+        .card-header { margin-bottom: 1.5rem; }
+        .card-title { font-size: 1.25rem; font-weight: 600; color: var(--text-main); }
+        .card-subtitle { font-size: 0.875rem; color: var(--text-muted); }
+
+        /* Table */
+        .admin-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .admin-table th {
+            text-align: left; padding: 16px 24px;
+            font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;
+            background-color: #f9fafb; border-bottom: 1px solid var(--border-color);
+        }
+        .admin-table td {
+            padding: 16px 24px; color: var(--text-main); border-bottom: 1px solid var(--border-color); font-size: 0.875rem;
+        }
+        .admin-table tr:hover td { background-color: #f9fafb; }
+
+        /* Buttons */
+        .btn-admin {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem;
+            font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem;
+            background-color: var(--brand-admin); color: white; border: none; text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-admin:hover { background-color: #1d4ed8; color: white; transform: translateY(-1px); }
+        
+        .btn-admin-outline {
+            background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main);
+        }
+        .btn-admin-outline:hover { background-color: #f3f4f6; }
+        /* Action Buttons */
+        .btn-action {
+            padding: 8px 12px;
+            font-size: 13px;
+            height: 38px;
+            min-width: 110px; /* Same width for all */
+            justify-content: center;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="admin-header">
+    <div>
+        <h1>Publications</h1>
+        <p style="color: var(--text-muted); margin-top:6px;">
+            Gérez les publications du forum
+        </p>
+    </div>
+
+    <div style="display:flex; gap:10px; align-items:center;">
+        <a href="{{ path('app_publication_stats') }}" class="btn-admin" style="background:#16a34a;">
+            📊 Statistiques
+        </a>
+        <a href="{{ path('app_publication_new') }}" class="btn-admin">
+            ➕ Nouvelle publication
+        </a>
+    </div>
+</div>
+
+<!-- ===== SEARCH FORM ===== -->
+<form method="get" action="{{ path('app_publication_index') }}" class="admin-card" style="margin:20px 0; display:flex; gap:10px; align-items:center;">
+    <input type="text" name="search_id" placeholder="Search by ID" class="btn-admin-outline" style="padding:6px 10px; border-radius:6px;" value="{{ app.request.query.get('search_id') }}">
+    <input type="text" name="search_titre" placeholder="Search by Title" class="btn-admin-outline" style="padding:6px 10px; border-radius:6px;" value="{{ app.request.query.get('search_titre') }}">
+    <button type="submit" class="btn-admin">Search</button>
+    <a href="{{ path('app_publication_index') }}" class="btn-admin btn-admin-outline" style="margin-left:auto;">Reset</a>
+</form>
+
+<!-- Card -->
+<div class="admin-card">
+    <div class="card-header">
+        <div>
+            <div class="card-title">Liste des publications</div>
+            <div class="card-subtitle">
+                {{ publications|length }} publication(s)
+                {% if sort_by is defined %}
+                    - Trié par 
+                    {% if sort_by == 'datePublication' %}
+                        date ({{ sort_order == 'DESC' ? 'plus récentes en premier' : 'plus anciennes en premier' }})
+                    {% elseif sort_by == 'titre' %}
+                        titre ({{ sort_order == 'ASC' ? 'A-Z' : 'Z-A' }})
+                    {% elseif sort_by == 'id' %}
+                        ID ({{ sort_order == 'ASC' ? 'croissant' : 'décroissant' }})
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th style="cursor: pointer;">
+                    <a href="{{ path('app_publication_index', {
+                        'search_id': app.request.query.get('search_id'),
+                        'search_titre': app.request.query.get('search_titre'),
+                        'sort_by': 'id',
+                        'sort_order': (sort_by|default('datePublication') == 'id' and sort_order|default('DESC') == 'ASC') ? 'DESC' : 'ASC'
+                    }) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 5px;">
+                        ID 
+                        {% if sort_by|default('datePublication') == 'id' %}
+                            <span>{{ sort_order|default('DESC') == 'ASC' ? '↑' : '↓' }}</span>
+                        {% endif %}
+                    </a>
+                </th>
+                <th style="cursor: pointer;">
+                    <a href="{{ path('app_publication_index', {
+                        'search_id': app.request.query.get('search_id'),
+                        'search_titre': app.request.query.get('search_titre'),
+                        'sort_by': 'titre',
+                        'sort_order': (sort_by|default('datePublication') == 'titre' and sort_order|default('DESC') == 'ASC') ? 'DESC' : 'ASC'
+                    }) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 5px;">
+                        Titre
+                        {% if sort_by|default('datePublication') == 'titre' %}
+                            <span>{{ sort_order|default('DESC') == 'ASC' ? '↑' : '↓' }}</span>
+                        {% endif %}
+                    </a>
+                </th>
+                <th>Contenu</th>
+                <th>Image</th>
+                <th style="min-width: 150px;">Réactions</th>
+                <th style="cursor: pointer;">
+                    <a href="{{ path('app_publication_index', {
+                        'search_id': app.request.query.get('search_id'),
+                        'search_titre': app.request.query.get('search_titre'),
+                        'sort_by': 'datePublication',
+                        'sort_order': (sort_by|default('datePublication') == 'datePublication' and sort_order|default('DESC') == 'ASC') ? 'DESC' : 'ASC'
+                    }) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 5px;">
+                        Date
+                        {% if sort_by|default('datePublication') == 'datePublication' %}
+                            <span>{{ sort_order|default('DESC') == 'ASC' ? '↑' : '↓' }}</span>
+                        {% endif %}
+                    </a>
+                </th>
+                <th style="text-align:right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for publication in publications %}
+            <tr>
+                <td>#{{ publication.id }}</td>
+                <td><strong>{{ publication.titre }}</strong></td>
+                <td>{{ publication.contenu|slice(0, 60) }}{% if publication.contenu|length > 60 %}...{% endif %}</td>
+                <td>
+                    {% if publication.image %}
+                        <img src="{{ asset('uploads/' ~ publication.image) }}" alt="image" style="width:60px;height:40px;object-fit:cover;border-radius:6px;">
+                    {% else %}
+                        <span style="color: var(--text-light);">Aucune</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="display: flex; gap: 15px; font-weight: 500;">
+                        <span style="color: #16a34a; display: flex; align-items: center; gap: 4px;" title="J'aime">
+                            👍 {{ publication.likesCount }}
+                        </span>
+                        <span style="color: #dc2626; display: flex; align-items: center; gap: 4px;" title="Je n'aime pas">
+                            👎 {{ publication.dislikesCount }}
+                        </span>
+                        <span style="color: #3b82f6; display: flex; align-items: center; gap: 4px;" title="Commentaires">
+                            💬 {{ publication.pubCom|length }}
+                        </span>
+                    </div>
+                </td>
+                <td>{{ publication.datePublication ? publication.datePublication|date('d/m/Y') : '-' }}</td>
+                <td style="text-align:right;">
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <a href="{{ path('app_publication_show', {id: publication.id}) }}" class="btn-admin btn-admin-outline btn-action">Voir</a>
+                        <a href="{{ path('app_publication_edit', {id: publication.id}) }}" class="btn-admin btn-action">Modifier</a>
+                        <form method="post" action="{{ path('app_publication_delete', {'id': publication.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette publication ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication.id) }}">
+                            <button type="submit" class="btn-admin btn-admin-outline btn-action">🗑 Supprimer</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Aucune publication pour le moment</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
