@@ -1,0 +1,227 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Nouvelle publication | Admin FeelSafe{% endblock %}
+
+{% block content %}
+<style>
+/* Gardez votre CSS existant ici */
+.publication-form {
+    max-width: 800px;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary, #1a1a1a);
+    margin-bottom: 8px;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #e74c3c;
+}
+
+.optional-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted, #6b7280);
+    background: var(--bg-secondary, #f3f4f6);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary, #1a1a1a);
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-control::placeholder {
+    color: #9ca3af;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--text-muted, #6b7280);
+}
+
+.form-error-message {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.file-upload-wrapper {
+    position: relative;
+}
+
+.form-control-file {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    color: var(--text-primary, #1a1a1a);
+    background-color: #fff;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.form-control-file:hover {
+    border-color: #3b82f6;
+    background-color: #f9fafb;
+}
+
+.file-upload-preview {
+    position: relative;
+    margin-top: 16px;
+    display: inline-block;
+}
+
+.file-upload-preview img {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    display: block;
+}
+
+.remove-preview {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.remove-preview:hover {
+    background: #dc2626;
+}
+
+.btn-admin {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    border: none;
+}
+
+.btn-admin-primary {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-admin-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn-admin-outline {
+    background: white;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+}
+
+.btn-admin-outline:hover {
+    background: #f3f4f6;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.admin-header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.admin-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    max-width: 850px;
+}
+
+@media (max-width: 640px) {
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+    
+    .form-actions .btn-admin {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<div class="admin-header">
+    <div>
+        <h1>Nouvelle publication</h1>
+        <p style="color: #6b7280; margin-top:6px;">
+            Créez et partagez une nouvelle publication sur le forum
+        </p>
+    </div>
+    <a href="{{ path('admin_forum_index') }}" class="btn-admin btn-admin-outline">
+        ← Retour à la liste
+    </a>
+</div>
+
+<div class="admin-card">
+    {% set publication = null %}
+    {{ include('admin/forum/_form.html.twig', {
+        'form': form,
+        'publication': publication,
+        'button_label': 'Créer la publication'
+    }) }}
+</div>
+{% endblock %}

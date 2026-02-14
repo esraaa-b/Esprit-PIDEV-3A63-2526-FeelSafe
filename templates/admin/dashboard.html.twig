@@ -1,0 +1,31 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="card bg-white p-6 rounded">
+        <p class="text-sm text-gray-500">Users</p>
+        <p class="text-2xl font-bold">124</p>
+    </div>
+
+    <div class="card bg-white p-6 rounded">
+        <p class="text-sm text-gray-500">Journal entries</p>
+        <p class="text-2xl font-bold">1 542</p>
+    </div>
+
+    <div class="card bg-white p-6 rounded">
+        <p class="text-sm text-gray-500">Alerts</p>
+        <p class="text-2xl font-bold text-red-600">6</p>
+    </div>
+
+    <div class="card bg-white p-6 rounded">
+        <p class="text-sm text-gray-500">Appointments</p>
+        <p class="text-2xl font-bold">32</p>
+    </div>
+</div>
+
+<div class="bg-white p-6 rounded shadow">
+    <p class="text-gray-600">Emotional trends (chart placeholder)</p>
+</div>
+{% endblock %}

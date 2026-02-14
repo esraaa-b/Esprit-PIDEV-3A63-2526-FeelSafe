@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - FeelSafe</title>
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Navbar -->
+        <nav class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                                <i data-feather="heart" class="w-6 h-6 text-primary-foreground"></i>
+                            </div>
+                            <span class="text-2xl font-serif font-bold text-foreground">FeelSafe</span>
+                        </div>
+                        <span class="ml-4 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                            Admin
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm text-gray-700">{{ user.fullName }}</span>
+                        <a href="{{ path('app_logout') }}" class="text-sm text-red-600 hover:text-red-700">
+                            Déconnexion
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Welcome Message -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">
+                    Bienvenue, {{ user.prenom }} ! 👋
+                </h1>
+                <p class="text-gray-600 mt-2">
+                    Tableau de bord administrateur - Gérez votre plateforme FeelSafe
+                </p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Utilisateurs</p>
+                            <p class="text-2xl font-bold text-gray-900">1,234</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i data-feather="users" class="w-6 h-6 text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Professionnels</p>
+                            <p class="text-2xl font-bold text-gray-900">56</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i data-feather="briefcase" class="w-6 h-6 text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Sessions</p>
+                            <p class="text-2xl font-bold text-gray-900">890</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i data-feather="calendar" class="w-6 h-6 text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Revenus</p>
+                            <p class="text-2xl font-bold text-gray-900">45,678 DT</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <i data-feather="dollar-sign" class="w-6 h-6 text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-lg shadow p-6 mb-8">
+                <h2 class="text-xl font-bold mb-4">Actions rapides</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button class="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <i data-feather="user-plus" class="w-5 h-5 text-primary"></i>
+                        <span>Gérer les utilisateurs</span>
+                    </button>
+                    <button class="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <i data-feather="settings" class="w-5 h-5 text-primary"></i>
+                        <span>Paramètres du système</span>
+                    </button>
+                    <button class="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <i data-feather="bar-chart" class="w-5 h-5 text-primary"></i>
+                        <span>Voir les rapports</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-bold mb-4">Activité récente</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i data-feather="user" class="w-5 h-5 text-blue-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">Nouvel utilisateur inscrit</p>
+                            <p class="text-xs text-gray-600">Il y a 5 minutes</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i data-feather="check" class="w-5 h-5 text-green-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">Session terminée</p>
+                            <p class="text-xs text-gray-600">Il y a 15 minutes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>feather.replace();</script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+{% extends 'client/base.html.twig' %}
+
+{% block title %}Sécurité — FeelSafe{% endblock %}
+
+{% block stylesheets %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --brand:        #22c55e;
+  --brand-dark:   #16a34a;
+  --brand-light:  #dcfce7;
+  --brand-glow:   rgba(34,197,94,.18);
+  --danger:       #ef4444;
+  --danger-light: rgba(239,68,68,.10);
+  --danger-border:rgba(239,68,68,.25);
+
+  --bg:           #f7f9f7;
+  --surface:      #ffffff;
+  --surface-2:    #f4f6f4;
+  --border:       #e4e8e4;
+
+  --text-main:    #111827;
+  --text-muted:   #6b7280;
+  --text-light:   #9ca3af;
+
+  --radius-sm:    8px;
+  --radius:       14px;
+  --radius-lg:    20px;
+  --shadow-sm:    0 1px 4px rgba(0,0,0,.07);
+  --shadow-md:    0 4px 20px rgba(0,0,0,.09);
+  --transition:   all .22s cubic-bezier(.4,0,.2,1);
+}
+
+* { box-sizing: border-box; }
+body { font-family: 'Figtree', sans-serif; background: var(--bg); }
+
+.page-header { margin-bottom: 32px; }
+.page-header h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  color: var(--text-main);
+  margin: 0 0 6px;
+}
+.page-header p { font-size: .9rem; color: var(--text-muted); margin: 0; }
+
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.section-card:hover { box-shadow: var(--shadow-md); }
+
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.section-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-light);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 3px;
+  letter-spacing: -.02em;
+}
+.section-sub {
+  font-size: .82rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Form ── */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.form-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+}
+.password-wrap { position: relative; }
+.form-input {
+  padding: 11px 42px 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem;
+  color: var(--text-main);
+  background: var(--surface-2);
+  transition: var(--transition);
+  width: 100%;
+}
+.form-input:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-glow);
+  background: var(--surface);
+}
+.form-input::placeholder { color: var(--text-light); }
+
+.toggle-eye {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-light);
+  padding: 2px;
+  transition: var(--transition);
+  line-height: 1;
+}
+.toggle-eye:hover { color: var(--brand); }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+
+.password-strength {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.strength-bar {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--border);
+  transition: var(--transition);
+}
+.strength-label {
+  font-size: .72rem;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.btn {
+  padding: 11px 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -.01em;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: white;
+  box-shadow: 0 4px 14px var(--brand-glow);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--brand-dark), #14532d);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(34,197,94,.3);
+}
+
+/* ── Alerts ── */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: .875rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeInDown .3s ease both;
+}
+.alert-success {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  border: 1px solid rgba(34,197,94,.3);
+}
+.alert-error {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+/* ── Security info rows ── */
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .875rem;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row-label {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.info-row-value { font-weight: 600; color: var(--text-main); }
+
+/* ── Tip box ── */
+.tip-box {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid rgba(34,197,94,.25);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.tip-box-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.tip-box-content { font-size: .82rem; color: var(--brand-dark); line-height: 1.6; }
+.tip-box-content strong { font-weight: 700; }
+
+/* ── Animations ── */
+@keyframes fadeIn     { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInUp   { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.section-card { animation: fadeInUp .35s ease both; }
+.section-card:nth-child(1) { animation-delay: .05s; }
+.section-card:nth-child(2) { animation-delay: .12s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Sécurité</h1>
+  <p>Gérez votre mot de passe et la sécurité de votre compte</p>
+</div>
+
+{# ── Flash messages ── #}
+{% for msg in app.flashes('success') %}
+  <div class="alert alert-success">✅ {{ msg }}</div>
+{% endfor %}
+{% for msg in app.flashes('error') %}
+  <div class="alert alert-error">⚠️ {{ msg }}</div>
+{% endfor %}
+
+{# ══════════════════════════════
+   SECTION : Changer le mot de passe
+   ══════════════════════════════ #}
+<div class="section-card">
+  <div class="section-head">
+    <div class="section-icon">🔑</div>
+    <div>
+      <p class="section-title">Modifier le mot de passe</p>
+      <p class="section-sub">Changez votre mot de passe régulièrement pour plus de sécurité</p>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ path('client_securite_password') }}" id="passwordForm">
+
+    <div class="form-group">
+      <label class="form-label" for="mdp_actuel">Mot de passe actuel *</label>
+      <div class="password-wrap">
+        <input class="form-input" type="password" id="mdp_actuel"
+               name="mot_de_passe_actuel" required placeholder="Votre mot de passe actuel">
+        <button type="button" class="toggle-eye" onclick="togglePass('mdp_actuel')">👁️</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label" for="mdp_nouveau">Nouveau mot de passe *</label>
+        <div class="password-wrap">
+          <input class="form-input" type="password" id="mdp_nouveau"
+                 name="nouveau_mot_de_passe" required placeholder="Min. 8 caractères"
+                 oninput="checkStrength(this.value)">
+          <button type="button" class="toggle-eye" onclick="togglePass('mdp_nouveau')">👁️</button>
+        </div>
+        <div class="password-strength" id="strengthBars">
+          <div class="strength-bar" id="bar1"></div>
+          <div class="strength-bar" id="bar2"></div>
+          <div class="strength-bar" id="bar3"></div>
+          <div class="strength-bar" id="bar4"></div>
+        </div>
+        <span class="strength-label" id="strengthLabel"></span>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label" for="mdp_confirmer">Confirmer le nouveau mot de passe *</label>
+        <div class="password-wrap">
+          <input class="form-input" type="password" id="mdp_confirmer"
+                 name="confirmer_mot_de_passe" required placeholder="Répétez le nouveau mot de passe"
+                 oninput="checkMatch()">
+          <button type="button" class="toggle-eye" onclick="togglePass('mdp_confirmer')">👁️</button>
+        </div>
+        <span class="strength-label" id="matchLabel"></span>
+      </div>
+    </div>
+
+    <div style="margin-top: 22px;">
+      <button type="submit" class="btn btn-primary">🔒 Mettre à jour le mot de passe</button>
+    </div>
+  </form>
+
+  <div class="tip-box">
+    <span class="tip-box-icon">💡</span>
+    <p class="tip-box-content">
+      <strong>Conseils pour un mot de passe fort :</strong><br>
+      Utilisez au moins 8 caractères, mélangez majuscules, minuscules, chiffres et symboles (@, !, #…).
+      Évitez les mots du dictionnaire et n'utilisez pas le même mot de passe sur plusieurs sites.
+    </p>
+  </div>
+</div>
+
+{# ══════════════════════════════
+   SECTION : Infos du compte
+   ══════════════════════════════ #}
+<div class="section-card">
+  <div class="section-head">
+    <div class="section-icon">🛡️</div>
+    <div>
+      <p class="section-title">Informations du compte</p>
+      <p class="section-sub">Détails et statut de votre compte</p>
+    </div>
+  </div>
+
+  <div class="info-row">
+    <span class="info-row-label">🆔 Identifiant</span>
+    <span class="info-row-value">#{{ user.id }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-row-label">✉️ Email</span>
+    <span class="info-row-value">{{ user.email }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-row-label">👤 Rôle</span>
+    <span class="info-row-value">
+      {% if user.isAdmin() %}👑 Administrateur
+      {% elseif user.isProfessionnel() %}💼 Professionnel
+      {% else %}👤 Client{% endif %}
+    </span>
+  </div>
+  <div class="info-row">
+    <span class="info-row-label">📅 Membre depuis</span>
+    <span class="info-row-value">{{ user.dateCreation|date('d/m/Y') }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-row-label">✅ Statut du compte</span>
+    <span class="info-row-value" style="color: {% if user.statut == 'actif' %}var(--brand){% else %}var(--danger){% endif %};">
+      {% if user.statut == 'actif' %}● Actif{% else %}● Inactif{% endif %}
+    </span>
+  </div>
+</div>
+
+<script>
+function togglePass(id) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function checkStrength(val) {
+  const bars   = [1,2,3,4].map(i => document.getElementById('bar' + i));
+  const label  = document.getElementById('strengthLabel');
+  const colors = ['#ef4444','#f59e0b','#3b82f6','#22c55e'];
+  const labels = ['Très faible','Moyen','Fort','Très fort'];
+
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  bars.forEach((b,i) => {
+    b.style.background = i < score ? colors[score - 1] : 'var(--border)';
+  });
+  label.textContent  = val.length ? labels[score - 1] || '' : '';
+  label.style.color  = val.length ? colors[score - 1] : 'var(--text-light)';
+}
+
+function checkMatch() {
+  const n = document.getElementById('mdp_nouveau').value;
+  const c = document.getElementById('mdp_confirmer').value;
+  const l = document.getElementById('matchLabel');
+  if (!c) { l.textContent = ''; return; }
+  if (n === c) { l.textContent = '✅ Les mots de passe correspondent'; l.style.color = 'var(--brand)'; }
+  else         { l.textContent = '❌ Les mots de passe ne correspondent pas'; l.style.color = 'var(--danger)'; }
+}
+</script>
+{% endblock %}

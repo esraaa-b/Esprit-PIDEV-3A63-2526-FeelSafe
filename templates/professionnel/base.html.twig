@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FeelSafe - Professionnel{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 28px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .badge-pro {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 12px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.8);
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .user-profile:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-menu-btn {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            font-size: 20px;
+            padding: 4px;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        {# Sidebar Professionnel #}
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">❤️</span>
+                    <span class="logo-text">FeelSafe</span>
+                </div>
+                <span class="badge-pro">PRO</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{{ path('professionnel_dashboard') }}" class="nav-item {{ app.request.get('_route') == 'professionnel_dashboard' ? 'active' : '' }}">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Tableau de bord</span>
+                </a>
+
+                <a href="{{ path('app_pro_patients') }}" class="nav-item {{ app.request.get('_route') == 'app_pro_patients' ? 'active' : '' }}">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Mes Patients</span>
+                </a>
+
+                <a href="{{ path('app_pro_agenda') }}" class="nav-item {{ app.request.get('_route') == 'app_pro_agenda' ? 'active' : '' }}">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">Agenda</span>
+                </a>
+
+                <a href="{{ path('app_pro_messages') }}" class="nav-item {{ app.request.get('_route') == 'app_pro_messages' ? 'active' : '' }}">
+                    <span class="nav-icon">✉️</span>
+                    <span class="nav-text">Messagerie</span>
+                </a>
+
+                <a href="{{ path('app_pro_resources') }}" class="nav-item {{ app.request.get('_route') == 'app_pro_resources' ? 'active' : '' }}">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-text">Ressources</span>
+                </a>
+
+                <a href="{{ path('app_pro_emergency') }}" class="nav-item {{ app.request.get('_route') == 'app_pro_emergency' ? 'active' : '' }}">
+                    <span class="nav-icon">🚨</span>
+                    <span class="nav-text">Urgences</span>
+                </a>
+
+                <a href="{{ path('app_pro_profile') }}" class="nav-item {{ app.request.get('_route') == 'app_pro_profile' ? 'active' : '' }}">
+                    <span class="nav-icon">🛡️</span>
+                    <span class="nav-text">Mon Profil</span>
+                </a>
+            </nav>
+
+            {# User Profile #}
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        {{ (prenom|default('U'))[0]|upper }}{{ (nom|default('U'))[0]|upper }}
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">Dr. {{ prenom|default('') }} {{ nom|default('') }}</div>
+                        <div class="user-email">{{ email|default('') }}</div>
+                    </div>
+                    <button class="user-menu-btn">⋮</button>
+                </div>
+            </div>
+        </aside>
+
+        {# Main Content #}
+        <main class="main-content">
+            {% block body %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

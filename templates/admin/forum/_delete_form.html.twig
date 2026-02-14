@@ -1,0 +1,9 @@
+<form method="post" action="{{ path('admin_forum_delete', {'id': publication.id}) }}" 
+      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette publication ?');" 
+      style="display: inline-block;">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication.id) }}">
+    <button type="submit" class="btn-admin btn-admin-outline" 
+            style="background: #ef4444; color: white; border-color: #ef4444;">
+        🗑 Supprimer définitivement
+    </button>
+</form>

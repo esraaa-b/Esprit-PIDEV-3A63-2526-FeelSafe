@@ -1,0 +1,172 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Confidentialité - FeelSafe{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+    <!-- Header -->
+    <header class="bg-card border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center gap-3">
+                    <a href="{{ path('app_profile_edit') }}" class="hover:text-primary">
+                        <i data-feather="arrow-left" class="w-5 h-5"></i>
+                    </a>
+                    <h1 class="text-xl font-serif font-bold">Paramètres de confidentialité</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Flash Messages -->
+        {% for message in app.flashes('success') %}
+            <div class="mb-6 p-4 rounded-lg bg-green-100 text-green-700">
+                <i data-feather="check-circle" class="w-5 h-5 inline mr-2"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="bg-card border rounded-lg p-6">
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold">Gérez vos données</h2>
+                <p class="text-sm text-muted-foreground mt-1">
+                    Contrôlez comment vos informations sont utilisées et partagées
+                </p>
+            </div>
+            
+            {{ form_start(confidentialiteForm, {'attr': {'class': 'space-y-6'}}) }}
+
+            <div class="space-y-4">
+                <!-- Partage de données -->
+                <div class="flex items-start gap-4 p-4 border rounded-lg">
+                    <div class="flex-1">
+                        <label for="{{ confidentialiteForm.partageDonnees.vars.id }}" class="font-medium cursor-pointer">
+                            {{ form_label(confidentialiteForm.partageDonnees) }}
+                        </label>
+                        <p class="text-sm text-muted-foreground mt-1">
+                            Vos données seront anonymisées et utilisées uniquement pour améliorer nos services
+                        </p>
+                    </div>
+                    <div class="flex items-center">
+                        {{ form_widget(confidentialiteForm.partageDonnees) }}
+                    </div>
+                </div>
+                {{ form_errors(confidentialiteForm.partageDonnees) }}
+
+                <!-- Notifications Email -->
+                <div class="flex items-start gap-4 p-4 border rounded-lg">
+                    <div class="flex-1">
+                        <label for="{{ confidentialiteForm.notificationsEmail.vars.id }}" class="font-medium cursor-pointer">
+                            {{ form_label(confidentialiteForm.notificationsEmail) }}
+                        </label>
+                        <p class="text-sm text-muted-foreground mt-1">
+                            Recevez des mises à jour importantes sur votre compte et votre bien-être
+                        </p>
+                    </div>
+                    <div class="flex items-center">
+                        {{ form_widget(confidentialiteForm.notificationsEmail) }}
+                    </div>
+                </div>
+                {{ form_errors(confidentialiteForm.notificationsEmail) }}
+
+                <!-- Visibilité du profil -->
+                <div class="p-4 border rounded-lg">
+                    <div class="mb-3">
+                        {{ form_label(confidentialiteForm.visibiliteProfil, null, {'label_attr': {'class': 'font-medium'}}) }}
+                        <p class="text-sm text-muted-foreground mt-1">
+                            Choisissez qui peut voir votre profil et vos informations
+                        </p>
+                    </div>
+                    {{ form_widget(confidentialiteForm.visibiliteProfil) }}
+                    {{ form_errors(confidentialiteForm.visibiliteProfil) }}
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button
+                    type="submit"
+                    class="flex-1 h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
+                >
+                    <i data-feather="save" class="w-4 h-4 inline mr-2"></i>
+                    Enregistrer les préférences
+                </button>
+                <a
+                    href="{{ path('app_profile_edit') }}"
+                    class="flex-1 h-11 border border-input bg-transparent rounded-md font-medium hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-center"
+                >
+                    Annuler
+                </a>
+            </div>
+
+            {{ form_end(confidentialiteForm) }}
+        </div>
+
+        <!-- Privacy Info -->
+        <div class="mt-6 bg-primary/5 border border-primary/20 rounded-lg p-6">
+            <h3 class="font-semibold mb-3 flex items-center gap-2">
+                <i data-feather="shield" class="w-5 h-5 text-primary"></i>
+                <span>Votre vie privée est notre priorité</span>
+            </h3>
+            <p class="text-sm text-muted-foreground mb-4">
+                Chez FeelSafe, nous prenons la protection de vos données très au sérieux. Vos informations personnelles sont chiffrées et sécurisées.
+            </p>
+            <ul class="space-y-2 text-sm text-muted-foreground">
+                <li class="flex items-start gap-2">
+                    <i data-feather="lock" class="w-4 h-4 mt-0.5 flex-shrink-0 text-primary"></i>
+                    <span>Toutes vos données sont chiffrées de bout en bout</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i data-feather="eye-off" class="w-4 h-4 mt-0.5 flex-shrink-0 text-primary"></i>
+                    <span>Nous ne vendons jamais vos informations personnelles</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i data-feather="trash-2" class="w-4 h-4 mt-0.5 flex-shrink-0 text-primary"></i>
+                    <span>Vous pouvez supprimer vos données à tout moment</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Data Download -->
+        <div class="mt-6 space-y-4">
+            <a
+                href="#"
+                class="block bg-card border rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i data-feather="download" class="w-5 h-5 text-primary"></i>
+                        <div>
+                            <p class="font-medium">Télécharger mes données</p>
+                            <p class="text-sm text-muted-foreground">Récupérez une copie de toutes vos informations</p>
+                        </div>
+                    </div>
+                    <i data-feather="chevron-right" class="w-5 h-5 text-muted-foreground"></i>
+                </div>
+            </a>
+
+            <a
+                href="#"
+                class="block bg-card border border-red-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i data-feather="trash-2" class="w-5 h-5 text-red-600"></i>
+                        <div>
+                            <p class="font-medium text-red-600">Supprimer mon compte</p>
+                            <p class="text-sm text-muted-foreground">Cette action est irréversible</p>
+                        </div>
+                    </div>
+                    <i data-feather="chevron-right" class="w-5 h-5 text-muted-foreground"></i>
+                </div>
+            </a>
+        </div>
+    </main>
+</div>
+
+<script src="https://unpkg.com/feather-icons"></script>
+<script>
+    feather.replace();
+</script>
+{% endblock %}

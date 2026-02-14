@@ -1,0 +1,73 @@
+{% extends 'auth/auth_base.html.twig' %}
+
+{% block title %}Mot de passe oublié - FeelSafe{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center p-8 bg-background">
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="flex items-center gap-2 mb-8 justify-center">
+            <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                <i data-feather="heart" class="w-6 h-6 text-primary-foreground"></i>
+            </div>
+            <span class="text-2xl font-serif font-bold text-foreground">FeelSafe</span>
+        </div>
+
+        <div class="border-0 shadow-lg rounded-lg bg-card p-6">
+            <div class="space-y-1 pb-6">
+                <h2 class="text-2xl font-serif font-bold">Mot de passe oublié</h2>
+                <p class="text-muted-foreground text-sm">
+                    Entrez votre adresse email pour réinitialiser votre mot de passe
+                </p>
+            </div>
+
+            {% for message in app.flashes('error') %}
+                <div class="mb-4 p-3 rounded-lg bg-red-100 border border-red-200 text-red-700 text-sm flex items-start gap-2">
+                    <i data-feather="alert-circle" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+            
+            <form method="post" action="{{ path('app_forgot_password_submit') }}" class="space-y-4">
+                <div class="space-y-2">
+                    <label for="email" class="block text-sm font-medium text-foreground">
+                        Adresse email
+                    </label>
+                    <div class="relative">
+                        <i data-feather="mail" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
+                        <input
+                            type="text"
+                            name="email"
+                            id="email"
+                            class="w-full h-11 px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            placeholder="votre@email.com"
+                            autofocus
+                        >
+                    </div>
+                </div>
+                
+                <button
+                    type="submit"
+                    class="w-full h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
+                >
+                    Continuer
+                </button>
+            </form>
+            
+            <div class="pt-4 text-center">
+                <a 
+                    href="{{ path('app_login') }}"
+                    class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+                >
+                    <i data-feather="arrow-left" class="w-4 h-4"></i>
+                    Retour à la connexion
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    feather.replace();
+</script>
+{% endblock %}

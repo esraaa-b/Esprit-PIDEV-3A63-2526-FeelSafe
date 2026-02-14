@@ -1,0 +1,88 @@
+{# templates/client/profile/edit.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier mon profil - FeelSafe{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-background">
+    <!-- Header -->
+    <header class="bg-card border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center gap-3">
+                    <a href="{{ path('app_profile') }}" class="hover:text-primary">
+                        <i data-feather="arrow-left" class="w-5 h-5"></i>
+                    </a>
+                    <h1 class="text-xl font-serif font-bold">Modifier mon profil</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Flash Messages -->
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="mb-6 p-4 rounded-lg {% if label == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                    <i data-feather="{% if label == 'success' %}check-circle{% else %}alert-circle{% endif %}" class="w-5 h-5 inline mr-2"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <div class="bg-card border rounded-lg p-6">
+            <h2 class="text-lg font-semibold mb-6">Informations personnelles</h2>
+            
+            {{ form_start(profileForm, {'attr': {'class': 'space-y-6'}}) }}
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    {{ form_label(profileForm.prenom, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                    {{ form_widget(profileForm.prenom) }}
+                    {{ form_errors(profileForm.prenom) }}
+                </div>
+                <div class="space-y-2">
+                    {{ form_label(profileForm.nom, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                    {{ form_widget(profileForm.nom) }}
+                    {{ form_errors(profileForm.nom) }}
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                {{ form_label(profileForm.email, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                {{ form_widget(profileForm.email) }}
+                {{ form_errors(profileForm.email) }}
+            </div>
+
+            <div class="space-y-2">
+                {{ form_label(profileForm.telephone, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                {{ form_widget(profileForm.telephone) }}
+                {{ form_errors(profileForm.telephone) }}
+            </div>
+
+            <div class="flex gap-4">
+                <button
+                    type="submit"
+                    class="flex-1 h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
+                >
+                    Enregistrer les modifications
+                </button>
+                <a
+                    href="{{ path('app_profile') }}"
+                    class="flex-1 h-11 border border-input bg-transparent rounded-md font-medium hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-center"
+                >
+                    Annuler
+                </a>
+            </div>
+
+            {{ form_end(profileForm) }}
+        </div>
+    </main>
+</div>
+
+<script src="https://unpkg.com/feather-icons"></script>
+<script>
+    feather.replace();
+</script>
+{% endblock %}

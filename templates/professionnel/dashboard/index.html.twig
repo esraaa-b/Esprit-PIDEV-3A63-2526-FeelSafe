@@ -1,0 +1,445 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block content %}
+<style>
+    /* Animations pro */
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes slideInLeft {
+        from { opacity: 0; transform: translateX(-30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: -1000px 0; }
+        100% { background-position: 1000px 0; }
+    }
+    
+    .animate-slide-right {
+        animation: slideInRight 0.6s ease-out;
+    }
+    
+    .animate-slide-left {
+        animation: slideInLeft 0.6s ease-out;
+    }
+    
+    /* Professional gradients */
+    .gradient-pro-purple {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .gradient-pro-blue {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .gradient-pro-indigo {
+        background: linear-gradient(135deg, #5f72bd 0%, #9b23ea 100%);
+    }
+    
+    .gradient-pro-cyan {
+        background: linear-gradient(135deg, #0093e9 0%, #80d0c7 100%);
+    }
+    
+    .gradient-pro-violet {
+        background: linear-gradient(135deg, #7f7fd5 0%, #86a8e7 50%, #91eae4 100%);
+    }
+    
+    .gradient-pro-orange {
+        background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%);
+    }
+    
+    /* Card effects */
+    .card-pro {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .card-pro:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Badge pro effect */
+    .badge-pro-effect {
+        background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+        background-size: 200% auto;
+        animation: shimmer 3s linear infinite;
+    }
+</style>
+
+<div class="max-w-7xl mx-auto space-y-8 p-6">
+    <!-- Professional Header -->
+    <div class="relative overflow-hidden gradient-pro-purple rounded-3xl p-8 text-white animate-slide-left shadow-2xl">
+        <div class="absolute top-0 right-0 opacity-10">
+            <svg width="400" height="400" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#FFFFFF" d="M45.3,-76.6C58.9,-69.4,70.5,-58.5,77.9,-45.2C85.3,-31.9,88.5,-16,87.8,-0.7C87.1,14.7,82.5,29.4,74.4,42.3C66.3,55.2,54.7,66.3,41.3,72.8C27.9,79.3,13.9,81.1,-0.5,82C-14.9,82.9,-29.9,82.9,-43.1,77.6C-56.3,72.3,-67.8,61.7,-75.5,48.6C-83.2,35.5,-87.1,19.9,-87.1,4.2C-87.1,-11.5,-83.2,-27.3,-75.5,-40.6C-67.8,-53.9,-56.3,-64.7,-42.8,-71.9C-29.3,-79.1,-14.7,-82.7,0.5,-83.5C15.7,-84.3,31.7,-83.8,45.3,-76.6Z" transform="translate(100 100)" />
+            </svg>
+        </div>
+        
+        <div class="relative z-10">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center shadow-xl">
+                        <span class="text-4xl">👨‍⚕️</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-3 mb-1">
+                            <h1 class="text-4xl font-bold">
+                                {{ greeting }}, Dr. {{ userName }}
+                            </h1>
+                            <span class="badge-pro-effect text-white text-xs font-bold px-3 py-1 rounded-full">PRO</span>
+                        </div>
+                        <p class="text-white/90 text-lg">
+                            Votre espace professionnel de bien-être
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                    </svg>
+                    <div class="text-left">
+                        <div class="font-bold text-sm">{{ "now"|date("l")|capitalize }}</div>
+                        <div class="text-xs text-white/80">{{ "now"|date("d F Y") }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Stats - Version Simplifiée -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-right">
+        <!-- Stat 1: Sessions -->
+        <div class="card-pro p-6 border-l-4" style="border-color: #667eea">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 gradient-pro-purple rounded-2xl flex items-center justify-center shadow-lg">
+                    <span class="text-2xl text-white">📊</span>
+                </div>
+                <div>
+                    <p class="text-3xl font-bold text-gray-800">24</p>
+                    <p class="text-gray-600 text-sm font-medium">Sessions ce mois</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 2: Journal Entries -->
+        <div class="card-pro p-6 border-l-4" style="border-color: #4facfe">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 gradient-pro-blue rounded-2xl flex items-center justify-center shadow-lg">
+                    <span class="text-2xl text-white">📔</span>
+                </div>
+                <div>
+                    <p class="text-3xl font-bold text-gray-800">15</p>
+                    <p class="text-gray-600 text-sm font-medium">Notes professionnelles</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat 3: Well-being Score -->
+        <div class="card-pro p-6 border-l-4" style="border-color: #0093e9">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 gradient-pro-cyan rounded-2xl flex items-center justify-center shadow-lg">
+                    <span class="text-2xl text-white">💼</span>
+                </div>
+                <div>
+                    <p class="text-3xl font-bold text-gray-800">85%</p>
+                    <p class="text-gray-600 text-sm font-medium">Performance globale</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Professional -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Quick Notes -->
+        <div class="card-pro p-6 animate-slide-left" style="animation-delay: 0.1s">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 gradient-pro-indigo rounded-2xl flex items-center justify-center shadow-lg">
+                    <span class="text-2xl">📝</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Notes rapides</h2>
+                    <p class="text-gray-600 text-sm">Vos dernières annotations</p>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-4 border border-purple-100">
+                <p class="text-gray-700 text-sm italic">
+                    "Excellente progression avec le programme de méditation. À poursuivre..."
+                </p>
+                <div class="text-xs text-gray-500 mt-2">Il y a 2 heures</div>
+            </div>
+            
+            <a href="/dashboard/journal" class="mt-4 flex items-center justify-center gap-2 w-full py-3 gradient-pro-purple text-white rounded-2xl font-bold hover:shadow-xl transition-all group">
+                <span>Accéder au journal</span>
+                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Activity Summary -->
+        <div class="card-pro p-6 animate-slide-right" style="animation-delay: 0.2s">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 gradient-pro-cyan rounded-2xl flex items-center justify-center shadow-lg">
+                    <span class="text-2xl">📈</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Activité récente</h2>
+                    <p class="text-gray-600 text-sm">Vos actions cette semaine</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl">
+                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <span class="text-xl">📔</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 text-sm">Session de méditation</div>
+                        <div class="text-xs text-gray-600">Il y a 1 jour</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                    <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <span class="text-xl">☀️</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 text-sm">Exercice de respiration</div>
+                        <div class="text-xs text-gray-600">Il y a 2 jours</div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="/dashboard/wellness" class="mt-4 flex items-center justify-center gap-2 w-full py-3 border-2 border-purple-200 text-purple-600 rounded-2xl font-bold hover:bg-purple-50 transition-all group">
+                <span>Voir toutes les activités</span>
+                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Professional Modules - MODULES EXISTANTS -->
+    <div class="animate-slide-left" style="animation-delay: 0.3s">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="text-3xl">🛠️</span>
+            <h2 class="text-3xl font-bold text-gray-800">Vos outils professionnels</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Module 1: Sécurité & Profil -->
+            <a href="/dashboard/security" class="block group">
+                <div class="card-pro overflow-hidden h-full border-2 border-transparent hover:border-purple-200">
+                    <div class="relative h-40 overflow-hidden">
+                        <img 
+                            src="/images/hero-wellness.jpg" 
+                            alt="Sécurité"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 gradient-pro-purple rounded-xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                            <span class="text-xl text-white">🛡️</span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-purple-600 transition-colors mb-2">
+                            Sécurité & Profil
+                        </h3>
+                        <p class="text-gray-600 text-sm">Gérez votre profil professionnel et paramètres</p>
+                        <div class="mt-4 flex items-center gap-2 text-purple-600 font-bold group-hover:gap-3 transition-all">
+                            <span class="text-sm">Accéder</span>
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Module 2: Journal Professionnel -->
+            <a href="/dashboard/journal" class="block group">
+                <div class="card-pro overflow-hidden h-full border-2 border-transparent hover:border-purple-200">
+                    <div class="relative h-40 overflow-hidden">
+                        <img 
+                            src="/images/journal.jpg" 
+                            alt="Journal"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 gradient-pro-blue rounded-xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                            <span class="text-xl text-white">📔</span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-purple-600 transition-colors mb-2">
+                            Journal Professionnel
+                        </h3>
+                        <p class="text-gray-600 text-sm">Documentez vos sessions et observations</p>
+                        <div class="mt-4 flex items-center gap-2 text-purple-600 font-bold group-hover:gap-3 transition-all">
+                            <span class="text-sm">Accéder</span>
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Module 3: Support & Communication -->
+            <a href="/dashboard/support" class="block group">
+                <div class="card-pro overflow-hidden h-full border-2 border-transparent hover:border-purple-200">
+                    <div class="relative h-40 overflow-hidden">
+                        <img 
+                            src="/images/support.jpg" 
+                            alt="Support"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 gradient-pro-indigo rounded-xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                            <span class="text-xl text-white">❤️</span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-purple-600 transition-colors mb-2">
+                            Support & Communication
+                        </h3>
+                        <p class="text-gray-600 text-sm">Assistance et outils de communication</p>
+                        <div class="mt-4 flex items-center gap-2 text-purple-600 font-bold group-hover:gap-3 transition-all">
+                            <span class="text-sm">Accéder</span>
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Module 4: Bien-être Professionnel -->
+            <a href="/dashboard/wellness" class="block group">
+                <div class="card-pro overflow-hidden h-full border-2 border-transparent hover:border-purple-200">
+                    <div class="relative h-40 overflow-hidden">
+                        <img 
+                            src="/images/wellness-activity.jpg" 
+                            alt="Bien-être"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 gradient-pro-cyan rounded-xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                            <span class="text-xl text-white">☀️</span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-purple-600 transition-colors mb-2">
+                            Bien-être Professionnel
+                        </h3>
+                        <p class="text-gray-600 text-sm">Exercices et pratiques pour votre équilibre</p>
+                        <div class="mt-4 flex items-center gap-2 text-purple-600 font-bold group-hover:gap-3 transition-all">
+                            <span class="text-sm">Accéder</span>
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Module 5: Urgence -->
+            <a href="/dashboard/emergency" class="block group">
+                <div class="card-pro overflow-hidden h-full border-2 border-transparent hover:border-purple-200">
+                    <div class="relative h-40 overflow-hidden">
+                        <img 
+                            src="/images/support.jpg" 
+                            alt="Urgence"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 gradient-pro-orange rounded-xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                            <span class="text-xl text-white">⚠️</span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-purple-600 transition-colors mb-2">
+                            Gestion des Urgences
+                        </h3>
+                        <p class="text-gray-600 text-sm">Protocoles et ressources d'urgence</p>
+                        <div class="mt-4 flex items-center gap-2 text-purple-600 font-bold group-hover:gap-3 transition-all">
+                            <span class="text-sm">Accéder</span>
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Module 6: Communauté Professionnelle -->
+            <a href="/dashboard/forum" class="block group">
+                <div class="card-pro overflow-hidden h-full border-2 border-transparent hover:border-purple-200">
+                    <div class="relative h-40 overflow-hidden">
+                        <img 
+                            src="/images/community.jpg" 
+                            alt="Communauté"
+                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 gradient-pro-violet rounded-xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                            <span class="text-xl text-white">👥</span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-purple-600 transition-colors mb-2">
+                            Communauté Professionnelle
+                        </h3>
+                        <p class="text-gray-600 text-sm">Échangez avec d'autres professionnels</p>
+                        <div class="mt-4 flex items-center gap-2 text-purple-600 font-bold group-hover:gap-3 transition-all">
+                            <span class="text-sm">Accéder</span>
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Professional Action Banner -->
+    <div class="relative overflow-hidden gradient-pro-violet rounded-3xl p-8 text-white shadow-2xl animate-slide-right" style="animation-delay: 0.4s">
+        <div class="absolute -right-20 -top-20 w-64 h-64 bg-white opacity-10 rounded-full"></div>
+        <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-white opacity-10 rounded-full"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-5">
+                <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                    <span class="text-3xl">💼</span>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold mb-1">Optimisez votre pratique professionnelle</h3>
+                    <p class="text-white/90">Accédez à tous vos outils de bien-être professionnel</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <a href="/dashboard/support" class="px-6 py-3 bg-white text-purple-600 rounded-2xl font-bold hover:bg-white/90 transition-all shadow-lg hover:shadow-2xl hover:scale-105">
+                    Support
+                </a>
+                <a href="/dashboard/wellness" class="px-6 py-3 border-2 border-white text-white rounded-2xl font-bold hover:bg-white/10 transition-all hover:scale-105">
+                    Bien-être
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Publication #{{ publication.id }} | Admin FeelSafe{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Publication #{{ publication.id }}</h1>
+            <p class="text-sm text-gray-600 mt-1">
+                {{ publication.titre }}
+            </p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ path('admin_forum_index') }}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                ← Retour à la liste
+            </a>
+            <a href="{{ path('admin_forum_edit', {'id': publication.id}) }}" 
+               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                Modifier
+            </a>
+            {{ include('admin/forum/_delete_form.html.twig', {'publication': publication}) }}
+        </div>
+    </div>
+
+    <!-- Publication Details -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span class="text-blue-600 font-bold text-lg">
+                        {{ publication.user ? publication.user.nom|first|upper : '?' }}
+                    </span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">{{ publication.titre }}</h2>
+                    <p class="text-sm text-gray-600">
+                        Par {{ publication.user ? publication.user.nom : 'Utilisateur' }} • 
+                        {{ publication.datePublication|date('d/m/Y à H:i') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            {% if publication.image %}
+                <div class="mb-6">
+                    <img src="{{ asset('uploads/' ~ publication.image) }}" 
+                         alt="{{ publication.titre }}"
+                         class="max-w-full max-h-96 rounded-lg border border-gray-200">
+                </div>
+            {% endif %}
+            
+            <div class="prose max-w-none">
+                {{ publication.contenu|nl2br }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    {% if commentaires is defined and commentaires|length > 0 %}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">
+                Commentaires ({{ commentaires|length }})
+            </h3>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for commentaire in commentaires %}
+            <div class="p-6">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                            <span class="text-gray-600 font-medium">
+                                {{ commentaire.user ? commentaire.user.nom|first|upper : '?' }}
+                            </span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">
+                                {{ commentaire.user ? commentaire.user.nom : 'Utilisateur' }}
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                {{ commentaire.dateCommentaire|date('d/m/Y à H:i') }}
+                            </p>
+                        </div>
+                    </div>
+                    <form method="post" 
+                          action="{{ path('admin_forum_comment_delete', {'id': commentaire.id}) }}" 
+                          onsubmit="return confirm('Supprimer ce commentaire ?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ commentaire.id) }}">
+                        <button type="submit" 
+                                class="text-red-600 hover:text-red-800 text-sm">
+                            Supprimer
+                        </button>
+                    </form>
+                </div>
+                <p class="text-gray-700 mt-3 ml-11">
+                    {{ commentaire.contenu }}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

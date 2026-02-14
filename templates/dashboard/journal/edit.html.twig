@@ -1,0 +1,98 @@
+{% extends 'dashboard/base.html.twig' %}
+
+{% block title %}Modifier le journal{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+
+    <h1 class="text-2xl font-bold">Modifier le journal émotionnel</h1>
+
+   <form method="post"
+      enctype="multipart/form-data"
+      x-data="{ selectedMood: '{{ journal.emotion.value }}' }"
+      class="bg-card p-6 rounded-xl border space-y-6">
+
+    <input type="hidden" name="emotion" :value="selectedMood">
+
+        <!-- EMOTION -->
+       <div>
+    <label class="block text-sm font-medium mb-1">Émotion</label>
+
+    <div class="flex gap-3 flex-wrap">
+        {% for mood in moodOptions %}
+            <button type="button"
+                    @click="selectedMood = '{{ mood.value }}'"
+                    :class="selectedMood === '{{ mood.value }}'
+                        ? '{{ mood.color() }}'
+                        : 'border-border hover:border-primary/50'"
+                    class="flex items-center gap-2 px-3 py-2 border rounded-lg transition">
+                <span>{{ mood.icon() }}</span>
+                <span>{{ mood.label() }}</span>
+            </button>
+        {% endfor %}
+    </div>
+</div>
+
+
+        </div>
+
+        <!-- CONTENT -->
+        <div>
+            <label class="block text-sm font-medium mb-1">Contenu</label>
+            <textarea name="contenu"
+                      rows="5"
+                      class="w-full rounded-lg border border-input bg-background px-3 py-2">{{ journal.contenu }}</textarea>
+        </div>
+
+        <!-- IMAGE PREVIEW -->
+        <div>
+            <label class="block text-sm font-medium mb-1">Image actuelle</label>
+            {% if journal.image %}
+                <img src="{{ asset('uploads/journals/images/' ~ journal.image) }}"
+                     class="h-32 rounded-lg border object-cover">
+            {% else %}
+                <p class="text-muted-foreground text-sm">Aucune image</p>
+            {% endif %}
+        </div>
+
+        <!-- IMAGE UPLOAD -->
+        <div>
+            <label class="block text-sm font-medium mb-1">Changer l’image</label>
+            <input type="file" name="image"
+                   class="block w-full text-sm">
+        </div>
+
+        <!-- AUDIO PREVIEW -->
+        <div>
+            <label class="block text-sm font-medium mb-1">Audio actuel</label>
+            {% if journal.audio %}
+                <audio controls class="w-full mt-2">
+                    <source src="{{ asset('uploads/journals/audio/' ~ journal.audio) }}">
+                </audio>
+            {% else %}
+                <p class="text-muted-foreground text-sm">Aucun audio</p>
+            {% endif %}
+        </div>
+
+        <!-- AUDIO UPLOAD -->
+        <div>
+            <label class="block text-sm font-medium mb-1">Changer l’audio</label>
+            <input type="file" name="audio"
+                   class="block w-full text-sm">
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="flex justify-end gap-3">
+            <a href="{{ path('app_journal') }}"
+               class="px-4 py-2 rounded-lg border">
+                Annuler
+            </a>
+
+            <button class="px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+                Enregistrer
+            </button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

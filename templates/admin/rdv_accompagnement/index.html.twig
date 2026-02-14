@@ -1,0 +1,981 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Gestion RDV & Accompagnement | Admin FeelSafe{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    {# Header with actions #}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <span>📅</span> Rendez-vous & Accompagnement
+            </h1>
+            <p class="text-sm text-gray-600 mt-1">Gérez les rendez-vous et le suivi des accompagnements</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openModal('rdv')" 
+                    class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+                <span>➕</span> Nouveau RDV
+            </button>
+            <button onclick="openModal('accompagnement')" 
+                    class="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <span>📝</span> Nouvel Accompagnement
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col items-center text-center">
+                <div class="text-3xl mb-3">📅</div>
+                <div class="text-3xl font-bold text-blue-600 mb-1">{{ rendezVous|length }}</div>
+                <p class="text-sm font-medium text-gray-600 mb-3">Rendez-vous total</p>
+                <div class="text-xs text-gray-500 pt-3 border-t border-gray-100 w-full">
+                    {% set rdvPlanifies = rendezVous|filter(rdv => rdv.statut.value == 'planifie')|length %}
+                    <span>{{ rdvPlanifies }} planifiés</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col items-center text-center">
+                <div class="text-3xl mb-3">👥</div>
+                <div class="text-3xl font-bold text-blue-600 mb-1">{{ accompagnements|length }}</div>
+                <p class="text-sm font-medium text-gray-600 mb-3">Accompagnements</p>
+                <div class="text-xs text-gray-500 pt-3 border-t border-gray-100 w-full">
+                    {% set accompActifs = accompagnements|filter(acc => acc.niveauPriorite <= 2)|length %}
+                    <span>{{ accompActifs }} prioritaires</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col items-center text-center">
+                <div class="text-3xl mb-3">✅</div>
+                <div class="text-3xl font-bold text-blue-600 mb-1">{{ rendezVous|filter(rdv => rdv.statut.value == 'honore')|length }}</div>
+                <p class="text-sm font-medium text-gray-600 mb-3">RDV honorés</p>
+                <div class="text-xs text-gray-500 pt-3 border-t border-gray-100 w-full">
+                    {% set totalRdv = rendezVous|length %}
+                    {% set rdvHonores = rendezVous|filter(rdv => rdv.statut.value == 'honore')|length %}
+                    <span>{{ (totalRdv > 0 ? (rdvHonores / totalRdv * 100)|round : 0) }}% de taux</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col items-center text-center">
+                <div class="text-3xl mb-3">📊</div>
+                <div class="text-3xl font-bold text-blue-600 mb-1">{{ utilisateurs|length }}</div>
+                <p class="text-sm font-medium text-gray-600 mb-3">Utilisateurs</p>
+                <div class="text-xs text-gray-500 pt-3 border-t border-gray-100 w-full">
+                    <span>Tous rôles confondus</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="flex border-b border-gray-200 bg-gray-50/50">
+            <button onclick="switchTab('rdv')" 
+                    id="tab-rdv-btn"
+                    class="px-6 py-4 text-sm font-medium border-b-2 transition-colors -mb-px
+                           {% if current_tab is not defined or current_tab == 'rdv' %}border-blue-600 text-blue-600{% else %}border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300{% endif %}">
+                Rendez-vous
+            </button>
+            <button onclick="switchTab('accompagnement')"
+                    id="tab-accomp-btn"
+                    class="px-6 py-4 text-sm font-medium border-b-2 transition-colors -mb-px
+                           {% if current_tab is defined and current_tab == 'accompagnement' %}border-blue-600 text-blue-600{% else %}border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300{% endif %}">
+                Accompagnements
+            </button>
+        </div>
+        
+        <div id="rdv-tab" class="{% if current_tab is not defined or current_tab == 'rdv' %}block{% else %}hidden{% endif %}">
+            <!-- RDV Table -->
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Liste des Rendez-vous</h2>
+                        <p class="text-sm text-gray-600 mt-1">Gérez tous les rendez-vous du système</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="search-rdv" placeholder="Rechercher un RDV..." 
+                               class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <select id="filter-statut" 
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                            <option value="">Tous les statuts</option>
+                            <option value="planifie">Planifié</option>
+                            <option value="honore">Honoré</option>
+                            <option value="annule">Annulé</option>
+                            <option value="non_honore">Non honoré</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professionnel</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Heure</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rdv-table-body" class="bg-white divide-y divide-gray-200">
+                            {% for rdv in rendezVous %}
+                            <tr data-id="{{ rdv.id }}" class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ rdv.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                                            {{ rdv.utilisateur.prenom|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ rdv.utilisateur.prenom }} {{ rdv.utilisateur.nom }}</div>
+                                            <div class="text-xs text-gray-500">{{ rdv.utilisateur.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                                            {{ rdv.professionnel.prenom|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ rdv.professionnel.prenom }} {{ rdv.professionnel.nom }}</div>
+                                            <div class="text-xs text-gray-500">{{ rdv.professionnel.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm text-gray-900">{{ rdv.dateRdv|date('d/m/Y') }}</span>
+                                        <span class="text-xs text-gray-500">{{ rdv.heureRdv|date('H:i') }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-4 font-medium rounded-full 
+                                        {{ rdv.mode.value == 'en_ligne' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                        {{ rdv.mode.value == 'en_ligne' ? 'En ligne' : 'Présentiel' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% set statutClass = {
+                                        'planifie': 'bg-yellow-100 text-yellow-800',
+                                        'honore': 'bg-green-100 text-green-800',
+                                        'annule': 'bg-red-100 text-red-800',
+                                        'non_honore': 'bg-gray-100 text-gray-800'
+                                    } %}
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-4 font-medium rounded-full {{ statutClass[rdv.statut.value] }}">
+                                        {{ rdv.statut.value|replace({'_': ' '})|title }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="editRdv({{ rdv.id }})" 
+                                                class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Modifier">
+                                            <span class="text-lg">✏️</span>
+                                        </button>
+                                        <button onclick="deleteRdv({{ rdv.id }})" 
+                                                class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Supprimer">
+                                            <span class="text-lg">🗑️</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-5xl mb-4 opacity-25">📅</span>
+                                        <h3 class="text-lg font-medium text-gray-900 mb-1">Aucun rendez-vous trouvé</h3>
+                                        <p class="text-sm text-gray-500 max-w-md mx-auto">
+                                            Créez votre premier rendez-vous en cliquant sur le bouton "Nouveau RDV"
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="accompagnement-tab" class="{% if current_tab is defined and current_tab == 'accompagnement' %}block{% else %}hidden{% endif %}">
+            <!-- Accompagnement Table -->
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Liste des Accompagnements</h2>
+                        <p class="text-sm text-gray-600 mt-1">Suivi des accompagnements en cours</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="search-accomp" placeholder="Rechercher..." 
+                               class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <select id="filter-priorite" 
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                            <option value="">Toutes priorités</option>
+                            <option value="1">Haute priorité</option>
+                            <option value="2">Priorité moyenne</option>
+                            <option value="3">Basse priorité</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RDV lié</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prochain RDV</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priorité</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Objectifs</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accomp-table-body" class="bg-white divide-y divide-gray-200">
+                            {% for accomp in accompagnements %}
+                            <tr data-id="{{ accomp.id }}" class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ accomp.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                                            {{ accomp.utilisateur.prenom|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ accomp.utilisateur.prenom }} {{ accomp.utilisateur.nom }}</div>
+                                            <div class="text-xs text-gray-500">{{ accomp.utilisateur.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <a href="javascript:void(0)" onclick="viewRdv({{ accomp.rendezvous.id }})" 
+                                       class="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                                        RDV #{{ accomp.rendezvous.id }} ({{ accomp.rendezvous.dateRdv|date('d/m/Y') }})
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if accomp.prochainRdv.value == 'oui' and accomp.dateProchainRdv %}
+                                        <div class="flex flex-col">
+                                            <span class="text-sm text-gray-900">{{ accomp.dateProchainRdv|date('d/m/Y') }}</span>
+                                            <span class="text-xs text-gray-500">Planifié</span>
+                                        </div>
+                                    {% else %}
+                                        <span class="px-2.5 py-1 inline-flex text-xs leading-4 font-medium rounded-full bg-gray-100 text-gray-800">
+                                            Non planifié
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% set prioriteClass = {
+                                        1: 'bg-red-100 text-red-800',
+                                        2: 'bg-yellow-100 text-yellow-800',
+                                        3: 'bg-green-100 text-green-800'
+                                    } %}
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-4 font-medium rounded-full {{ prioriteClass[accomp.niveauPriorite] }}">
+                                        {% if accomp.niveauPriorite == 1 %}Haute
+                                        {% elseif accomp.niveauPriorite == 2 %}Moyenne
+                                        {% else %}Basse
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 max-w-xs">
+                                    <div class="text-sm text-gray-600 truncate" title="{{ accomp.objectifs|default('Aucun objectif défini') }}">
+                                        {{ accomp.objectifs|default('Aucun objectif')|slice(0, 50) }}{% if accomp.objectifs and accomp.objectifs|length > 50 %}...{% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="editAccompagnement({{ accomp.id }})" 
+                                                class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Modifier">
+                                            <span class="text-lg">✏️</span>
+                                        </button>
+                                        <button onclick="deleteAccompagnement({{ accomp.id }})" 
+                                                class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Supprimer">
+                                            <span class="text-lg">🗑️</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-5xl mb-4 opacity-25">📝</span>
+                                        <h3 class="text-lg font-medium text-gray-900 mb-1">Aucun accompagnement trouvé</h3>
+                                        <p class="text-sm text-gray-500 max-w-md mx-auto">
+                                            Créez votre premier accompagnement pour commencer le suivi
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="rdv-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" onclick="closeModal('rdv')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
+            <div class="bg-white px-6 pt-6 pb-4 sm:p-6">
+                <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                    <h3 class="text-xl font-semibold text-gray-900" id="rdv-modal-title">Nouveau Rendez-vous</h3>
+                    <button onclick="closeModal('rdv')" class="text-gray-400 hover:text-gray-600 focus:outline-none text-2xl">&times;</button>
+                </div>
+                <div class="mt-6">
+                    <form id="rdv-form" class="space-y-6">
+                        <input type="hidden" id="rdv-id">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label for="rdv-utilisateur" class="block text-sm font-medium text-gray-700">Utilisateur (Patient) *</label>
+                                <select id="rdv-utilisateur" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="">Sélectionner un utilisateur</option>
+                                    {% for user in utilisateurs %}
+                                    <option value="{{ user.id }}">{{ user.prenom }} {{ user.nom }} ({{ user.email }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="rdv-professionnel" class="block text-sm font-medium text-gray-700">Professionnel *</label>
+                                <select id="rdv-professionnel" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="">Sélectionner un professionnel</option>
+                                    {% for user in utilisateurs %}
+                                    <option value="{{ user.id }}">{{ user.prenom }} {{ user.nom }} ({{ user.email }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="rdv-date" class="block text-sm font-medium text-gray-700">Date *</label>
+                                <input type="date" id="rdv-date" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                            <div class="space-y-2">
+                                <label for="rdv-time" class="block text-sm font-medium text-gray-700">Heure *</label>
+                                <input type="time" id="rdv-time" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                            <div class="space-y-2">
+                                <label for="rdv-mode" class="block text-sm font-medium text-gray-700">Mode *</label>
+                                <select id="rdv-mode" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="">Sélectionner mode</option>
+                                    <option value="en_ligne">En ligne</option>
+                                    <option value="en_presentiel">En présentiel</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="rdv-localisation" class="block text-sm font-medium text-gray-700">Localisation</label>
+                                <input type="text" id="rdv-localisation" placeholder="Adresse ou lien de visio"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                            <div class="md:col-span-2 space-y-2">
+                                <label for="rdv-commentaire" class="block text-sm font-medium text-gray-700">Commentaire</label>
+                                <textarea id="rdv-commentaire" rows="3" placeholder="Notes additionnelles..."
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"></textarea>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="rdv-statut" class="block text-sm font-medium text-gray-700">Statut *</label>
+                                <select id="rdv-statut" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="planifie">Planifié</option>
+                                    <option value="honore">Honoré</option>
+                                    <option value="annule">Annulé</option>
+                                    <option value="non_honore">Non honoré</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                <button onclick="closeModal('rdv')" 
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Annuler
+                </button>
+                <button onclick="saveRdv()" 
+                        class="px-4 py-2 bg-blue-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="accompagnement-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" onclick="closeModal('accompagnement')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
+            <div class="bg-white px-6 pt-6 pb-4 sm:p-6">
+                <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                    <h3 class="text-xl font-semibold text-gray-900" id="accomp-modal-title">Nouvel Accompagnement</h3>
+                    <button onclick="closeModal('accompagnement')" class="text-gray-400 hover:text-gray-600 focus:outline-none text-2xl">&times;</button>
+                </div>
+                <div class="mt-6">
+                    <form id="accomp-form" class="space-y-6">
+                        <input type="hidden" id="accomp-id">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label for="accomp-rendezvous" class="block text-sm font-medium text-gray-700">RDV lié *</label>
+                                <select id="accomp-rendezvous" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="">Sélectionner un RDV</option>
+                                    {% for rdv in rendezVous %}
+                                    <option value="{{ rdv.id }}">
+                                        RDV #{{ rdv.id }} - {{ rdv.utilisateur.prenom }} ({{ rdv.dateRdv|date('d/m/Y') }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="accomp-utilisateur" class="block text-sm font-medium text-gray-700">Utilisateur *</label>
+                                <select id="accomp-utilisateur" required 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="">Sélectionner un utilisateur</option>
+                                    {% for user in utilisateurs %}
+                                    <option value="{{ user.id }}">{{ user.prenom }} {{ user.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="accomp-prochain-rdv" class="block text-sm font-medium text-gray-700">Prochain RDV ?</label>
+                                <select id="accomp-prochain-rdv" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="non">Non</option>
+                                    <option value="oui">Oui</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2" id="prochain-rdv-date-container" style="display: none;">
+                                <label for="accomp-prochain-date" class="block text-sm font-medium text-gray-700">Date prochain RDV</label>
+                                <input type="date" id="accomp-prochain-date" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                            <div class="md:col-span-2 space-y-2">
+                                <label for="accomp-objectifs" class="block text-sm font-medium text-gray-700">Objectifs</label>
+                                <textarea id="accomp-objectifs" rows="3" placeholder="Objectifs thérapeutiques..."
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"></textarea>
+                            </div>
+                            <div class="md:col-span-2 space-y-2">
+                                <label for="accomp-notes" class="block text-sm font-medium text-gray-700">Notes de suivi</label>
+                                <textarea id="accomp-notes" rows="3" placeholder="Notes du professionnel..."
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"></textarea>
+                            </div>
+                            <div class="space-y-2">
+                                <label for="accomp-priorite" class="block text-sm font-medium text-gray-700">Niveau de priorité</label>
+                                <select id="accomp-priorite" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    <option value="3">Basse</option>
+                                    <option value="2">Moyenne</option>
+                                    <option value="1">Haute</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                <button onclick="closeModal('accompagnement')" 
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Annuler
+                </button>
+                <button onclick="saveAccompagnement()" 
+                        class="px-4 py-2 bg-blue-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="confirm-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" onclick="closeModal('confirm')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+            <div class="bg-white px-6 pt-6 pb-4 sm:p-6">
+                <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                    <h3 class="text-xl font-semibold text-gray-900">Confirmation</h3>
+                    <button onclick="closeModal('confirm')" class="text-gray-400 hover:text-gray-600 focus:outline-none text-2xl">&times;</button>
+                </div>
+                <div class="mt-4">
+                    <p id="confirm-message" class="text-gray-700">Êtes-vous sûr de vouloir supprimer cet élément ?</p>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                <button onclick="closeModal('confirm')" 
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Annuler
+                </button>
+                <button onclick="confirmDelete()" 
+                        class="px-4 py-2 bg-red-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification container -->
+<div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<script>
+let currentDeleteAction = null;
+let currentDeleteId = null;
+let currentTab = 'rdv';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tabs
+    switchTab('rdv');
+    
+    // Setup event listeners
+    document.getElementById('filter-statut').addEventListener('change', filterRdvTable);
+    document.getElementById('filter-priorite').addEventListener('change', filterAccompTable);
+    document.getElementById('search-rdv').addEventListener('input', filterRdvTable);
+    document.getElementById('search-accomp').addEventListener('input', filterAccompTable);
+    
+    // Setup prochain RDV toggle
+    document.getElementById('accomp-prochain-rdv').addEventListener('change', function() {
+        const dateContainer = document.getElementById('prochain-rdv-date-container');
+        dateContainer.style.display = this.value === 'oui' ? 'block' : 'none';
+    });
+    
+    // Set default date to today for RDV
+    const today = new Date().toISOString().split('T')[0];
+    const rdvDate = document.getElementById('rdv-date');
+    if (rdvDate) rdvDate.min = today;
+    
+    // Set default date to tomorrow for accompagnement
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const accompDate = document.getElementById('accomp-prochain-date');
+    if (accompDate) accompDate.min = tomorrow.toISOString().split('T')[0];
+});
+
+function switchTab(tabName) {
+    currentTab = tabName;
+    
+    // Update tab buttons
+    document.getElementById('tab-rdv-btn').classList.toggle('border-blue-600', tabName === 'rdv');
+    document.getElementById('tab-rdv-btn').classList.toggle('text-blue-600', tabName === 'rdv');
+    document.getElementById('tab-rdv-btn').classList.toggle('border-transparent', tabName !== 'rdv');
+    document.getElementById('tab-rdv-btn').classList.toggle('text-gray-600', tabName !== 'rdv');
+    
+    document.getElementById('tab-accomp-btn').classList.toggle('border-blue-600', tabName === 'accompagnement');
+    document.getElementById('tab-accomp-btn').classList.toggle('text-blue-600', tabName === 'accompagnement');
+    document.getElementById('tab-accomp-btn').classList.toggle('border-transparent', tabName !== 'accompagnement');
+    document.getElementById('tab-accomp-btn').classList.toggle('text-gray-600', tabName !== 'accompagnement');
+    
+    // Update tab content
+    document.getElementById('rdv-tab').classList.toggle('hidden', tabName !== 'rdv');
+    document.getElementById('accompagnement-tab').classList.toggle('hidden', tabName !== 'accompagnement');
+}
+
+function openModal(modalType) {
+    closeAllModals();
+    
+    if (modalType === 'rdv') {
+        resetRdvForm();
+        document.getElementById('rdv-modal-title').textContent = 'Nouveau Rendez-vous';
+        document.getElementById('rdv-modal').classList.remove('hidden');
+    } else if (modalType === 'accompagnement') {
+        resetAccompForm();
+        document.getElementById('accomp-modal-title').textContent = 'Nouvel Accompagnement';
+        document.getElementById('accompagnement-modal').classList.remove('hidden');
+    }
+}
+
+function closeModal(modalType) {
+    if (modalType === 'rdv') {
+        document.getElementById('rdv-modal').classList.add('hidden');
+    } else if (modalType === 'accompagnement') {
+        document.getElementById('accompagnement-modal').classList.add('hidden');
+    } else if (modalType === 'confirm') {
+        document.getElementById('confirm-modal').classList.add('hidden');
+    }
+}
+
+function closeAllModals() {
+    document.getElementById('rdv-modal').classList.add('hidden');
+    document.getElementById('accompagnement-modal').classList.add('hidden');
+    document.getElementById('confirm-modal').classList.add('hidden');
+}
+
+function resetRdvForm() {
+    document.getElementById('rdv-form').reset();
+    document.getElementById('rdv-id').value = '';
+    document.getElementById('rdv-statut').value = 'planifie';
+    
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('rdv-date').value = today;
+    document.getElementById('rdv-time').value = '09:00';
+}
+
+function resetAccompForm() {
+    document.getElementById('accomp-form').reset();
+    document.getElementById('accomp-id').value = '';
+    document.getElementById('accomp-priorite').value = '3';
+    document.getElementById('accomp-prochain-rdv').value = 'non';
+    document.getElementById('prochain-rdv-date-container').style.display = 'none';
+    
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('accomp-prochain-date').valueAsDate = tomorrow;
+}
+
+async function saveRdv() {
+    const rdvId = document.getElementById('rdv-id').value;
+    const isEdit = rdvId !== '';
+    
+    const formData = {
+        utilisateur_id: document.getElementById('rdv-utilisateur').value,
+        professionnel_id: document.getElementById('rdv-professionnel').value,
+        date_rdv: document.getElementById('rdv-date').value,
+        heure_rdv: document.getElementById('rdv-time').value,
+        mode: document.getElementById('rdv-mode').value,
+        localisation: document.getElementById('rdv-localisation').value,
+        statut: document.getElementById('rdv-statut').value,
+        commentaire: document.getElementById('rdv-commentaire').value
+    };
+    
+    // Validation
+    if (!formData.utilisateur_id || !formData.professionnel_id || !formData.date_rdv || !formData.heure_rdv || !formData.mode || !formData.statut) {
+        showNotification('Veuillez remplir tous les champs obligatoires (*)', 'error');
+        return;
+    }
+    
+    const url = isEdit ? 
+        `/admin/rdv-accompagnement/rdv/${rdvId}/edit` :
+        '/admin/rdv-accompagnement/rdv/new';
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            closeModal('rdv');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Erreur réseau: ' + error.message, 'error');
+    }
+}
+
+async function saveAccompagnement() {
+    const accompId = document.getElementById('accomp-id').value;
+    const isEdit = accompId !== '';
+    
+    const formData = {
+        rendezvous_id: document.getElementById('accomp-rendezvous').value,
+        utilisateur_id: document.getElementById('accomp-utilisateur').value,
+        prochain_rdv: document.getElementById('accomp-prochain-rdv').value,
+        date_prochain_rdv: document.getElementById('accomp-prochain-date').value,
+        objectifs: document.getElementById('accomp-objectifs').value,
+        notes_suivi: document.getElementById('accomp-notes').value,
+        niveau_priorite: document.getElementById('accomp-priorite').value
+    };
+    
+    // Validation
+    if (!formData.rendezvous_id || !formData.utilisateur_id) {
+        showNotification('Veuillez remplir tous les champs obligatoires (*)', 'error');
+        return;
+    }
+    
+    if (formData.prochain_rdv === 'non') {
+        formData.date_prochain_rdv = null;
+    }
+    
+    const url = isEdit ? 
+        `/admin/rdv-accompagnement/accompagnement/${accompId}/edit` :
+        '/admin/rdv-accompagnement/accompagnement/new';
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            closeModal('accompagnement');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Erreur réseau: ' + error.message, 'error');
+    }
+}
+
+async function editRdv(id) {
+    try {
+        const response = await fetch(`/admin/rdv-accompagnement/rdv/${id}/get`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erreur réseau: ' + response.status);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.rdv) {
+            document.getElementById('rdv-id').value = data.rdv.id;
+            document.getElementById('rdv-utilisateur').value = data.rdv.utilisateur_id;
+            document.getElementById('rdv-professionnel').value = data.rdv.professionnel_id;
+            document.getElementById('rdv-date').value = data.rdv.date_rdv;
+            document.getElementById('rdv-time').value = data.rdv.heure_rdv;
+            document.getElementById('rdv-mode').value = data.rdv.mode;
+            document.getElementById('rdv-localisation').value = data.rdv.localisation || '';
+            document.getElementById('rdv-statut').value = data.rdv.statut;
+            document.getElementById('rdv-commentaire').value = data.rdv.commentaire || '';
+            
+            document.getElementById('rdv-modal-title').textContent = 'Modifier Rendez-vous';
+            
+            closeAllModals();
+            document.getElementById('rdv-modal').classList.remove('hidden');
+            
+            showNotification('Formulaire pré-rempli avec les données du RDV', 'success');
+        } else {
+            showNotification(data.message || 'Erreur lors de la récupération des données', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur détaillée:', error);
+        showNotification('Erreur: ' + error.message, 'error');
+    }
+}
+
+async function editAccompagnement(id) {
+    try {
+        const response = await fetch(`/admin/rdv-accompagnement/accompagnement/${id}/get`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erreur réseau: ' + response.status);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.accompagnement) {
+            document.getElementById('accomp-id').value = data.accompagnement.id;
+            document.getElementById('accomp-rendezvous').value = data.accompagnement.rendezvous_id;
+            document.getElementById('accomp-utilisateur').value = data.accompagnement.utilisateur_id;
+            document.getElementById('accomp-prochain-rdv').value = data.accompagnement.prochain_rdv;
+            document.getElementById('accomp-priorite').value = data.accompagnement.niveau_priorite;
+            document.getElementById('accomp-objectifs').value = data.accompagnement.objectifs || '';
+            document.getElementById('accomp-notes').value = data.accompagnement.notes_suivi || '';
+            
+            const dateContainer = document.getElementById('prochain-rdv-date-container');
+            if (data.accompagnement.prochain_rdv === 'oui' && data.accompagnement.date_prochain_rdv) {
+                document.getElementById('accomp-prochain-date').value = data.accompagnement.date_prochain_rdv;
+                dateContainer.style.display = 'block';
+            } else {
+                dateContainer.style.display = 'none';
+            }
+            
+            document.getElementById('accomp-modal-title').textContent = 'Modifier Accompagnement';
+            
+            closeAllModals();
+            document.getElementById('accompagnement-modal').classList.remove('hidden');
+            
+            showNotification('Formulaire pré-rempli avec les données de l\'accompagnement', 'success');
+        } else {
+            showNotification(data.message || 'Erreur lors de la récupération des données', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur détaillée:', error);
+        showNotification('Erreur: ' + error.message, 'error');
+    }
+}
+
+function deleteRdv(id) {
+    currentDeleteAction = 'rdv';
+    currentDeleteId = id;
+    document.getElementById('confirm-message').textContent = 
+        'Êtes-vous sûr de vouloir supprimer ce rendez-vous ? Cette action est irréversible.';
+    document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function deleteAccompagnement(id) {
+    currentDeleteAction = 'accompagnement';
+    currentDeleteId = id;
+    document.getElementById('confirm-message').textContent = 
+        'Êtes-vous sûr de vouloir supprimer cet accompagnement ? Cette action est irréversible.';
+    document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+async function confirmDelete() {
+    closeModal('confirm');
+    
+    const url = currentDeleteAction === 'rdv' ? 
+        `/admin/rdv-accompagnement/rdv/${currentDeleteId}/delete` :
+        `/admin/rdv-accompagnement/accompagnement/${currentDeleteId}/delete`;
+    
+    try {
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Erreur réseau: ' + error.message, 'error');
+    }
+}
+
+function viewRdv(id) {
+    switchTab('rdv');
+    document.getElementById('search-rdv').value = '#' + id;
+    filterRdvTable();
+}
+
+function filterRdvTable() {
+    const searchTerm = document.getElementById('search-rdv').value.toLowerCase();
+    const statutFilter = document.getElementById('filter-statut').value.toLowerCase();
+    
+    document.querySelectorAll('#rdv-table-body tr').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const statutElement = row.querySelector('.bg-yellow-100, .bg-green-100, .bg-red-100, .bg-gray-100');
+        const statut = statutElement ? statutElement.textContent.toLowerCase() : '';
+        
+        const matchesSearch = !searchTerm || text.includes(searchTerm);
+        const matchesStatut = !statutFilter || statut.includes(statutFilter);
+        
+        row.style.display = matchesSearch && matchesStatut ? '' : 'none';
+    });
+}
+
+function filterAccompTable() {
+    const searchTerm = document.getElementById('search-accomp').value.toLowerCase();
+    const prioriteFilter = document.getElementById('filter-priorite').value;
+    
+    document.querySelectorAll('#accomp-table-body tr').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const prioriteElement = row.querySelector('.bg-red-100, .bg-yellow-100, .bg-green-100');
+        const priorite = prioriteElement ? prioriteElement.textContent.toLowerCase() : '';
+        
+        const matchesSearch = !searchTerm || text.includes(searchTerm);
+        const matchesPriorite = !prioriteFilter || 
+            (prioriteFilter == 1 && priorite.includes('haute')) ||
+            (prioriteFilter == 2 && priorite.includes('moyenne')) ||
+            (prioriteFilter == 3 && priorite.includes('basse'));
+        
+        row.style.display = matchesSearch && matchesPriorite ? '' : 'none';
+    });
+}
+
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notification-container');
+    
+    const notification = document.createElement('div');
+    notification.className = `transform transition-all duration-300 translate-x-full opacity-0`;
+    
+    const bgColor = type === 'success' ? 'bg-green-50 border-green-200' : 
+                    type === 'error' ? 'bg-red-50 border-red-200' : 
+                    'bg-blue-50 border-blue-200';
+    
+    const textColor = type === 'success' ? 'text-green-800' : 
+                     type === 'error' ? 'text-red-800' : 
+                     'text-blue-800';
+    
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+    
+    notification.innerHTML = `
+        <div class="flex items-center gap-3 px-4 py-3 rounded-lg border ${bgColor} shadow-lg max-w-md">
+            <span class="text-lg">${icon}</span>
+            <p class="text-sm font-medium ${textColor}">${message}</p>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-gray-400 hover:text-gray-600">
+                <span class="text-xl">&times;</span>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full', 'opacity-0');
+    }, 10);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
+
+// Close modals when clicking outside
+window.addEventListener('click', function(event) {
+    if (event.target.classList.contains('bg-gray-900', 'bg-opacity-75')) {
+        closeAllModals();
+    }
+});
+
+// Add escape key to close modals
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeAllModals();
+    }
+});
+</script>
+{% endblock %}

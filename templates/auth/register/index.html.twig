@@ -1,0 +1,348 @@
+{% extends 'auth/auth_base.html.twig' %}
+
+{% block title %}Inscription - FeelSafe{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex">
+    <!-- Left Panel - Branding -->
+    <div class="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('/images/hero-wellness.jpg')] bg-cover bg-center opacity-20"></div>
+        <div class="relative z-10 flex flex-col justify-center px-12 text-primary-foreground">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-12 h-12 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
+                    <i data-feather="heart" class="w-7 h-7"></i>
+                </div>
+                <span class="text-3xl font-serif font-bold">FeelSafe</span>
+            </div>
+            <h1 class="text-4xl font-serif font-bold mb-6 leading-tight text-balance">
+                Rejoignez notre communauté bienveillante
+            </h1>
+            <p class="text-lg opacity-90 mb-8 leading-relaxed">
+                Créez votre compte et commencez votre parcours vers un meilleur bien-être mental.
+            </p>
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <i data-feather="shield" class="w-5 h-5"></i>
+                    <span>Données 100% sécurisées</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i data-feather="users" class="w-5 h-5"></i>
+                    <span>Communauté active et bienveillante</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i data-feather="star" class="w-5 h-5"></i>
+                    <span>Accompagnement personnalisé</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel - Registration Form -->
+    <div class="flex-1 flex items-center justify-center p-8 bg-background overflow-y-auto">
+        <div class="w-full max-w-md my-8">
+            <!-- Mobile Logo -->
+            <div class="lg:hidden flex items-center gap-2 mb-8 justify-center">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                    <i data-feather="heart" class="w-6 h-6 text-primary-foreground"></i>
+                </div>
+                <span class="text-2xl font-serif font-bold text-foreground">FeelSafe</span>
+            </div>
+
+            <div class="border-0 shadow-lg rounded-lg bg-card p-6">
+                <div class="space-y-1 pb-6">
+                    <h2 class="text-2xl font-serif font-bold">Créer un compte</h2>
+                    <p class="text-muted-foreground text-sm">
+                        Remplissez le formulaire pour commencer
+                    </p>
+                </div>
+
+                <div class="mb-6">
+                    {{ form_start(registrationForm, {'attr': {'class': 'space-y-4', 'novalidate': 'novalidate', 'id': 'registrationForm'}}) }}
+                    
+                    {# Flash Messages #}
+                    {% for label, messages in app.flashes %}
+                        {% for message in messages %}
+                            <div class="p-3 rounded-lg alert-auto-hide flex items-center gap-2 {% if label == 'success' %}bg-green-100 text-green-700{% elseif label == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %} text-sm">
+                                <i data-feather="{% if label == 'success' %}check-circle{% elseif label == 'error' %}alert-circle{% else %}info{% endif %}" class="w-4 h-4"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+
+                    {# Message d'erreur global #}
+                    <div id="global-error" class="p-3 rounded-lg bg-red-100 text-red-700 text-sm hidden items-center gap-2">
+                        <i data-feather="alert-circle" class="w-4 h-4"></i>
+                        <span>Compte n'est pas valide. Veuillez remplir tous les champs requis.</span>
+                    </div>
+
+                    {# Informations personnelles #}
+                    <div class="border-b pb-4 mb-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <i data-feather="user" class="w-5 h-5"></i>
+                            Informations personnelles
+                        </h3>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                {{ form_label(registrationForm.prenom, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                                {{ form_widget(registrationForm.prenom) }}
+                                <div class="form-error">
+                                    {{ form_errors(registrationForm.prenom) }}
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                {{ form_label(registrationForm.nom, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                                {{ form_widget(registrationForm.nom) }}
+                                <div class="form-error">
+                                    {{ form_errors(registrationForm.nom) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mt-4">
+                            {{ form_label(registrationForm.email, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.email) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.email) }}
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mt-4">
+                            {{ form_label(registrationForm.telephone, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.telephone) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.telephone) }}
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mt-4">
+                            {{ form_label(registrationForm.role, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.role) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.role) }}
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                Sélectionnez votre profil pour une expérience adaptée
+                            </p>
+                        </div>
+
+                        {# ⚡ CHAMP CODE SECRET ADMIN (Caché par défaut) #}
+                        <div class="space-y-2 mt-4" id="admin-code-field" style="display: none;">
+                            <label for="code_admin_secret" class="block text-sm font-medium text-foreground flex items-center gap-2">
+                                <i data-feather="key" class="w-4 h-4"></i>
+                                Code secret administrateur
+                            </label>
+                            <input 
+                                type="password" 
+                                id="code_admin_secret" 
+                                name="code_admin_secret"
+                                placeholder="Entrez le code secret"
+                                class="w-full h-11 px-3 py-2 border rounded-md border-red-300 focus:border-red-500 focus:ring-red-500"
+                            />
+                            <p class="text-xs text-red-600 flex items-center gap-1">
+                                <i data-feather="alert-circle" class="w-3 h-3"></i>
+                                Un code secret est requis pour créer un compte administrateur
+                            </p>
+                        </div>
+                    </div>
+
+                    {# Sécurité #}
+                    <div class="border-b pb-4 mb-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <i data-feather="lock" class="w-5 h-5"></i>
+                            Sécurité
+                        </h3>
+
+                        <div class="space-y-2">
+                            {{ form_label(registrationForm.plainPassword.first, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.plainPassword.first) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.plainPassword.first) }}
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mt-4">
+                            {{ form_label(registrationForm.plainPassword.second, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.plainPassword.second) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.plainPassword.second) }}
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                Minimum 8 caractères avec majuscule, minuscule et chiffre
+                            </p>
+                        </div>
+                    </div>
+
+                    {# Paramètres de confidentialité #}
+                    <div class="border-b pb-4 mb-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <i data-feather="shield" class="w-5 h-5"></i>
+                            Confidentialité et préférences
+                        </h3>
+
+                        <div class="space-y-2">
+                            {{ form_label(registrationForm.visibiliteProfil, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.visibiliteProfil) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.visibiliteProfil) }}
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                <i data-feather="info" class="w-3 h-3 inline"></i>
+                                Vous pourrez modifier ce paramètre à tout moment dans votre profil
+                            </p>
+                        </div>
+
+                        <div class="space-y-3 mt-4">
+                            <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                                {{ form_widget(registrationForm.partageDonnees) }}
+                                <div class="flex-1">
+                                    {{ form_label(registrationForm.partageDonnees, null, {'label_attr': {'class': 'text-sm font-medium text-foreground cursor-pointer'}}) }}
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        Vos données seront anonymisées et utilisées uniquement pour la recherche médicale
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                                {{ form_widget(registrationForm.notificationsEmail) }}
+                                <div class="flex-1">
+                                    {{ form_label(registrationForm.notificationsEmail, null, {'label_attr': {'class': 'text-sm font-medium text-foreground cursor-pointer'}}) }}
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        Recevez des rappels et des conseils personnalisés
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <i data-feather="check-circle" class="w-5 h-5"></i>
+                        Créer mon compte
+                    </button>
+
+                    {{ form_end(registrationForm) }}
+                </div>
+
+                <div class="pt-0">
+                    <p class="text-center text-sm text-muted-foreground">
+                        Vous avez déjà un compte?
+                        <a href="{{ path('app_login') }}" class="text-primary font-medium hover:underline">
+                            Se connecter
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remplacer les icônes Feather
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+            
+            // ⚡ JavaScript pour afficher/cacher le champ code secret
+            const roleSelect = document.querySelector('select[name="registration_form[role]"]');
+            const adminCodeField = document.getElementById('admin-code-field');
+            const adminCodeInput = document.getElementById('code_admin_secret');
+            const registrationForm = document.getElementById('registrationForm');
+            const globalError = document.getElementById('global-error');
+            
+            if (roleSelect && adminCodeField && adminCodeInput) {
+                // Fonction pour afficher/cacher le champ
+                function toggleAdminCodeField() {
+                    if (roleSelect.value === 'ROLE_ADMIN') {
+                        adminCodeField.style.display = 'block';
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+                    } else {
+                        adminCodeField.style.display = 'none';
+                        adminCodeInput.value = '';
+                    }
+                }
+                
+                // Appeler au chargement
+                toggleAdminCodeField();
+                
+                // Appeler quand le rôle change
+                roleSelect.addEventListener('change', function() {
+                    toggleAdminCodeField();
+                });
+            }
+            
+            // ⚡ Validation du formulaire - EMPÊCHER LA SOUMISSION SI VIDE
+            if (registrationForm && globalError) {
+                registrationForm.addEventListener('submit', function(e) {
+                    // Cacher le message d'erreur
+                    globalError.classList.add('hidden');
+                    globalError.classList.remove('flex');
+                    
+                    // Récupérer tous les champs input et select
+                    const inputs = registrationForm.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="password"], select');
+                    let hasEmptyField = false;
+                    
+                    // Vérifier si au moins un champ est vide
+                    inputs.forEach(function(input) {
+                        // Ignorer les champs cachés et les checkboxes
+                        if (input.type !== 'hidden' && input.type !== 'checkbox') {
+                            const parentDiv = input.closest('.space-y-2, .space-y-3, div');
+                            // Vérifier si le champ parent n'est pas caché (pour admin code)
+                            if (parentDiv && parentDiv.style.display !== 'none' && !input.value.trim()) {
+                                hasEmptyField = true;
+                            }
+                        }
+                    });
+                    
+                    // Vérifier spécialement le code admin si visible
+                    if (roleSelect && roleSelect.value === 'ROLE_ADMIN' && adminCodeField.style.display !== 'none') {
+                        if (!adminCodeInput.value.trim()) {
+                            hasEmptyField = true;
+                        }
+                    }
+                    
+                    // Si un champ est vide, afficher l'erreur et bloquer la soumission
+                    if (hasEmptyField) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        globalError.classList.remove('hidden');
+                        globalError.classList.add('flex');
+                        
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+                        
+                        // Scroll vers le message d'erreur
+                        globalError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        return false;
+                    }
+                });
+            }
+            
+            // Auto-hide flash messages après 5 secondes
+            const alerts = document.querySelectorAll('.alert-auto-hide');
+            if (alerts.length > 0) {
+                alerts.forEach(function(alert) {
+                    setTimeout(function() {
+                        alert.style.transition = 'opacity 0.5s ease';
+                        alert.style.opacity = '0';
+                        setTimeout(function() {
+                            alert.remove();
+                        }, 500);
+                    }, 5000);
+                });
+            }
+        });
+    </script>
+{% endblock %}

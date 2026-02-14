@@ -1,0 +1,195 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="space-y-8">
+
+        {# Flash Messages #}
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="p-4 rounded-lg {% if label == 'success' %}bg-green-100 text-green-800 border border-green-200{% else %}bg-red-100 text-red-800 border border-red-200{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <div>
+            <h1 class="text-3xl font-serif font-bold text-foreground">Sécurité & Profil</h1>
+            <p class="text-muted-foreground mt-1">
+                Gérez votre compte et vos paramètres de confidentialité
+            </p>
+        </div>
+
+        <div x-data="{ activeTab: 'profile' }" class="space-y-6">
+            <div class="flex gap-2 border-b border-border">
+                <button @click="activeTab = 'profile'"
+                        :class="activeTab === 'profile' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 border-b-2 font-medium transition-colors">
+                    Profil
+                </button>
+                <button @click="activeTab = 'security'"
+                        :class="activeTab === 'security' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 border-b-2 font-medium transition-colors">
+                    Sécurité
+                </button>
+                <button @click="activeTab = 'privacy'"
+                        :class="activeTab === 'privacy' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                        class="px-4 py-2 border-b-2 font-medium transition-colors">
+                    Confidentialité
+                </button>
+            </div>
+
+            {# ================= PROFILE TAB ================= #}
+            <div x-show="activeTab === 'profile'" class="space-y-6">
+                <form method="post" action="{{ path('app_pro_profile_edit') }}" novalidate class="bg-card rounded-lg border border-border p-6">
+
+                    <h2 class="text-lg font-semibold text-foreground mb-6">Informations personnelles</h2>
+
+                    <div class="space-y-6">
+
+                        <div class="flex items-center gap-6">
+                            <div class="w-24 h-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-medium">
+                                {{ user.prenom|first|upper }}
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-foreground">{{ user.fullName }}</h3>
+                                <p class="text-sm text-muted-foreground">{{ user.email }}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Prénom</label>
+                                <input type="text" name="prenom" value="{{ user.prenom }}"
+                                       class="w-full h-10 px-3 rounded-lg border border-input bg-background">
+                                {% if errors.prenom is defined %}
+                                    <p class="text-red-500 text-sm mt-1">{{ errors.prenom }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Nom</label>
+                                <input type="text" name="nom" value="{{ user.nom }}"
+                                       class="w-full h-10 px-3 rounded-lg border border-input bg-background">
+                                {% if errors.nom is defined %}
+                                    <p class="text-red-500 text-sm mt-1">{{ errors.nom }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Email</label>
+                                <input type="email" name="email" value="{{ user.email }}"
+                                       class="w-full h-10 px-3 rounded-lg border border-input bg-background">
+                                {% if errors.email is defined %}
+                                    <p class="text-red-500 text-sm mt-1">{{ errors.email }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Téléphone</label>
+                                <input type="tel" name="telephone" value="{{ user.telephone }}"
+                                       class="w-full h-10 px-3 rounded-lg border border-input bg-background">
+                            </div>
+
+                        </div>
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('profile-edit') }}">
+
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+                                Enregistrer les modifications
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            {# ================= SECURITY TAB ================= #}
+            <div x-show="activeTab === 'security'" class="space-y-6">
+
+                <form method="post" action="{{ path('app_pro_security_password') }}" novalidate class="bg-card rounded-lg border border-border p-6">
+
+                    <div class="space-y-4">
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Mot de passe actuel</label>
+                            <input type="password" name="current_password"
+                                   class="w-full h-10 px-3 rounded-lg border border-input bg-background">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Nouveau mot de passe</label>
+                            <input type="password" name="new_password"
+                                   class="w-full h-10 px-3 rounded-lg border border-input bg-background">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Confirmer le nouveau mot de passe</label>
+                            <input type="password" name="confirm_password"
+                                   class="w-full h-10 px-3 rounded-lg border border-input bg-background">
+                        </div>
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('change-password') }}">
+
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+                                Changer le mot de passe
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            {# ================= PRIVACY TAB ================= #}
+            <div x-show="activeTab === 'privacy'" class="space-y-6">
+
+                <form method="post" action="{{ path('app_pro_security_privacy') }}" novalidate class="bg-card rounded-lg border border-border p-6">
+
+                    <div class="space-y-4">
+
+                        <div class="flex items-center justify-between py-3 border-b border-border">
+                            <div>
+                                <p class="font-medium">Profil public</p>
+                                <p class="text-sm text-muted-foreground">Rendre votre profil visible</p>
+                            </div>
+                            <input type="checkbox" name="visibilite_profil"
+                                   {{ user.confidentialite and user.confidentialite.visibiliteProfil == 'public' ? 'checked' : '' }}>
+                        </div>
+
+                        <div class="flex items-center justify-between py-3 border-b border-border">
+                            <div>
+                                <p class="font-medium">Partager mes données</p>
+                                <p class="text-sm text-muted-foreground">Voir vos progrès</p>
+                            </div>
+                            <input type="checkbox" name="partage_donnees"
+                                   {{ user.confidentialite and user.confidentialite.partageDonnees ? 'checked' : '' }}>
+                        </div>
+
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <p class="font-medium">Notifications email</p>
+                            </div>
+                            <input type="checkbox" name="notifications_email"
+                                   {{ user.confidentialite and user.confidentialite.notificationsEmail ? 'checked' : '' }}>
+                        </div>
+
+                    </div>
+
+                    <input type="hidden" name="_token" value="{{ csrf_token('update-privacy') }}">
+
+                    <div class="flex justify-end mt-6">
+                        <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
