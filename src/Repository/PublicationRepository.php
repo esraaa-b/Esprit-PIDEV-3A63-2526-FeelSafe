@@ -40,4 +40,48 @@ class PublicationRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+    public function findUnreadNotifications(int $userId): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.user = :userId')
+            ->andWhere('p.notificationRead = :read')
+            ->andWhere('p.notificationMessage IS NOT NULL')
+            ->setParameter('userId', $userId)
+            ->setParameter('read', false)
+            ->orderBy('p.notificationDate', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+    public function findByTopic(string $topic): array
+    {
+        $clusters = [
+            'Anxiété' => ['anxiété', 'anxieux', 'peur', 'panique', 'crise', 'inquiétude', 'anxiety', 'anxious', 'fear', 'panic', 'attack', 'worry'],
+            'Dépression' => ['dépression', 'déprimé', 'triste', 'tristesse', 'vide', 'désespoir', 'depression', 'depressed', 'sad', 'sadness', 'empty', 'hopeless', 'despair'],
+            'Stress' => ['stress', 'stressé', 'pression', 'surmenage', 'épuisement', 'stressed', 'pressure', 'burnout', 'exhausted'],
+            'Angoisse' => ['angoisse', 'angoisse', 'oppression', 'thoracique', 'tremblement', 'anguish', 'distress', 'tight chest', 'shaking'],
+            'Addiction' => ['addiction', 'dépendance', 'drogue', 'alcool', 'tabac', 'jeu', 'drug', 'alcohol', 'smoking', 'gambling', 'substance'],
+            'Solitude' => ['solitude', 'seul', 'isolement', 'isolé', 'délaissé', 'loneliness', 'lonely', 'alone', 'isolation', 'isolated', 'neglected'],
+        ];
+
+        $keywords = $clusters[$topic] ?? [$topic];
+        
+        $qb = $this->createQueryBuilder('p')
+            ->leftJoin('p.pubCom', 'c'); // Pour chercher aussi dans les commentaires
+
+        $orX = $qb->expr()->orX();
+        foreach ($keywords as $key => $word) {
+            $paramName = 'word_' . $key;
+            $orX->add($qb->expr()->like('p.titre', ':' . $paramName));
+            $orX->add($qb->expr()->like('p.contenu', ':' . $paramName));
+            $orX->add($qb->expr()->like('c.contenu', ':' . $paramName));
+            $qb->setParameter($paramName, '%' . $word . '%');
+        }
+
+        return $qb->andWhere($orX)
+            ->andWhere('p.isDeleted = :false')
+            ->setParameter('false', false)
+            ->orderBy('p.datePublication', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }

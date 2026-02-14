@@ -109,7 +109,8 @@
                         {% endif %}
 
                         {# Supprimer (poubelle) #}
-                        {% if commentaire.user %}
+                        {# Autorisé pour : L'auteur du commentaire OU l'auteur de la publication #}
+                        {% if (commentaire.user and commentaire.user.id == 1) or (publication.user and publication.user.id == 1) %}
                             <form action="{{ path('app_front_commentaire_delete', {id: commentaire.id}) }}"
                                   method="POST"
                                   onsubmit="return confirm('Supprimer ce commentaire ?');">

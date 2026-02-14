@@ -7,22 +7,33 @@
 
     <h1 class="text-xl font-semibold text-foreground">Quoi de neuf, Israe ?</h1>
 
-    <form method="POST" enctype="multipart/form-data" class="space-y-4" novalidate>
+    {{ form_start(form, {'attr': {'class': 'space-y-4', 'novalidate': 'novalidate'}}) }}
 
         {# TITRE #}
         <div>
-            <input type="text" name="titre"
-                   placeholder="Titre de votre publication..."
-                   class="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:outline-none"
-                   required>
+            {{ form_widget(form.titre, {
+                'attr': {
+                    'class': 'w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:outline-none',
+                    'placeholder': 'Titre de votre publication...'
+                }
+            }) }}
+            <div class="text-red-500 text-sm mt-1">
+                {{ form_errors(form.titre) }}
+            </div>
         </div>
 
         {# CONTENU #}
         <div>
-            <textarea name="contenu" rows="4"
-                      placeholder="Exprimez-vous..."
-                      class="w-full resize-none bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:outline-none"
-                      required></textarea>
+            {{ form_widget(form.contenu, {
+                'attr': {
+                    'class': 'w-full resize-none bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:outline-none',
+                    'placeholder': 'Exprimez-vous...',
+                    'rows': 4
+                }
+            }) }}
+            <div class="text-red-500 text-sm mt-1">
+                {{ form_errors(form.contenu) }}
+            </div>
         </div>
 
         {# IMAGE UPLOAD STYLE FACEBOOK #}
@@ -34,8 +45,11 @@
                     <path d="M21 15l-5-5L5 21"/>
                 </svg>
                 <span>Ajouter une image</span>
-                <input type="file" name="image" class="hidden">
+                {{ form_widget(form.image, {'attr': {'class': 'hidden'}}) }}
             </label>
+            <div class="text-red-500 text-sm mt-1">
+                {{ form_errors(form.image) }}
+            </div>
         </div>
 
         {# BOUTON #}
@@ -43,6 +57,6 @@
             Publier
         </button>
 
-    </form>
+    {{ form_end(form) }}
 </div>
 {% endblock %}

@@ -20,11 +20,11 @@ class PublicationType extends AbstractType
         $builder
             ->add('titre', TextType::class, [
                 'label' => 'Titre',
-                'required' => true,
+                'required' => false,
             ])
             ->add('contenu', TextareaType::class, [
                 'label' => 'Contenu',
-                'required' => true,
+                'required' => false,
             ])
             ->add('image', FileType::class, [
                 'label' => 'Image (JPG, PNG, WEBP)',

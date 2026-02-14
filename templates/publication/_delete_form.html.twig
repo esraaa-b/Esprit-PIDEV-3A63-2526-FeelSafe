@@ -3,7 +3,7 @@
       onsubmit="return confirm('Are you sure you want to delete this item?');"
       style="display:inline-block; margin-left: 8px;">
     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication.id) }}">
-    <button class="btn-admin btn-admin-outline">
+    <button class="btn-admin btn-delete">
         Delete
     </button>
 </form>

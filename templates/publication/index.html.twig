@@ -2,6 +2,79 @@
 
 {% block title %}Forum | FeelSafe{% endblock %}
 
+{% block stylesheets %}
+    <style>
+        /* Scoped Admin Styles for Publication */
+        :root {
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --brand-admin: #2563eb;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .admin-header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .admin-card {
+            background-color: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 24px;
+        }
+
+        .card-header { margin-bottom: 1.5rem; }
+        .card-title { font-size: 1.25rem; font-weight: 600; color: var(--text-main); }
+        .card-subtitle { font-size: 0.875rem; color: var(--text-muted); }
+
+        /* Table */
+        .admin-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .admin-table th {
+            text-align: left; padding: 16px 24px;
+            font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;
+            background-color: #f9fafb; border-bottom: 1px solid var(--border-color);
+        }
+        .admin-table td {
+            padding: 16px 24px; color: var(--text-main); border-bottom: 1px solid var(--border-color); font-size: 0.875rem;
+        }
+        .admin-table tr:hover td { background-color: #f9fafb; }
+
+        /* Buttons */
+        .btn-admin {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem;
+            font-size: 0.875rem; font-weight: 500; border-radius: 0.5rem;
+            background-color: var(--brand-admin); color: white; border: none; text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-admin:hover { background-color: #1d4ed8; color: white; transform: translateY(-1px); }
+        
+        .btn-admin-outline {
+            background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main);
+        }
+        .btn-admin-outline:hover { background-color: #f3f4f6; }
+        /* Action Buttons */
+        .btn-action {
+            padding: 8px 12px;
+            font-size: 13px;
+            height: 38px;
+            min-width: 110px; /* Same width for all */
+            justify-content: center;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
 
 <!-- Header -->
@@ -83,6 +156,7 @@
                 </th>
                 <th>Contenu</th>
                 <th>Image</th>
+                <th style="min-width: 150px;">Réactions</th>
                 <th style="cursor: pointer;">
                     <a href="{{ path('app_publication_index', {
                         'search_id': app.request.query.get('search_id'),
@@ -112,19 +186,34 @@
                         <span style="color: var(--text-light);">Aucune</span>
                     {% endif %}
                 </td>
+                <td>
+                    <div style="display: flex; gap: 15px; font-weight: 500;">
+                        <span style="color: #16a34a; display: flex; align-items: center; gap: 4px;" title="J'aime">
+                            👍 {{ publication.likesCount }}
+                        </span>
+                        <span style="color: #dc2626; display: flex; align-items: center; gap: 4px;" title="Je n'aime pas">
+                            👎 {{ publication.dislikesCount }}
+                        </span>
+                        <span style="color: #3b82f6; display: flex; align-items: center; gap: 4px;" title="Commentaires">
+                            💬 {{ publication.pubCom|length }}
+                        </span>
+                    </div>
+                </td>
                 <td>{{ publication.datePublication ? publication.datePublication|date('d/m/Y') : '-' }}</td>
                 <td style="text-align:right;">
-                    <a href="{{ path('app_publication_show', {id: publication.id}) }}" class="btn-admin btn-admin-outline" style="padding:6px 10px;font-size:12px;">Voir</a>
-                    <a href="{{ path('app_publication_edit', {id: publication.id}) }}" class="btn-admin" style="padding:6px 10px;font-size:12px;">Modifier</a>
-                    <form method="post" action="{{ path('app_publication_delete', {'id': publication.id}) }}" style="display:inline-block;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette publication ?');">
-                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication.id) }}">
-                        <button type="submit" class="btn-admin btn-admin-outline">🗑 Supprimer</button>
-                    </form>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <a href="{{ path('app_publication_show', {id: publication.id}) }}" class="btn-admin btn-admin-outline btn-action">Voir</a>
+                        <a href="{{ path('app_publication_edit', {id: publication.id}) }}" class="btn-admin btn-action">Modifier</a>
+                        <form method="post" action="{{ path('app_publication_delete', {'id': publication.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette publication ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication.id) }}">
+                            <button type="submit" class="btn-admin btn-admin-outline btn-action">🗑 Supprimer</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         {% else %}
             <tr>
-                <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">Aucune publication pour le moment</td>
+                <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Aucune publication pour le moment</td>
             </tr>
         {% endfor %}
         </tbody>

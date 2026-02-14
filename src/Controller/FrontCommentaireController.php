@@ -26,10 +26,19 @@ final class FrontCommentaireController extends AbstractController
             $commentaire->setPublication($publication);
 
             // Simuler utilisateur connecté (id=1)
-            $user = $em->getRepository(Utilisateur::class)->find(1);
+            $user = $em->getRepository(Utilisateur::class)->find(1); 
+            
             $commentaire->setUser($user);
 
             $em->persist($commentaire);
+
+            // Notification pour l'auteur de la publication via Publication
+            if ($publication->getUser()) {
+                $publication->setNotificationMessage("Nouveau commentaire de " . $user->getNom() . " sur votre publication.");
+                $publication->setNotificationRead(false);
+                $publication->setNotificationDate(new \DateTime());
+            }
+
             $em->flush();
 
             $this->addFlash('success', 'Commentaire ajouté !');
@@ -44,7 +53,10 @@ final class FrontCommentaireController extends AbstractController
         // Simuler utilisateur connecté (id=1)
         $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
 
-        if ($commentaire->getUser() !== $fakeUser) {
+        $isCommentAuthor = ($commentaire->getUser() === $fakeUser);
+        $isPublicationAuthor = ($commentaire->getPublication()->getUser() === $fakeUser);
+
+        if (!$isCommentAuthor && !$isPublicationAuthor) {
             throw $this->createAccessDeniedException("Vous ne pouvez pas supprimer ce commentaire !");
         }
 
@@ -62,7 +74,7 @@ final class FrontCommentaireController extends AbstractController
         $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
 
         if ($commentaire->getUser() !== $fakeUser) {
-            throw $this->createAccessDeniedException("Vous ne pouvez pas modifier ce commentaire !");
+            throw $this->createAccessDeniedException("Seul l'auteur peut modifier son commentaire !");
         }
 
         // Si le formulaire est soumis

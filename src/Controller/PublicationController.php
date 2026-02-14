@@ -26,7 +26,9 @@ final class PublicationController extends AbstractController
         $sortBy = $request->query->get('sort_by', 'datePublication');
         $sortOrder = $request->query->get('sort_order', 'DESC');
 
-        $queryBuilder = $publicationRepository->createQueryBuilder('p');
+        $queryBuilder = $publicationRepository->createQueryBuilder('p')
+        ->where('p.isDeleted = :isDeleted')
+        ->setParameter('isDeleted', false);
 
         if ($searchId) {
             $queryBuilder->andWhere('p.id = :id')->setParameter('id', $searchId);
@@ -134,6 +136,13 @@ final class PublicationController extends AbstractController
                 $publication->setImage($newFilename);
             }
 
+            // Notification à l'auteur
+            if ($publication->getUser()) {
+                $publication->setNotificationMessage("Votre publication '" . $publication->getTitre() . "' a été modifiée par un administrateur.");
+                $publication->setNotificationRead(false);
+                $publication->setNotificationDate(new \DateTime());
+            }
+
             $entityManager->flush();
 
             return $this->redirectToRoute('app_publication_index', [], Response::HTTP_SEE_OTHER);
@@ -149,7 +158,16 @@ final class PublicationController extends AbstractController
     public function delete(Request $request, Publication $publication, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete' . $publication->getId(), $request->request->get('_token'))) {
-            $entityManager->remove($publication);
+            // Notification + Soft Delete
+            if ($publication->getUser()) {
+                $publication->setNotificationMessage("Votre publication '" . $publication->getTitre() . "' a été supprimée par un administrateur.");
+                $publication->setNotificationRead(false);
+                $publication->setNotificationDate(new \DateTime());
+                $publication->setIsDeleted(true); // Soft Delete pour garder la notif
+            } else {
+                $entityManager->remove($publication); // Si pas d'user, on supprime vraiment
+            }
+            
             $entityManager->flush();
         }
 

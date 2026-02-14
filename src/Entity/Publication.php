@@ -17,6 +17,66 @@ class Publication
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $notificationMessage = null;
+
+    #[ORM\Column]
+    private ?bool $notificationRead = false;
+
+    #[ORM\Column]
+    private ?bool $isDeleted = false;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $notificationDate = null;
+
+    public function getNotificationMessage(): ?string
+    {
+        return $this->notificationMessage;
+    }
+
+    public function setNotificationMessage(?string $notificationMessage): static
+    {
+        $this->notificationMessage = $notificationMessage;
+
+        return $this;
+    }
+
+    public function isNotificationRead(): ?bool
+    {
+        return $this->notificationRead;
+    }
+
+    public function setNotificationRead(bool $notificationRead): static
+    {
+        $this->notificationRead = $notificationRead;
+
+        return $this;
+    }
+
+    public function isDeleted(): ?bool
+    {
+        return $this->isDeleted;
+    }
+
+    public function setIsDeleted(bool $isDeleted): static
+    {
+        $this->isDeleted = $isDeleted;
+
+        return $this;
+    }
+
+    public function getNotificationDate(): ?\DateTimeInterface
+    {
+        return $this->notificationDate;
+    }
+
+    public function setNotificationDate(?\DateTimeInterface $notificationDate): static
+    {
+        $this->notificationDate = $notificationDate;
+
+        return $this;
+    }
+
     #[ORM\Column(type: 'integer')]
     private int $likesCount = 0;
 
@@ -60,7 +120,7 @@ class Publication
     /**
      * @var Collection<int, Commentaire>
      */
-    #[ORM\OneToMany(targetEntity: Commentaire::class, mappedBy: 'publication')]
+    #[ORM\OneToMany(targetEntity: Commentaire::class, mappedBy: 'publication', cascade: ['remove'], orphanRemoval: true)]
     private Collection $pubCom;
 
 
@@ -79,7 +139,7 @@ class Publication
         return $this->titre;
     }
 
-    public function setTitre(string $titre): static
+    public function setTitre(?string $titre): static
     {
         $this->titre = $titre;
 
@@ -91,7 +151,7 @@ class Publication
         return $this->contenu;
     }
 
-    public function setContenu(string $contenu): static
+    public function setContenu(?string $contenu): static
     {
         $this->contenu = $contenu;
 
@@ -133,6 +193,27 @@ class Publication
 
         return $this;
     }
+    public function getLikesCount(): int
+{
+    return $this->likesCount;
+}
+
+public function setLikesCount(int $likesCount): self
+{
+    $this->likesCount = $likesCount;
+    return $this;
+}
+
+public function getDislikesCount(): int
+{
+    return $this->dislikesCount;
+}
+
+public function setDislikesCount(int $dislikesCount): self
+{
+    $this->dislikesCount = $dislikesCount;
+    return $this;
+}
 
     /**
      * @return Collection<int, Commentaire>
