@@ -6,6 +6,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Repository\PublicationRepository;
+use App\Repository\CommentaireRepository;
+use App\Repository\CommentaireLikeRepository;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Publication;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -16,6 +18,7 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Entity\Utilisateur;
 use App\Entity\Commentaire;
 use App\Form\PublicationType;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class FrontPublicationController extends AbstractController
 {   
@@ -39,12 +42,16 @@ final class FrontPublicationController extends AbstractController
                 ->andWhere('p.isDeleted = :false')
                 ->setParameter('search', '%' . $search . '%')
                 ->setParameter('false', false)
-                ->orderBy('p.datePublication', 'DESC')
+                ->orderBy('p.pinnedAt', 'DESC')
+                ->addOrderBy('p.datePublication', 'DESC')
                 ->getQuery()
                 ->getResult();
         } else {
-            // Toutes les publications non supprimées
-            $publications = $publicationRepository->findBy(['isDeleted' => false], ['datePublication' => 'DESC']);
+            // Toutes les publications non supprimées, triées par épinglage puis date
+            $publications = $publicationRepository->findBy(
+                ['isDeleted' => false],
+                ['pinnedAt' => 'DESC', 'datePublication' => 'DESC']
+            );
         }
 
         return $this->render('front_publication/index.html.twig', [
@@ -60,10 +67,24 @@ final class FrontPublicationController extends AbstractController
         methods: ['GET'],
         requirements: ['id' => '\d+']
     )]
-    public function show(Publication $publication): Response
-    {
+    public function show(
+        Publication $publication,
+        CommentaireRepository $commentaireRepo,
+        CommentaireLikeRepository $likeRepo,
+        EntityManagerInterface $em
+    ): Response {
+        $rootComments = $commentaireRepo->findRootByPublication($publication);
+
+        // Build user votes map: { commentId => 'like'|'dislike' }
+        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
+        $userVotes = $fakeUser
+            ? $likeRepo->findUserVotesForPublication($fakeUser->getId(), $publication->getId())
+            : [];
+
         return $this->render('front_publication/show.html.twig', [
             'publication' => $publication,
+            'rootComments' => $rootComments,
+            'userVotes' => $userVotes,
         ]);
     }
 
@@ -102,6 +123,11 @@ final class FrontPublicationController extends AbstractController
                 } catch (FileException $e) {
                     $this->addFlash('error', 'Erreur lors de l\'upload de l\'image');
                 }
+            }
+
+            // Gestion de l'épinglage
+            if ($form->get('isPinned')->getData()) {
+                $publication->setPinnedAt(new \DateTime());
             }
 
             $entityManager->persist($publication);
@@ -175,6 +201,15 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
             }
         }
 
+        // Gestion de l'épinglage
+        if ($form->get('isPinned')->getData()) {
+            if ($publication->getPinnedAt() === null) {
+                $publication->setPinnedAt(new \DateTime());
+            }
+        } else {
+            $publication->setPinnedAt(null);
+        }
+
         $em->flush();
         $this->addFlash('success', 'Publication modifiée !');
         return $this->redirectToRoute('app_front_publication');
@@ -240,6 +275,38 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
         ]);
     }
 
+    #[Route('/front/publication/{id}/pin', name: 'app_front_publication_pin', methods: ['POST'])]
+    public function pin(Publication $publication, EntityManagerInterface $em): Response
+    {
+        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
+        if ($publication->getUser() !== $fakeUser) {
+            $this->addFlash('error', 'Action non autorisée.');
+            return $this->redirectToRoute('app_front_publication');
+        }
+
+        $publication->setPinnedAt(new \DateTime());
+        $em->flush();
+
+        $this->addFlash('success', 'Publication épinglée !');
+        return $this->redirectToRoute('app_front_publication');
+    }
+
+    #[Route('/front/publication/{id}/unpin', name: 'app_front_publication_unpin', methods: ['POST'])]
+    public function unpin(Publication $publication, EntityManagerInterface $em): Response
+    {
+        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
+        if ($publication->getUser() !== $fakeUser) {
+            $this->addFlash('error', 'Action non autorisée.');
+            return $this->redirectToRoute('app_front_publication');
+        }
+
+        $publication->setPinnedAt(null);
+        $em->flush();
+
+        $this->addFlash('success', 'Publication désépinglée.');
+        return $this->redirectToRoute('app_front_publication');
+    }
+
     #[Route('/notification/mark-as-read', name: 'app_notification_mark_as_read', methods: ['POST'])]
     public function markAsRead(PublicationRepository $repository, EntityManagerInterface $em): Response
     {
@@ -250,5 +317,101 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
         $em->flush();
         
         return $this->json(['success' => true]);
+    }
+
+    #[Route('/front/publication/{id}/summarize', name: 'app_front_publication_summarize', methods: ['POST'])]
+    public function summarize(Publication $publication, HttpClientInterface $client): Response
+    {
+        $apiKey = $_ENV['OPENROUTER_API_KEY'] ?? $_SERVER['OPENROUTER_API_KEY'] ?? '';
+
+        if (!$apiKey) {
+            return $this->json(['error' => 'API Key not configured'], 500);
+        }
+
+        try {
+            $response = $client->request('POST', 'https://openrouter.ai/api/v1/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                    'HTTP-Referer' => 'http://localhost:8000', // Requis par OpenRouter
+                    'X-Title' => 'FeelSafe Forum',
+                ],
+                'json' => [
+                    'model' => 'google/gemini-2.0-flash-001',
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'Tu es un assistant qui résume des publications de forum de santé mentale. Fais un résumé très court (2 phrases max), bienveillant et structuré en français.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => "Titre: " . $publication->getTitre() . "\n\nContenu: " . $publication->getContenu(),
+                        ],
+                    ],
+                ],
+            ]);
+
+            $data = $response->toArray();
+            $summary = $data['choices'][0]['message']['content'] ?? 'Désolé, je n\'ai pas pu générer de résumé.';
+
+            return $this->json(['summary' => $summary]);
+
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur IA: ' . $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/front/publication/ai-action', name: 'app_front_publication_ai', methods: ['POST'])]
+    public function aiAction(Request $request, HttpClientInterface $client): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        $action = $data['action'] ?? '';
+        $text = $data['text'] ?? '';
+
+        if (empty($text)) {
+            return $this->json(['error' => 'Le texte est vide.'], 400);
+        }
+
+        $apiKey = $_ENV['OPENROUTER_API_KEY'] ?? $_SERVER['OPENROUTER_API_KEY'] ?? '';
+        if (!$apiKey) {
+            return $this->json(['error' => 'Clé API non configurée.'], 500);
+        }
+
+        $prompt = "";
+        if ($action === 'reformulate') {
+            $prompt = "Réécris le texte suivant de manière plus fluide, élégante et percutante pour un forum de santé mentale. Garde un ton bienveillant et professionnel. DONNE UNIQUEMENT LE TEXTE REFORMULÉ, SANS RIEN AJOUTER AVANT OU APRÈS (pas de 'Voici la reformulation', pas de feedback). Voici le texte : \n\n" . $text;
+        } elseif ($action === 'correct') {
+            $prompt = "Corrige uniquement les fautes d'orthographe et de grammaire du texte suivant. Ne reformule pas le style, garde le sens original intact. DONNE UNIQUEMENT LE TEXTE CORRIGÉ, SANS RIEN AJOUTER AVANT OU APRÈS (pas de 'Voici le texte corrigé'). Voici le texte : \n\n" . $text;
+        } else {
+            return $this->json(['error' => 'Action invalide.'], 400);
+        }
+
+        try {
+            $response = $client->request('POST', 'https://openrouter.ai/api/v1/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                    'HTTP-Referer' => 'http://localhost:8000',
+                    'X-Title' => 'FeelSafe Forum',
+                ],
+                'json' => [
+                    'model' => 'google/gemini-2.0-flash-001',
+                    'messages' => [
+                        ['role' => 'user', 'content' => $prompt]
+                    ],
+                ],
+            ]);
+
+            $result = $response->toArray();
+            $generatedText = $result['choices'][0]['message']['content'] ?? null;
+
+            if (!$generatedText) {
+                return $this->json(['error' => 'L\'IA n\'a pas pu générer de réponse.'], 500);
+            }
+
+            return $this->json(['text' => trim($generatedText)]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur IA: ' . $e->getMessage()], 500);
+        }
     }
 }

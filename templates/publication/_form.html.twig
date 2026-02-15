@@ -9,14 +9,24 @@
 
     <div class="space-y-4">
         {# Titre #}
-        <div>
-            {{ form_label(form.titre, 'Titre de la publication', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-1'}}) }}
+        <div class="space-y-2">
+            {{ form_label(form.titre, 'Titre de la publication', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700'}}) }}
             {{ form_widget(form.titre, {
+                'id': 'back-pub-titre',
                 'attr': {
-                    'class': 'block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder-gray-400',
+                    'class': 'w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none focus:bg-white transition-all',
                     'placeholder': 'Entrez un titre captivant...'
                 }
             }) }}
+            
+            {# Emoji Picker for Title #}
+            <div class="flex justify-end pr-2">
+                {% include 'front_publication/_giphy_picker.html.twig' with {
+                    textareaId: 'back-pub-titre',
+                    showMedia: false
+                } only %}
+            </div>
+
             {% if form_errors(form.titre)|length > 0 %}
                 <div class="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <i data-feather="alert-circle" class="w-3 h-3"></i>
@@ -26,15 +36,24 @@
         </div>
 
         {# Contenu #}
-        <div>
-            {{ form_label(form.contenu, 'Contenu', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 mb-1'}}) }}
+        <div class="space-y-2">
+            {{ form_label(form.contenu, 'Contenu', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700'}}) }}
             {{ form_widget(form.contenu, {
+                'id': 'back-pub-contenu',
                 'attr': {
-                    'class': 'block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder-gray-400',
+                    'class': 'w-full resize-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none focus:bg-white transition-all',
                     'rows': '8',
                     'placeholder': 'Rédigez le contenu ici...'
                 }
             }) }}
+
+            {# Emoji Picker for Content #}
+            <div class="flex justify-end pr-2">
+                {% include 'front_publication/_giphy_picker.html.twig' with {
+                    textareaId: 'back-pub-contenu',
+                    showMedia: false
+                } only %}
+            </div>
             {% if form_errors(form.contenu)|length > 0 %}
                 <div class="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <i data-feather="alert-circle" class="w-3 h-3"></i>
@@ -81,6 +100,20 @@
             {% if form_errors(form.image)|length > 0 %}
                 <div class="mt-2 text-sm text-red-600 text-center">
                     {{ form_errors(form.image) }}
+                </div>
+            {% endif %}
+        </div>
+
+        {# Catégorie #}
+        <div class="space-y-2">
+            {{ form_widget(form.categorie, {
+                'attr': {
+                    'class': 'w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none focus:bg-white transition-all shadow-sm'
+                }
+            }) }}
+            {% if form_errors(form.categorie)|length > 0 %}
+                <div class="mt-1 text-sm text-red-600">
+                    {{ form_errors(form.categorie) }}
                 </div>
             {% endif %}
         </div>

@@ -3,7 +3,52 @@
 {% block title %}{{ publication.titre }}{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-6">
+    <div class="max-w-3xl mx-auto space-y-6" x-data="{ 
+    isPlaying: false,
+    utterance: null,
+    isSummarizing: false,
+    aiSummary: null,
+    speakPublication(text) {
+        if (this.isPlaying) {
+            window.speechSynthesis.cancel();
+            this.isPlaying = false;
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        this.isPlaying = true;
+        
+        this.utterance = new SpeechSynthesisUtterance(text);
+        this.utterance.lang = 'fr-FR';
+        this.utterance.onend = () => {
+            this.isPlaying = false;
+        };
+        
+        window.speechSynthesis.speak(this.utterance);
+    },
+    async summarize() {
+        if (this.isSummarizing) return;
+        this.isSummarizing = true;
+        this.aiSummary = null;
+
+        try {
+            const response = await fetch('{{ path('app_front_publication_summarize', {id: publication.id}) }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            if (data.summary) {
+                this.aiSummary = data.summary;
+            } else {
+                alert(data.error || 'Erreur lors du résumé');
+            }
+        } catch (e) {
+            alert('Erreur: ' + e.message);
+        } finally {
+            this.isSummarizing = false;
+        }
+    }
+}">
 
     {# Bouton retour à la liste amélioré #}
     <div class="mb-4">
@@ -21,6 +66,21 @@
         <h1 class="text-2xl font-bold mb-2 text-foreground">{{ publication.titre }}</h1>
         <p class="text-muted-foreground mb-3">{{ publication.contenu }}</p>
 
+        {# AI Summary Result #}
+        <div x-show="aiSummary" x-transition 
+             class="mb-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i data-feather="sparkles" class="w-12 h-12 text-indigo-600"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-600 text-white shadow-sm">
+                    <i data-feather="zap" class="w-3.5 h-3.5"></i>
+                </div>
+                <h4 class="text-sm font-bold text-indigo-900 uppercase tracking-wider">Résumé de l'IA</h4>
+            </div>
+            <p class="text-indigo-800 text-sm leading-relaxed" x-text="aiSummary"></p>
+        </div>
+
         {% if publication.image %}
             <img src="{{ asset('uploads/' ~ publication.image) }}"
                  class="w-full h-64 object-cover rounded-lg mb-3">
@@ -28,6 +88,49 @@
 
         <div class="flex items-center gap-4 text-sm text-muted-foreground mb-2">
             <span>Publié le {{ publication.datePublication|date('d/m/Y') }}</span>
+
+            <span class="text-muted-foreground">•</span>
+
+            {# TTS Button #}
+            <button @click.prevent="speakPublication('{{ (publication.titre ~ ". " ~ publication.contenu)|e('js') }}')" 
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-colors text-sm font-bold"
+                    :class="{ 'bg-primary text-white': isPlaying }">
+                <template x-if="!isPlaying">
+                    <div class="flex items-center gap-1.5">
+                        <i data-feather="volume-2" class="w-4 h-4"></i>
+                        <span>Écouter la publication</span>
+                    </div>
+                </template>
+                <template x-if="isPlaying">
+                    <div class="flex items-center gap-1.5">
+                        <i data-feather="square" class="w-4 h-4"></i>
+                        <span>Arrêter la lecture</span>
+                    </div>
+                </template>
+            </button>
+
+            <span class="text-muted-foreground">•</span>
+
+            {# AI Summarize Button #}
+            <button @click.prevent="summarize()" 
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all text-sm font-bold border border-indigo-100 disabled:opacity-50"
+                    :disabled="isSummarizing">
+                <template x-if="!isSummarizing">
+                    <div class="flex items-center gap-1.5">
+                        <i data-feather="sparkles" class="w-4 h-4"></i>
+                        <span>Résumer avec l'IA</span>
+                    </div>
+                </template>
+                <template x-if="isSummarizing">
+                    <div class="flex items-center gap-1.5">
+                        <svg class="animate-spin h-4 w-4 text-indigo-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Analyse en cours...</span>
+                    </div>
+                </template>
+            </button>
 
             <!-- Likes -->
             <span class="flex items-center gap-1">
@@ -61,78 +164,14 @@
             Commentaires ({{ publication.pubCom|length }})
         </h2>
 
-        {% for commentaire in publication.pubCom %}
-            <div class="border border-border rounded-lg p-3 bg-background space-y-2" style="padding-left: 2rem !important;">
-
-                {# Contenu du commentaire #}
-                <p class="text-foreground">{{ commentaire.contenu }}</p>
-
-                {# Ligne du bas : nom/date + icônes modifier/supprimer #}
-                <div class="flex items-center justify-between text-sm text-muted-foreground">
-
-                    {# Nom et date à gauche #}
-                    <div>
-                        {{ commentaire.user ? commentaire.user.nom : 'Utilisateur' }}
-                        • {{ commentaire.dateCommentaire ? commentaire.dateCommentaire|date('d/m/Y H:i') : '' }}
-                    </div>
-
-                    {# Icônes à droite #}
-                    <div class="flex items-center gap-2">
-
-                        {# Modifier (crayon) - Modal Alpine.js #}
-                        {% if commentaire.user.id == 1 %}
-                            <div x-data="{ open: false }">
-                                <button @click="open = true" class="text-blue-600 hover:text-blue-800 text-sm">
-                                    ✏️
-                                </button>
-                                <div x-show="open" x-cloak
-                                     class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                                    <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-lg relative">
-                                        <h2 class="text-lg font-bold mb-4">Modifier le commentaire</h2>
-                                        <form method="POST" action="{{ path('app_front_commentaire_edit', {id: commentaire.id}) }}" class="space-y-2">
-                                            <textarea name="contenu"
-                                                      rows="4"
-                                                      class="w-full border rounded p-2"
-                                                      required>{{ commentaire.contenu }}</textarea>
-                                            <div class="flex justify-end gap-2">
-                                                <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90">
-                                                    Enregistrer
-                                                </button>
-                                                <button type="button" @click="open = false" class="px-4 py-2 border rounded hover:bg-gray-100">
-                                                    Annuler
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        {# Supprimer (poubelle) #}
-                        {# Autorisé pour : L'auteur du commentaire OU l'auteur de la publication #}
-                        {% if (commentaire.user and commentaire.user.id == 1) or (publication.user and publication.user.id == 1) %}
-                            <form action="{{ path('app_front_commentaire_delete', {id: commentaire.id}) }}"
-                                  method="POST"
-                                  onsubmit="return confirm('Supprimer ce commentaire ?');">
-                                <button type="submit"
-                                        class="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive transition">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-4 w-4"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              stroke-width="2"
-                                              d="M6 7h12M9 7v10m6-10v10M10 4h4a1 1 0 011 1v2H9V5a1 1 0 011-1z"/>
-                                    </svg>
-                                </button>
-                            </form>
-                        {% endif %}
-
-                    </div>
-                </div>
-
+        {% for commentaire in rootComments %}
+            <div x-data="{ showReply: false }">
+                {% include 'front_publication/_comment_front.html.twig' with {
+                    commentaire: commentaire,
+                    publication: publication,
+                    userVotes: userVotes,
+                    depth: 0
+                } only %}
             </div>
         {% else %}
             <p class="text-muted-foreground">Aucun commentaire pour le moment.</p>
@@ -144,10 +183,18 @@
               class="mt-4 space-y-2">
 
             <textarea name="contenu"
+                      id="main-comment-textarea"
                       rows="3"
                       class="w-full border border-border rounded-lg p-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Écrire un commentaire..."
-                      required></textarea>
+                      placeholder="Écrire un commentaire..."></textarea>
+
+            <input type="hidden" name="gif_url" id="main-comment-gif-url">
+
+            {# Giphy Picker #}
+            {% include 'front_publication/_giphy_picker.html.twig' with {
+                textareaId: 'main-comment-textarea',
+                hiddenInputId: 'main-comment-gif-url'
+            } only %}
 
             <button type="submit"
                     class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 inline-flex items-center gap-2 transition">

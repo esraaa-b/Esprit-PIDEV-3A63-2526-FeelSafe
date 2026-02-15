@@ -29,6 +29,12 @@ class Publication
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTimeInterface $notificationDate = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $categorie = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $pinnedAt = null;
+
     public function getNotificationMessage(): ?string
     {
         return $this->notificationMessage;
@@ -73,6 +79,30 @@ class Publication
     public function setNotificationDate(?\DateTimeInterface $notificationDate): static
     {
         $this->notificationDate = $notificationDate;
+
+        return $this;
+    }
+
+    public function getCategorie(): ?string
+    {
+        return $this->categorie;
+    }
+
+    public function setCategorie(?string $categorie): static
+    {
+        $this->categorie = $categorie;
+
+        return $this;
+    }
+
+    public function getPinnedAt(): ?\DateTimeInterface
+    {
+        return $this->pinnedAt;
+    }
+
+    public function setPinnedAt(?\DateTimeInterface $pinnedAt): static
+    {
+        $this->pinnedAt = $pinnedAt;
 
         return $this;
     }

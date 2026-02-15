@@ -64,13 +64,41 @@
             background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main);
         }
         .btn-admin-outline:hover { background-color: #f3f4f6; }
-        /* Action Buttons */
-        .btn-action {
-            padding: 8px 12px;
-            font-size: 13px;
-            height: 38px;
-            min-width: 110px; /* Same width for all */
+        
+        /* Icon buttons for actions (eye, pencil, trash) */
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
             justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background-color: transparent;
+            color: var(--text-main);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-icon:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            transform: translateY(-1px);
+        }
+        /* Supprimer le fond rouge spécifique pour le bouton delete */
+        .btn-icon.delete:hover {
+            color: #dc2626;
+            border-color: #dc2626;
+            background-color: #fee2e2;
+        }
+        /* Pour le formulaire, on veut que le bouton prenne la même apparence */
+        form .btn-icon {
+            border: 1px solid var(--border-color);
+            background: transparent;
+            font: inherit;
+        }
+        form .btn-icon:hover {
+            background-color: #f3f4f6;
         }
     </style>
 {% endblock %}
@@ -202,11 +230,20 @@
                 <td>{{ publication.datePublication ? publication.datePublication|date('d/m/Y') : '-' }}</td>
                 <td style="text-align:right;">
                     <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                        <a href="{{ path('app_publication_show', {id: publication.id}) }}" class="btn-admin btn-admin-outline btn-action">Voir</a>
-                        <a href="{{ path('app_publication_edit', {id: publication.id}) }}" class="btn-admin btn-action">Modifier</a>
-                        <form method="post" action="{{ path('app_publication_delete', {'id': publication.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette publication ?');">
+                        <a href="{{ path('app_publication_show', {'id': publication.id}) }}" class="btn-icon" title="Voir">
+                            <span class="text-lg">👁️</span>
+                            <span class="sr-only">Voir</span>
+                        </a>
+                        <a href="{{ path('app_publication_edit', {id: publication.id}) }}" class="btn-icon" title="Modifier">
+                            <span class="text-lg">✏️</span>
+                            <span class="sr-only">Modifier</span>
+                        </a>
+                        <form method="post" action="{{ path('app_publication_delete', {'id': publication.id}) }}" onsubmit="return confirm('Êtes-vous sûr ?');" style="display: inline;">
                             <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication.id) }}">
-                            <button type="submit" class="btn-admin btn-admin-outline btn-action">🗑 Supprimer</button>
+                            <button type="submit" class="btn-icon delete" title="Supprimer">
+                                <span class="text-lg">🗑️</span>
+                                <span class="sr-only">Supprimer</span>
+                            </button>
                         </form>
                     </div>
                 </td>

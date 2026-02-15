@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Publication;
+use App\Entity\Commentaire;
 use App\Form\PublicationType;
 use App\Repository\PublicationRepository;
+use App\Repository\CommentaireRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -13,7 +15,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Entity\Utilisateur;
-use App\Entity\Commentaire;
 
 #[Route('/publication')]
 final class PublicationController extends AbstractController
@@ -103,11 +104,31 @@ final class PublicationController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_publication_show', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function show(Publication $publication): Response
+    public function show(Publication $publication, CommentaireRepository $commentaireRepo): Response
     {
+        $rootComments = $commentaireRepo->findRootByPublication($publication);
+
         return $this->render('publication/show.html.twig', [
             'publication' => $publication,
+            'rootComments' => $rootComments,
         ]);
+    }
+
+    #[Route('/commentaire/{id}/delete', name: 'app_publication_commentaire_delete', methods: ['POST'])]
+    public function deleteComment(
+        Request $request,
+        Commentaire $commentaire,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $publicationId = $commentaire->getPublication()->getId();
+
+        if ($this->isCsrfTokenValid('delete_comment' . $commentaire->getId(), $request->request->get('_token'))) {
+            $entityManager->remove($commentaire);
+            $entityManager->flush();
+            $this->addFlash('success', 'Commentaire supprimé par l\'administrateur.');
+        }
+
+        return $this->redirectToRoute('app_publication_show', ['id' => $publicationId]);
     }
     
     #[Route('/{id}/edit', name: 'app_publication_edit', methods: ['GET', 'POST'])]
@@ -158,21 +179,15 @@ final class PublicationController extends AbstractController
     public function delete(Request $request, Publication $publication, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete' . $publication->getId(), $request->request->get('_token'))) {
-            // Notification + Soft Delete
-            if ($publication->getUser()) {
-                $publication->setNotificationMessage("Votre publication '" . $publication->getTitre() . "' a été supprimée par un administrateur.");
-                $publication->setNotificationRead(false);
-                $publication->setNotificationDate(new \DateTime());
-                $publication->setIsDeleted(true); // Soft Delete pour garder la notif
-            } else {
-                $entityManager->remove($publication); // Si pas d'user, on supprime vraiment
-            }
-            
+            // Suppression réelle de la base de données
+            $entityManager->remove($publication);
             $entityManager->flush();
+            $this->addFlash('success', 'Publication supprimée définitivement.');
         }
 
         return $this->redirectToRoute('app_publication_index', [], Response::HTTP_SEE_OTHER);
     }
+
     #[Route('/stats', name: 'app_publication_stats', methods: ['GET'])]
     public function stats(EntityManagerInterface $em): Response
     {
@@ -182,23 +197,25 @@ final class PublicationController extends AbstractController
         // Récupérer tous les commentaires
         $commentaires = $em->getRepository(Commentaire::class)->findAll();
 
-        // Initialiser le comptage des publications par mois
         $pubCounts = array_fill(0, 12, 0); // Index 0-11
         $comCounts = array_fill(0, 12, 0); // Index 0-11
+        $reactCounts = array_fill(0, 12, 0); // Index 0-11
 
-        // Compter les publications par mois
+        // Compter les publications et leurs réactions par mois
         foreach ($publications as $p) {
             if ($p->getDatePublication()) {
                 $month = (int)$p->getDatePublication()->format('n') - 1; // 0-11
                 $pubCounts[$month]++;
+                $reactCounts[$month] += ($p->getLikesCount() + $p->getDislikesCount());
             }
         }
 
-        // Compter les commentaires par mois
+        // Compter les commentaires et leurs réactions par mois
         foreach ($commentaires as $c) {
             if ($c->getDateCommentaire()) {
                 $month = (int)$c->getDateCommentaire()->format('n') - 1; // 0-11
                 $comCounts[$month]++;
+                $reactCounts[$month] += ($c->getLikesCount() + $c->getDislikesCount());
             }
         }
 
@@ -208,10 +225,50 @@ final class PublicationController extends AbstractController
             $months[] = date('F', mktime(0, 0, 0, $i, 1));
         }
 
+        // Données pour les graphiques par catégorie
+        $categories = ['Anxiété', 'Dépression', 'Stress', 'Angoisse', 'Addiction', 'Solitude', 'Autre'];
+        $catLikes = array_fill_keys($categories, 0);
+        $catDislikes = array_fill_keys($categories, 0);
+
+        // KPIs globaux
+        $totalLikes = 0;
+        $totalDislikes = 0;
+        $totalComments = count($commentaires);
+        $totalPubs = count($publications);
+
+        foreach ($publications as $p) {
+            $cat = $p->getCategorie();
+            if ($cat && isset($catLikes[$cat])) {
+                $catLikes[$cat] += $p->getLikesCount();
+                $catDislikes[$cat] += $p->getDislikesCount();
+            } else {
+                $catLikes['Autre'] += $p->getLikesCount();
+                $catDislikes['Autre'] += $p->getDislikesCount();
+            }
+            $totalLikes += $p->getLikesCount();
+            $totalDislikes += $p->getDislikesCount();
+        }
+
+        // Top 5 Publications par réactions
+        $topPublications = $publications;
+        usort($topPublications, function($a, $b) {
+            return ($b->getLikesCount() + $b->getDislikesCount()) <=> ($a->getLikesCount() + $a->getDislikesCount());
+        });
+        $topPublications = array_slice($topPublications, 0, 5);
+
         return $this->render('publication/stats.html.twig', [
             'months' => $months,
-            'pubCounts' => $pubCounts, // Publications par mois
-            'comCounts' => $comCounts, // Commentaires par mois
+            'pubCounts' => $pubCounts,
+            'comCounts' => $comCounts,
+            'reactCounts' => $reactCounts,
+            'catLabels' => array_keys($catLikes),
+            'catLikes' => array_values($catLikes),
+            'catDislikes' => array_values($catDislikes),
+            'totalLikes' => $totalLikes,
+            'totalDislikes' => $totalDislikes,
+            'totalComments' => $totalComments,
+            'totalPubs' => $totalPubs,
+            'topPublications' => $topPublications,
         ]);
     }
 }
