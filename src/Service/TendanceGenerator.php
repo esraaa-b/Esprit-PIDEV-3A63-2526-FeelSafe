@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Service;
 
 use App\Entity\JournalEmotionnel;
@@ -30,10 +31,6 @@ class TendanceGenerator
             ->getQuery()
             ->getResult();
 
-        if (!$journals) {
-            return;
-        }
-
         // 3️⃣ Remove old tendances (recalculate clean)
         $this->em->createQueryBuilder()
             ->delete(TendanceEmotionnelle::class, 't')
@@ -46,7 +43,12 @@ class TendanceGenerator
             ->getQuery()
             ->execute();
 
-        // 4️⃣ Calculate stats
+        // 4️⃣ If no journals left, we're done (old tendances are deleted)
+        if (empty($journals)) {
+            return; // Pas de nouvelles tendances à créer
+        }
+
+        // 5️⃣ Calculate stats
         $total = count($journals);
         $stats = [];
 
@@ -55,7 +57,7 @@ class TendanceGenerator
             $stats[$emotion] = ($stats[$emotion] ?? 0) + 1;
         }
 
-        // 5️⃣ Store tendances
+        // 6️⃣ Store tendances
         foreach ($stats as $emotion => $count) {
             $trend = new TendanceEmotionnelle();
             $trend->setUtilisateur($user);

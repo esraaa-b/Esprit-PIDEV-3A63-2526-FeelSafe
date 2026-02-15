@@ -1,0 +1,79 @@
+<div class="flex justify-between items-start mb-4">
+    <div>
+        <h3 class="text-lg font-semibold text-gray-900" id="modal-title">
+            Journal du {{ journal.dateCreation|date('d/m/Y') }}
+        </h3>
+        <p class="text-sm text-gray-500 mt-1">
+            Patient: {{ journal.utilisateur.prenom }} {{ journal.utilisateur.nom }}
+        </p>
+    </div>
+    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
+        <i class="fas fa-times text-xl"></i>
+    </button>
+</div>
+
+<div class="space-y-4">
+    <!-- Émotion -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <div class="text-sm text-gray-500 mb-2">Émotion ressentie</div>
+        <div class="flex items-center gap-3">
+            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium {{ journal.emotion.color() }}">
+                {{ journal.emotion.icon() }}
+                {{ journal.emotion.label() }}
+            </span>
+            <span class="text-xs text-gray-400">{{ journal.dateCreation|date('H:i') }}</span>
+        </div>
+    </div>
+    
+    <!-- Contenu texte -->
+    {% if journal.contenu %}
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <div class="text-sm text-gray-500 mb-2">Description</div>
+        <p class="text-gray-800 whitespace-pre-wrap">{{ journal.contenu }}</p>
+    </div>
+    {% endif %}
+    
+    <!-- Image -->
+    {% if journal.image %}
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <div class="text-sm text-gray-500 mb-2">Image</div>
+        <img src="{{ asset('uploads/journals/images/' ~ journal.image) }}" 
+             alt="Journal image" 
+             class="max-h-96 rounded-lg mx-auto cursor-pointer"
+             onclick="window.open(this.src, '_blank')">
+    </div>
+    {% endif %}
+    
+    <!-- Audio -->
+    {% if journal.audio %}
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <div class="text-sm text-gray-500 mb-2">Enregistrement audio</div>
+        <audio controls class="w-full">
+            <source src="{{ asset('uploads/journals/audio/' ~ journal.audio) }}" type="audio/mpeg">
+            Votre navigateur ne supporte pas l'élément audio.
+        </audio>
+    </div>
+    {% endif %}
+    
+    <!-- Métadonnées -->
+    <div class="bg-gray-50 p-4 rounded-lg">
+        <div class="text-sm text-gray-500 mb-2">Informations</div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>
+                <span class="text-gray-500">Créé le:</span>
+                <span class="ml-2 text-gray-900">{{ journal.dateCreation|date('d/m/Y à H:i') }}</span>
+            </div>
+            <div>
+                <span class="text-gray-500">ID:</span>
+                <span class="ml-2 text-gray-900">#{{ journal.id }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-6 flex justify-end">
+    <button type="button" onclick="closeModal()" 
+            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+        Fermer
+    </button>
+</div>

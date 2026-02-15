@@ -21,7 +21,7 @@ class DashboardController extends AbstractController
         }
         
         if (in_array('ROLE_PROFESSIONNEL', $user->getRoles(), true)) {
-            return $this->redirectToRoute('professionnel_dashboard');
+            return $this->redirectToRoute('app_pro_journal_patients');
         }
         
         // Par défaut, rediriger vers le dashboard client
