@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "base.html.twig" %}
 
 {% block content %}
@@ -308,3 +309,125 @@
     </div>
 </div>
 {% endblock %}
+=======
+{% extends "professionnel/base.html.twig" %}
+
+{% block title %}Demandes de RDV{% endblock %}
+
+{% block body %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">Demandes de rendez-vous</h1>
+        <a href="{{ path('app_support_accomp') }}" class="btn btn-outline">Accompagnement</a>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        {% set clientIds = [] %}
+        {% set clientList = [] %}
+        {% for r in rdvs %}
+            {% if r.utilisateur and r.utilisateur.id not in clientIds %}
+                {% set clientIds = clientIds|merge([r.utilisateur.id]) %}
+                {% set clientList = clientList|merge([r.utilisateur]) %}
+            {% endif %}
+        {% endfor %}
+        <div class="mb-4 flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Client</label>
+                <select id="filter-client" class="border border-gray-300 rounded px-3 py-2 text-sm w-56">
+                    <option value="">Tous</option>
+                    {% for c in clientList %}
+                        <option value="{{ c.id }}">{{ c.getFullName() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Date</label>
+                <input type="date" id="filter-date" class="border border-gray-300 rounded px-3 py-2 text-sm w-48">
+            </div>
+            <button type="button" id="clear-filters" class="btn btn-outline btn-sm">Réinitialiser</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table id="rdv-table" class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Heure</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mode</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                {% for rdv in rdvs %}
+                    <tr data-client="{{ rdv.utilisateur ? rdv.utilisateur.id : '' }}" data-date="{{ rdv.dateRdv|date('Y-m-d') }}">
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ rdv.utilisateur ? rdv.utilisateur.getFullName() : '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ rdv.dateRdv|date('d/m/Y') }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ rdv.heureRdv|date('H:i') }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ rdv.mode.value == 'en_ligne' ? 'En ligne' : 'Présentiel' }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="text-xs px-2 py-1 rounded-full 
+                                {% if rdv.statut.value == 'planifie' %}bg-blue-100 text-blue-700{% elseif rdv.statut.value == 'honore' %}bg-green-100 text-green-700{% elseif rdv.statut.value == 'annule' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ rdv.statut.value }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                <form action="{{ path('support_rdv_accept', { id: rdv.id }) }}" method="post">
+                                    <button type="submit" class="btn btn-sm">Accepter</button>
+                                </form>
+                                <form action="{{ path('support_rdv_refuse', { id: rdv.id }) }}" method="post" class="flex items-center gap-2">
+                                    <input type="text" name="commentaire" placeholder="Motif" class="border border-gray-300 rounded px-2 py-2 text-xs">
+                                    <button type="submit" class="btn btn-sm btn-danger">Refuser</button>
+                                </form>
+                                <form action="{{ path('support_rdv_update', { id: rdv.id }) }}" method="post" class="flex items-center gap-2">
+                                    <select name="statut" class="border border-gray-300 rounded px-2 py-2 text-xs">
+                                        {% for s in statuts %}
+                                            <option value="{{ s.value }}" {{ s.value == rdv.statut.value ? 'selected' : '' }}>
+                                                {{ s.name|lower }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="text" name="commentaire" value="{{ rdv.commentaire }}" placeholder="Commentaire" class="border border-gray-300 rounded px-2 py-2 text-xs">
+                                    <button type="submit" class="btn btn-sm btn-secondary">Mettre à jour</button>
+                                </form>
+                                {% if rdv.utilisateur %}
+                                <a href="{{ path('app_support_accomp', { client_id: rdv.utilisateur.id }) }}" class="btn btn-sm btn-outline">Accompagnement client</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Aucune demande</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        (function(){
+            var fc=document.getElementById('filter-client');
+            var fd=document.getElementById('filter-date');
+            var cl=document.getElementById('clear-filters');
+            function apply(){
+                var cid=fc.value||'';
+                var date=fd.value||'';
+                var rows=document.querySelectorAll('#rdv-table tbody tr');
+                rows.forEach(function(tr){
+                    var tCid=tr.getAttribute('data-client')||'';
+                    var tDate=tr.getAttribute('data-date')||'';
+                    var show=true;
+                    if(cid && tCid!==cid) show=false;
+                    if(date && tDate!==date) show=false;
+                    tr.style.display=show?'':'none';
+                });
+            }
+            fc.addEventListener('change',apply);
+            fd.addEventListener('change',apply);
+            cl.addEventListener('click',function(){fc.value='';fd.value='';apply();});
+        })();
+    </script>
+</div>
+{% endblock %}
+>>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)

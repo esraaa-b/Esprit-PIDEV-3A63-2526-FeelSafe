@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "base.html.twig" %}
 
 {% block content %}
@@ -308,3 +309,180 @@
     </div>
 </div>
 {% endblock %}
+=======
+{% extends "dashboard/base.html.twig" %}
+
+{% block title %}Prendre RDV{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">Prendre un rendez-vous</h1>
+        <a href="{{ path('app_support_accomp') }}" class="btn btn-outline">Accompagnement</a>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <p class="text-sm text-gray-600">Choisissez un professionnel, une date, une heure et le mode</p>
+        <form action="{{ path('support_create') }}" method="post" class="mt-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Professionnel</label>
+                <select name="professionnel_id" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                    <option value="">Sélectionner</option>
+                    {% for pro in professionnels %}
+                        <option value="{{ pro.id }}">{{ pro.getFullName() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="rdv-date" name="date" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Heure</label>
+                    <input type="time" id="rdv-time" name="time" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Mode</label>
+                <select name="mode" id="mode-select" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                    {% for m in modes %}
+                        <option value="{{ m.value }}">{{ m.name|lower }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="localisation-field" class="hidden">
+                <label class="block text-sm font-medium text-gray-700">Localisation</label>
+                <input type="text" id="localisation-input" name="localisation" placeholder="Ex: 9 rue Mohamed Lakkani" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" pattern="^\d+\s+[A-Za-zÀ-ÖØ-öø-ÿ].+" title="Format requis: numéro au début puis nom de voie (ex: 9 rue Mohamed Lakkani)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Commentaire</label>
+                <textarea name="commentaire" rows="3" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Message pour le professionnel (optionnel)"></textarea>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="btn btn-lg w-full md:w-auto">
+                    Valider
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">Mes demandes de rendez-vous</h2>
+            <a href="{{ path('app_support_accomp') }}" class="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">Voir accompagnement</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Professionnel</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Heure</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mode</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commentaire</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                {% for r in rdvs %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ r.professionnel ? r.professionnel.getFullName() : '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ r.dateRdv|date('d/m/Y') }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ r.heureRdv|date('H:i') }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ r.mode.value == 'en_ligne' ? 'En ligne' : 'Présentiel' }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="text-xs px-2 py-1 rounded-full 
+                                {% if r.statut.value == 'planifie' %}bg-blue-100 text-blue-700{% elseif r.statut.value == 'honore' %}bg-green-100 text-green-700{% elseif r.statut.value == 'annule' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ r.statut.value }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700">
+                            <div class="space-y-2">
+                                <div>{{ r.commentaire ?: '—' }}</div>
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ path('support_rdv_ics', { id: r.id }) }}" class="btn btn-sm btn-outline">Télécharger .ics</a>
+                                    {% set start = (r.dateRdv|date('Ymd')) ~ 'T' ~ (r.heureRdv|date('His')) %}
+                                    {% set end = (r.dateRdv|date('Ymd')) ~ 'T' ~ (r.heureRdv|date_modify('+1 hour')|date('His')) %}
+                                    {% set text = 'Rendez-vous FeelSafe' %}
+                                    {% set details = r.commentaire ?: '' %}
+                                    {% set location = r.localisation ?: '' %}
+                                    <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ text|url_encode }}&details={{ details|url_encode }}&location={{ location|url_encode }}&dates={{ start }}/{{ end }}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary">Ajouter à Google</a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Aucune demande</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modeSelect = document.getElementById('mode-select');
+    const locField = document.getElementById('localisation-field');
+    const locInput = document.getElementById('localisation-input');
+    const dateInput = document.getElementById('rdv-date');
+    const timeInput = document.getElementById('rdv-time');
+    const form = document.querySelector('form[action="{{ path('support_create') }}"]');
+    function toggleLoc() {
+        if (modeSelect.value === 'en_presentiel') {
+            locField.classList.remove('hidden');
+            locInput.setAttribute('required', 'required');
+        } else {
+            locField.classList.add('hidden');
+            locInput.removeAttribute('required');
+            locInput.value = '';
+        }
+    }
+    modeSelect.addEventListener('change', toggleLoc);
+    toggleLoc();
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    dateInput.min = `${yyyy}-${mm}-${dd}`;
+
+    function updateTimeMin() {
+        if (!dateInput.value) return;
+        const selected = new Date(dateInput.value + 'T00:00');
+        if (selected.toDateString() === today.toDateString()) {
+            const h = String(today.getHours()).padStart(2, '0');
+            const m = String(today.getMinutes()).padStart(2, '0');
+            timeInput.min = `${h}:${m}`;
+        } else {
+            timeInput.removeAttribute('min');
+        }
+    }
+    dateInput.addEventListener('change', updateTimeMin);
+    updateTimeMin();
+
+    form.addEventListener('submit', function(e) {
+        const d = dateInput.value;
+        const t = timeInput.value;
+        if (modeSelect.value === 'en_presentiel') {
+            const re = /^\d+\s+[A-Za-zÀ-ÖØ-öø-ÿ].+/;
+            if (!re.test(locInput.value.trim())) {
+                e.preventDefault();
+                alert('Localisation invalide. Format attendu: numéro au début puis la voie (ex: 9 rue Mohamed Lakkani).');
+                return;
+            }
+        }
+        if (!d || !t) return;
+        const selected = new Date(d + 'T' + t);
+        if (selected.getTime() <= Date.now()) {
+            e.preventDefault();
+            alert('La date et l\'heure doivent être futures');
+        }
+    });
+});
+</script>
+{% endblock %}
+>>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)

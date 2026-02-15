@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}FeelSafe - Professionnel{% endblock %}</title>
+<<<<<<< HEAD
+=======
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+>>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
     <style>
         * {
             margin: 0;
@@ -172,6 +176,22 @@
 
         {% block extra_styles %}{% endblock %}
     </style>
+<<<<<<< HEAD
+=======
+    <style>
+        .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.625rem 1rem;border-radius:.75rem;border:2px solid #16a34a;background:#16a34a;color:#fff;font-weight:600;box-shadow:0 6px 12px rgba(22,163,74,.25);transition:.2s;text-decoration:none}
+        .btn:hover{background:#15803d;border-color:#15803d;transform:translateY(-1px)}
+        .btn:active{transform:translateY(0)}
+        .btn-outline{background:transparent;color:#111;border-color:#16a34a}
+        .btn-outline:hover{background:#dcfce7;color:#111}
+        .btn-secondary{background:#22c55e;border-color:#22c55e}
+        .btn-secondary:hover{background:#16a34a;border-color:#16a34a}
+        .btn-danger{background:#ef4444;border-color:#ef4444;color:#fff}
+        .btn-danger:hover{background:#dc2626;border-color:#dc2626}
+        .btn-lg{padding:.75rem 1.25rem;border-radius:1rem}
+        .btn-sm{padding:.375rem .75rem;border-radius:.5rem;font-size:.875rem}
+    </style>
+>>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
 </head>
 <body>
     <div class="app-layout">
@@ -211,6 +231,19 @@
                     <span class="nav-text">Ressources</span>
                 </a>
 
+<<<<<<< HEAD
+=======
+                <a href="{{ path('app_support') }}" class="nav-item {{ app.request.get('_route') == 'app_support' ? 'active' : '' }}">
+                    <span class="nav-icon">❤️</span>
+                    <span class="nav-text">Accompagnement</span>
+                </a>
+                
+                <a href="{{ path('app_support_stats') }}" class="nav-item {{ app.request.get('_route') == 'app_support_stats' ? 'active' : '' }}">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Statistiques</span>
+                </a>
+
+>>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
                 <a href="{{ path('app_pro_emergency') }}" class="nav-item {{ app.request.get('_route') == 'app_pro_emergency' ? 'active' : '' }}">
                     <span class="nav-icon">🚨</span>
                     <span class="nav-text">Urgences</span>
@@ -226,7 +259,11 @@
             <div class="sidebar-footer">
                 <div class="user-profile">
                     <div class="user-avatar">
+<<<<<<< HEAD
                         {{ (prenom|default('U'))[0]|upper }}{{ (nom|default('U'))[0]|upper }}
+=======
+                        {{ prenom|default('U')|slice(0,1)|upper }}{{ nom|default('U')|slice(0,1)|upper }}
+>>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
                     </div>
                     <div class="user-info">
                         <div class="user-name">Dr. {{ prenom|default('') }} {{ nom|default('') }}</div>
@@ -239,8 +276,25 @@
 
         {# Main Content #}
         <main class="main-content">
+<<<<<<< HEAD
+=======
+            {% for message in app.flashes('success') %}
+                <div style="margin-bottom:12px;padding:12px 16px;border-radius:10px;background:#ecfee9;color:#14532d;border:1px solid #bbf7d0;">
+                    ✅ {{ message }}
+                </div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+                <div style="margin-bottom:12px;padding:12px 16px;border-radius:10px;background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca;">
+                    ❌ {{ message }}
+                </div>
+            {% endfor %}
+>>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
             {% block body %}{% endblock %}
         </main>
     </div>
 </body>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
