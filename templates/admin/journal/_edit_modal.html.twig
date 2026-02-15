@@ -232,14 +232,14 @@
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-height: 0; /* CRUCIAL pour Firefox */
+    min-height: 0;
 }
 
 /* ✅ ZONE DE SCROLL UNIQUE */
 .modal-content-scroll {
     overflow-y: auto;
     flex: 1;
-    min-height: 0; /* CRUCIAL pour Firefox */
+    min-height: 0;
     padding-right: 8px;
     margin-bottom: 8px;
 }
@@ -332,93 +332,3 @@
 }
 </style>
 
-<script>
-(function() {
-    'use strict';
-    
-    console.log('🚀 Modal chargé');
-    
-    // INIT ÉMOTIONS
-    function initEmotionButtons() {
-        const labels = document.querySelectorAll('.modal-card .emotion-label');
-        
-        labels.forEach(label => {
-            if (label.hasAttribute('data-initialized')) return;
-            label.setAttribute('data-initialized', 'true');
-            
-            label.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Réinitialiser tous les labels
-                document.querySelectorAll('.modal-card .emotion-label').forEach(l => {
-                    l.style.background = '#f8fff8';
-                    l.style.color = '#3a5a3a';
-                    l.style.borderColor = '#d8e8d8';
-                });
-                
-                // Appliquer la couleur
-                const value = this.dataset.value;
-                const colors = {
-                    'tres_bien': '#2b5e2b',
-                    'bien': '#3b7a3b',
-                    'neutre': '#b8a83b',
-                    'pas_bien': '#b85a5a',
-                    'tres_mal': '#b33a3a'
-                };
-                
-                this.style.background = colors[value];
-                this.style.color = 'white';
-                this.style.borderColor = colors[value];
-                
-                // Cocher le radio
-                const radioId = this.getAttribute('for');
-                if (radioId) {
-                    const radio = document.getElementById(radioId);
-                    if (radio) radio.checked = true;
-                }
-            });
-        });
-    }
-    
-    // INIT FICHIERS
-    function initFileInputs() {
-        const imageInput = document.querySelector('[id*="imageFile"]');
-        const audioInput = document.querySelector('[id*="audioFile"]');
-        
-        if (imageInput) {
-            imageInput.addEventListener('change', function() {
-                const span = document.getElementById('image-file-name');
-                if (span) span.textContent = this.files[0] ? this.files[0].name : 'Aucun fichier choisi';
-            });
-        }
-        
-        if (audioInput) {
-            audioInput.addEventListener('change', function() {
-                const span = document.getElementById('audio-file-name');
-                if (span) span.textContent = this.files[0] ? this.files[0].name : 'Aucun fichier choisi';
-            });
-        }
-    }
-    
-    // INITIALISER
-    initEmotionButtons();
-    initFileInputs();
-    
-    // OBSERVER
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length) {
-                initEmotionButtons();
-                initFileInputs();
-            }
-        });
-    });
-    
-    observer.observe(document.querySelector('.modal-card') || document.body, {
-        childList: true,
-        subtree: true
-    });
-    
-})();
-</script>

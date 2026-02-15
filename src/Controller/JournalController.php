@@ -10,6 +10,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use App\Enum\EmotionEnum;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use App\Service\TendanceGenerator;
 class JournalController extends AbstractController
 {
     private $params;
@@ -20,7 +21,7 @@ class JournalController extends AbstractController
     }
    
     #[Route('/dashboard/journal', name: 'app_journal')]
-    public function index(EntityManagerInterface $em): Response
+    public function index(EntityManagerInterface $em, TendanceGenerator $generator): Response
     {
         $user = $this->getUser();
         $journals = $em->getRepository(JournalEmotionnel::class)
@@ -106,21 +107,47 @@ class JournalController extends AbstractController
         $reactionsCount = $totalEntries * rand(3, 8);
         
         // Statistiques par émotion
-        $moodStats = [];
-        foreach (EmotionEnum::cases() as $mood) {
-            $count = $em->getRepository(JournalEmotionnel::class)
-                ->createQueryBuilder('j')
-                ->select('COUNT(j.id)')
-                ->where('j.utilisateur = :user')
-                ->andWhere('j.emotion = :emotion')
-                ->setParameter('user', $user)
-                ->setParameter('emotion', $mood)
-                ->getQuery()
-                ->getSingleScalarResult();
-            
-            $moodStats[$mood->value] = $count;
-        }
-        
+        // ===============================
+// TENDANCES DU MOIS (Analytics)
+// ===============================
+$now = new \DateTime();
+$month = (int)$now->format('m');
+$year = (int)$now->format('Y');
+
+$tendanceRepo = $em->getRepository(\App\Entity\TendanceEmotionnelle::class);
+
+// check if tendances already exist
+$tendances = $tendanceRepo->findBy([
+    'utilisateur' => $user,
+    'mois' => $month,
+    'annee' => $year
+]);
+
+// if not → generate them automatically
+if (!$tendances) {
+    $generator->generateForMonth($user, $month, $year);
+
+    $tendances = $tendanceRepo->findBy([
+        'utilisateur' => $user,
+        'mois' => $month,
+        'annee' => $year
+    ]);
+}
+
+// transform tendances → moodStats for UI
+$moodStats = [];
+
+foreach ($tendances as $tendance) {
+    $moodStats[$tendance->getEmotion()] = $tendance->getTotaleOccurrences();
+}
+
+// ensure all emotions exist (important for charts)
+foreach (EmotionEnum::cases() as $emotion) {
+    if (!isset($moodStats[$emotion->value])) {
+        $moodStats[$emotion->value] = 0;
+    }
+}
+
         // Données pour le graphique (30 derniers jours)
         $chartLabels = [];
         $chartData = [
@@ -173,9 +200,10 @@ class JournalController extends AbstractController
 
     #[Route('/dashboard/journal/new', name: 'app_journal_new', methods: ['POST'])]
     public function new(
-        Request $request, 
-        EntityManagerInterface $em
-    ): Response {
+    Request $request,
+    EntityManagerInterface $em,
+    TendanceGenerator $generator
+): Response{
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
 
         if (!$this->isCsrfTokenValid('create_journal', $request->request->get('_token'))) {
@@ -245,17 +273,25 @@ class JournalController extends AbstractController
 
         $em->persist($journal);
         $em->flush();
+        $now = new \DateTime();
+        $generator->generateForMonth(
+            $user,
+            (int)$now->format('m'),
+            (int)$now->format('Y')
+        );
+
 
         $this->addFlash('success', 'Entrée de journal ajoutée avec succès !');
         return $this->redirectToRoute('app_journal');
     }
 
     #[Route('/dashboard/journal/{id}/edit', name: 'app_journal_edit', methods: ['POST'])]
-    public function edit(
-        Request $request,
-        JournalEmotionnel $journal,
-        EntityManagerInterface $em
-    ): Response {
+   public function edit(
+    Request $request,
+    JournalEmotionnel $journal,
+    EntityManagerInterface $em,
+    TendanceGenerator $generator
+): Response{
         $this->denyAccessUnlessGranted('OWNER', $journal);
 
         if (!$this->isCsrfTokenValid('edit_journal_' . $journal->getId(), $request->request->get('_token'))) {
@@ -341,6 +377,13 @@ class JournalController extends AbstractController
         }
 
         $em->flush();
+        $now = new \DateTime();
+        $generator->generateForMonth(
+            $this->getUser(),
+            (int)$now->format('m'),
+            (int)$now->format('Y')
+        );
+
 
         $this->addFlash('success', 'Entrée modifiée avec succès !');
         return $this->redirectToRoute('app_journal');
@@ -348,9 +391,10 @@ class JournalController extends AbstractController
 
     #[Route('/dashboard/journal/{id}/delete', name: 'app_journal_delete', methods: ['POST'])]
     public function delete(
-        JournalEmotionnel $journal,
-        EntityManagerInterface $em
-    ): Response {
+    JournalEmotionnel $journal,
+    EntityManagerInterface $em,
+    TendanceGenerator $generator
+): Response{
         $this->denyAccessUnlessGranted('OWNER', $journal);
 
         $uploadDir = $this->params->get('kernel.project_dir') . '/public/uploads/journals';
@@ -373,8 +417,195 @@ class JournalController extends AbstractController
 
         $em->remove($journal);
         $em->flush();
+        $now = new \DateTime();
+        $generator->generateForMonth(
+            $this->getUser(),
+            (int)$now->format('m'),
+            (int)$now->format('Y')
+        );
+
 
         $this->addFlash('success', 'Entrée supprimée avec succès !');
         return $this->redirectToRoute('app_journal');
     }
+    #[Route('/dashboard/tendance/generate', name: 'generate_tendance')]
+public function generate(TendanceGenerator $generator): Response
+{
+    $user = $this->getUser();
+    $now = new \DateTime();
+
+$generator->generateForMonth(
+    $user,
+    (int)$now->format('m'),
+    (int)$now->format('Y')
+);
+
+    $this->addFlash('success', 'Tendances générées avec succès.');
+
+    return $this->redirectToRoute('app_journal');
+}
+#[Route('/dashboard/tendance/calculate', name: 'app_tendance_calculate', methods: ['POST'])]
+public function calculate(TendanceGenerator $generator): Response
+{
+    $user = $this->getUser();
+    $now = new \DateTime();
+
+    $generator->generateForMonth(
+        $user,
+        (int)$now->format('m'),
+        (int)$now->format('Y')
+    );
+
+    $this->addFlash('success', 'Tendances calculées avec succès.');
+    return $this->redirectToRoute('app_journal');
+}
+#[Route('/dashboard/tendance/reset', name: 'app_tendance_reset', methods: ['POST'])]
+public function reset(Request $request, EntityManagerInterface $em): Response
+{
+    $user = $this->getUser();
+    $now = new \DateTime();
+    $month = (int)$now->format('m');
+    $year = (int)$now->format('Y');
+
+    // Vérifier le CSRF token
+    if (!$this->isCsrfTokenValid('reset_tendance', $request->request->get('_token'))) {
+        throw $this->createAccessDeniedException();
+    }
+
+    // Supprimer les tendances
+    $em->createQueryBuilder()
+        ->delete(\App\Entity\TendanceEmotionnelle::class, 't')
+        ->where('t.utilisateur = :user')
+        ->andWhere('t.mois = :month')
+        ->andWhere('t.annee = :year')
+        ->setParameter('user', $user)
+        ->setParameter('month', $month)
+        ->setParameter('year', $year)
+        ->getQuery()
+        ->execute();
+
+    // Vérifier si c'est une requête AJAX
+    if ($request->isXmlHttpRequest()) {
+        return $this->json([
+            'success' => true,
+            'message' => 'Tendances réinitialisées'
+        ]);
+    }
+
+    $this->addFlash('success', 'Tendances réinitialisées.');
+    return $this->redirectToRoute('app_journal');
+}
+#[Route('/dashboard/tendance/reset-json', name: 'app_tendance_reset_json', methods: ['POST'])]
+public function resetJson(Request $request, EntityManagerInterface $em): Response
+{
+    $user = $this->getUser();
+    $now = new \DateTime();
+    $month = (int)$now->format('m');
+    $year = (int)$now->format('Y');
+
+    // Vérifier le token CSRF
+    $data = json_decode($request->getContent(), true);
+    if (!isset($data['_token']) || !$this->isCsrfTokenValid('reset_tendance', $data['_token'])) {
+        return $this->json(['error' => 'Token invalide'], 400);
+    }
+
+    // Supprimer les tendances
+    $em->createQueryBuilder()
+        ->delete(\App\Entity\TendanceEmotionnelle::class, 't')
+        ->where('t.utilisateur = :user')
+        ->andWhere('t.mois = :month')
+        ->andWhere('t.annee = :year')
+        ->setParameter('user', $user)
+        ->setParameter('month', $month)
+        ->setParameter('year', $year)
+        ->getQuery()
+        ->execute();
+
+    // Retourner des données vides pour le graphique
+    $chartLabels = [];
+    $chartData = [
+        'tres_bien' => [],
+        'bien' => [],
+        'neutre' => [],
+        'pas_bien' => [],
+        'tres_mal' => []
+    ];
+    
+    // Générer les 30 derniers jours
+    for ($i = 29; $i >= 0; $i--) {
+        $date = new \DateTime("-$i days");
+        $chartLabels[] = $date->format('d/m');
+        
+        foreach (['tres_bien', 'bien', 'neutre', 'pas_bien', 'tres_mal'] as $mood) {
+            $chartData[$mood][] = 0;
+        }
+    }
+
+    return $this->json([
+        'success' => true,
+        'message' => 'Tendances réinitialisées',
+        'chartLabels' => $chartLabels,
+        'chartData' => $chartData
+    ]);
+}
+#[Route('/dashboard/tendance/calculate-json', name: 'app_tendance_calculate_json', methods: ['POST'])]
+public function calculateJson(Request $request, TendanceGenerator $generator, EntityManagerInterface $em): Response
+{
+    $user = $this->getUser();
+    $now = new \DateTime();
+    $month = (int)$now->format('m');
+    $year = (int)$now->format('Y');
+    
+    // Verify CSRF token
+    $data = json_decode($request->getContent(), true);
+    if (!isset($data['_token']) || !$this->isCsrfTokenValid('calculate_tendance', $data['_token'])) {
+        return $this->json(['error' => 'Invalid CSRF token'], 400);
+    }
+    
+    // Generate tendances
+    $generator->generateForMonth($user, $month, $year);
+    
+    // Get updated chart data (last 30 days)
+    $chartLabels = [];
+    $chartData = [
+        'tres_bien' => [],
+        'bien' => [],
+        'neutre' => [],
+        'pas_bien' => [],
+        'tres_mal' => []
+    ];
+    
+    $repo = $em->getRepository(JournalEmotionnel::class);
+    
+    for ($i = 29; $i >= 0; $i--) {
+        $date = new \DateTime("-$i days");
+        $chartLabels[] = $date->format('d/m');
+        
+        $dayEntries = $repo->createQueryBuilder('j')
+            ->where('j.utilisateur = :user')
+            ->andWhere('j.dateCreation >= :start')
+            ->andWhere('j.dateCreation < :end')
+            ->setParameter('user', $user)
+            ->setParameter('start', $date->format('Y-m-d 00:00:00'))
+            ->setParameter('end', $date->format('Y-m-d 23:59:59'))
+            ->getQuery()
+            ->getResult();
+        
+        foreach (['tres_bien', 'bien', 'neutre', 'pas_bien', 'tres_mal'] as $mood) {
+            $chartData[$mood][] = 0;
+        }
+        
+        foreach ($dayEntries as $entry) {
+            $moodValue = $entry->getEmotion()->value;
+            $chartData[$moodValue][count($chartData[$moodValue]) - 1]++;
+        }
+    }
+    
+    return $this->json([
+        'success' => true,
+        'chartLabels' => $chartLabels,
+        'chartData' => $chartData
+    ]);
+}
+
 }
