@@ -1,101 +1,48 @@
-{# templates/dashboard/base.html.twig #}
 <!DOCTYPE html>
 <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{% block title %}FeelSafe - Tableau de bord{% endblock %}</title>
-        
-        {# Feather Icons CDN #}
-        <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-        
-        {# Your Tailwind CSS #}
-        <link rel="stylesheet" href="{{ asset('build/app.css') }}">
-        
-        {% block stylesheets %}{% endblock %}
-        {% block javascripts_head %}{% endblock %}
-<<<<<<< HEAD
-=======
-        <style>
-            .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.625rem 1rem;border-radius:.75rem;border:2px solid #16a34a;background:#16a34a;color:#fff;font-weight:600;box-shadow:0 6px 12px rgba(22,163,74,.25);transition:.2s}
-            .btn:hover{background:#15803d;border-color:#15803d;transform:translateY(-1px)}
-            .btn:active{transform:translateY(0)}
-            .btn-outline{background:transparent;color:#111;border-color:#16a34a}
-            .btn-outline:hover{background:#dcfce7;color:#111}
-            .btn-secondary{background:#22c55e;border-color:#22c55e}
-            .btn-secondary:hover{background:#16a34a;border-color:#16a34a}
-            .btn-danger{background:#ef4444;border-color:#ef4444;color:#fff}
-            .btn-danger:hover{background:#dc2626;border-color:#dc2626}
-            .btn-lg{padding:.75rem 1.25rem;border-radius:1rem}
-            .btn-sm{padding:.375rem .75rem;border-radius:.5rem;font-size:.875rem}
-        </style>
->>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
-    </head>
-    <body class="bg-background">
-               <div
-                x-data="{
-                    sidebarOpen: false,
-                    currentPath: window.location.pathname
-                }"
-                x-init="
-                    sidebarOpen = window.innerWidth >= 1024;
-                    $nextTick(() => $el.removeAttribute('x-cloak'));
-                    window.addEventListener('resize', () => {
-                    sidebarOpen = window.innerWidth >= 1024;
-                    });
-                "
-                x-cloak
-                class="flex min-h-screen"
-                >
-            {# Include just the sidebar/mobile header #}
-            {% include "components/dashboard_navbar.html.twig" %}
-            
-            {# Main Content Area #}
-              <main class="flex-1 p-6 pt-20 lg:pt-6">
-                <div class="pt-16 lg:pt-0">
-                    <div class="p-6 lg:p-8">
-<<<<<<< HEAD
-=======
-                        {% for message in app.flashes('success') %}
-                            <div class="mb-4 px-4 py-3 rounded-lg bg-green-50 text-green-800 border border-green-200">✅ {{ message }}</div>
-                        {% endfor %}
-                        {% for message in app.flashes('error') %}
-                            <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-800 border border-red-200">❌ {{ message }}</div>
-                        {% endfor %}
->>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
-                        {% block content %}{% endblock %}
-                    </div>
-                </div>
-            </main>
-        </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FeelSafe - Tableau de bord{% endblock %}</title>
 
-        {# Alpine.js for interactivity #}
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
-        
-        {# Feather icons initialization #}
-        <script>
-        document.addEventListener('alpine:init', function() {
-            setTimeout(function() {
-                if (typeof feather !== 'undefined') {
-                    try {
-                        feather.replace();
-                    } catch (error) {
-                        console.warn('Feather Icons could not replace some elements:', error.message);
-                    }
-                }
-            }, 100);
-        });
-        </script>
-        
-        {% block javascripts %}{% endblock %}
-    </body>
-    <style>
-  [x-cloak] {
-    display: none !important;
-  }
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+    
+    <!-- Alpine.js with DEFER attribute -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+    
+    {% block stylesheets %}{% endblock %}
+    {% block javascripts_head %}{% endblock %}
+</head>
+<body class="bg-background pt-20 lg:pt-32">
+    <div class="flex flex-col min-h-screen">
+        {% include "components/dashboard_navbar.html.twig" %}
+
+        <main class="flex-1 w-full px-6 py-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+<style>
+    :root {
+  --navbar-height: 72px;
+}
 </style>
-<<<<<<< HEAD
+
+    
+    <script>
+    document.addEventListener('alpine:init', () => {
+        console.log('✅ Alpine.js initialized!');
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    });
+    
+    document.addEventListener('alpine:initialized', () => {
+        console.log('✅ Alpine.js fully ready!');
+    });
+    </script>
+    
+    {% block javascripts %}{% endblock %}
+</body>
 </html>
-=======
-</html>
->>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)

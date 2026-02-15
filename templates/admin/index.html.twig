@@ -1,7 +1,50 @@
 {% extends 'admin/base.html.twig' %}
 
 {% block title %}Admin Dashboard{% endblock %}
+    {% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
+    {% endblock %}
 
 {% block content %}
-<h1>Admin Dashboard</h1>
+        <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
+<div class="admin-main">
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 dashboard-grid">
+
+        <div class="dashboard-card">
+            <div class="dashboard-icon">📢</div>
+            <div>
+                <div class="dashboard-number">{{ nbPublications }}</div>
+                <div class="dashboard-label">Publications</div>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-icon icon-green">📓</div>
+            <div>
+                <div class="dashboard-number">{{ nbJournals }}</div>
+                <div class="dashboard-label">Journaux émotionnels</div>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-icon icon-yellow">👤</div>
+            <div>
+                <div class="dashboard-number">{{ nbClients }}</div>
+                <div class="dashboard-label">Clients</div>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-icon icon-purple">🧑‍⚕️</div>
+            <div>
+                <div class="dashboard-number">{{ nbProfessionnels }}</div>
+                <div class="dashboard-label">Professionnels</div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
 {% endblock %}

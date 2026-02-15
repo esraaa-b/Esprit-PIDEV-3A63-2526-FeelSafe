@@ -7,6 +7,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use App\Entity\JournalEmotionnel;
 
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
 #[ORM\Table(name: 'utilisateur')]
@@ -48,11 +51,15 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\OneToOne(mappedBy: 'utilisateur', cascade: ['persist', 'remove'])]
     private ?ConfidentialiteUtilisateur $confidentialite = null;
+    #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: JournalEmotionnel::class, orphanRemoval: true)]
+    private Collection $journaux;
+
 
     public function __construct()
     {
         $this->dateCreation = new \DateTimeImmutable();
         $this->role = ['ROLE_CLIENT']; // Rôle par défaut
+        $this->journaux = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -229,4 +236,32 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->hasRole('ROLE_CLIENT');
     }
+    /**
+ * @return Collection<int, JournalEmotionnel>
+ */
+public function getJournaux(): Collection
+{
+    return $this->journaux;
+}
+public function addJournal(JournalEmotionnel $journal): static
+{
+    if (!$this->journaux->contains($journal)) {
+        $this->journaux->add($journal);
+        $journal->setUtilisateur($this);
+    }
+
+    return $this;
+}
+
+public function removeJournal(JournalEmotionnel $journal): static
+{
+    if ($this->journaux->removeElement($journal)) {
+        if ($journal->getUtilisateur() === $this) {
+            $journal->setUtilisateur(null);
+        }
+    }
+
+    return $this;
+}
+
 }

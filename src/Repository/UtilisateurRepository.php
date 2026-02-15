@@ -47,11 +47,8 @@ class UtilisateurRepository extends ServiceEntityRepository
     public function findByRole(string $role): array
     {
         return $this->createQueryBuilder('u')
-<<<<<<< HEAD
-            ->where('u.roles LIKE :role')
-=======
+
             ->where('u.role LIKE :role')
->>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
             ->setParameter('role', '%"' . $role . '"%')
             ->orderBy('u.dateCreation', 'DESC')
             ->getQuery()
@@ -79,11 +76,7 @@ class UtilisateurRepository extends ServiceEntityRepository
         try {
             return (int) $this->createQueryBuilder('u')
                 ->select('COUNT(u.id)')
-<<<<<<< HEAD
-                ->where('u.roles LIKE :role')
-=======
                 ->where('u.role LIKE :role')
->>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
                 ->setParameter('role', '%"' . $role . '"%')
                 ->getQuery()
                 ->getSingleScalarResult();
@@ -135,8 +128,4 @@ class UtilisateurRepository extends ServiceEntityRepository
             'inactifs' => $this->count(['statut' => 'inactif']),
         ];
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 3e7fee3 (Ajout des modifications module accompagnement et rendez-vous)
