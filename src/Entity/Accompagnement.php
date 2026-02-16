@@ -13,7 +13,7 @@ class Accompagnement
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'id_accompagnement')]
+    #[ORM\Column(name: 'id')]
     private ?int $id = null;
 
     #[ORM\Column(name: 'prochain_rdv', length: 5, enumType: ProchainRdv::class)]
@@ -31,12 +31,12 @@ class Accompagnement
     #[ORM\Column(name: 'niveau_priorite', type: Types::SMALLINT, nullable: true)]
     private ?int $niveauPriorite = null;
 
-    #[ORM\ManyToOne(targetEntity: RendezVous::class)]
-    #[ORM\JoinColumn(name: 'id_rendez_vous', referencedColumnName: 'id_rendez_vous')]
+    #[ORM\ManyToOne(inversedBy: 'accomp', targetEntity: RendezVous::class)]
+    #[ORM\JoinColumn(name: 'rendezvous_id', referencedColumnName: 'id')]
     private ?RendezVous $rendezvous = null;
 
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
-    #[ORM\JoinColumn(name: 'id_utilisateur', referencedColumnName: 'id')]
+    #[ORM\JoinColumn(name: 'utilisateur_id', referencedColumnName: 'id')]
     private ?Utilisateur $utilisateur = null;
 
     public function getId(): ?int

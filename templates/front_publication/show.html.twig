@@ -1,0 +1,219 @@
+{% extends "dashboard/base.html.twig" %}
+{% block dashboard_navbar %}{% endblock %}
+{% block body_padding %}{% endblock %}
+
+{% block title %}{{ publication.titre }}{% endblock %}
+
+{% block content %}
+    <div class="max-w-3xl mx-auto space-y-6" x-data="{ 
+    isPlaying: false,
+    utterance: null,
+    isSummarizing: false,
+    aiSummary: null,
+    speakPublication(text) {
+        if (this.isPlaying) {
+            window.speechSynthesis.cancel();
+            this.isPlaying = false;
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        this.isPlaying = true;
+        
+        this.utterance = new SpeechSynthesisUtterance(text);
+        this.utterance.lang = 'fr-FR';
+        this.utterance.onend = () => {
+            this.isPlaying = false;
+        };
+        
+        window.speechSynthesis.speak(this.utterance);
+    },
+    async summarize() {
+        if (this.isSummarizing) return;
+        this.isSummarizing = true;
+        this.aiSummary = null;
+
+        try {
+            const response = await fetch('{{ path('app_front_publication_summarize', {id: publication.id}) }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            if (data.summary) {
+                this.aiSummary = data.summary;
+            } else {
+                alert(data.error || 'Erreur lors du résumé');
+            }
+        } catch (e) {
+            alert('Erreur: ' + e.message);
+        } finally {
+            this.isSummarizing = false;
+        }
+    }
+}">
+
+    {# Bouton retour à la liste amélioré #}
+    <div class="mb-4">
+        <a href="{{ path('app_front_publication') }}" 
+           class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors border border-primary/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span class="text-base">Retour à la liste</span>
+        </a>
+    </div>
+
+    {# Publication #}
+    <div class="bg-card p-5 rounded-xl shadow border border-border" style="padding-left: 2rem !important;">
+        <h1 class="text-2xl font-bold mb-2 text-foreground">{{ publication.titre }}</h1>
+        <p class="text-muted-foreground mb-3">{{ publication.contenu }}</p>
+
+        {# AI Summary Result #}
+        <div x-show="aiSummary" x-transition 
+             class="mb-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i data-feather="sparkles" class="w-12 h-12 text-indigo-600"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-600 text-white shadow-sm">
+                    <i data-feather="zap" class="w-3.5 h-3.5"></i>
+                </div>
+                <h4 class="text-sm font-bold text-indigo-900 uppercase tracking-wider">Résumé de l'IA</h4>
+            </div>
+            <p class="text-indigo-800 text-sm leading-relaxed" x-text="aiSummary"></p>
+        </div>
+
+        {% if publication.image %}
+            <img src="{{ asset('uploads/' ~ publication.image) }}"
+                 class="w-full h-64 object-cover rounded-lg mb-3">
+        {% endif %}
+
+        <div class="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+            <span>Publié le {{ publication.datePublication|date('d/m/Y') }}</span>
+
+            <span class="text-muted-foreground">•</span>
+
+            {# TTS Button #}
+            <button @click.prevent="speakPublication('{{ (publication.titre ~ ". " ~ publication.contenu)|e('js') }}')" 
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-colors text-sm font-bold"
+                    :class="{ 'bg-primary text-white': isPlaying }">
+                <template x-if="!isPlaying">
+                    <div class="flex items-center gap-1.5">
+                        <i data-feather="volume-2" class="w-4 h-4"></i>
+                        <span>Écouter la publication</span>
+                    </div>
+                </template>
+                <template x-if="isPlaying">
+                    <div class="flex items-center gap-1.5">
+                        <i data-feather="square" class="w-4 h-4"></i>
+                        <span>Arrêter la lecture</span>
+                    </div>
+                </template>
+            </button>
+
+            <span class="text-muted-foreground">•</span>
+
+            {# AI Summarize Button #}
+            <button @click.prevent="summarize()" 
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all text-sm font-bold border border-indigo-100 disabled:opacity-50"
+                    :disabled="isSummarizing">
+                <template x-if="!isSummarizing">
+                    <div class="flex items-center gap-1.5">
+                        <i data-feather="sparkles" class="w-4 h-4"></i>
+                        <span>Résumer avec l'IA</span>
+                    </div>
+                </template>
+                <template x-if="isSummarizing">
+                    <div class="flex items-center gap-1.5">
+                        <svg class="animate-spin h-4 w-4 text-indigo-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Analyse en cours...</span>
+                    </div>
+                </template>
+            </button>
+
+            <!-- Likes -->
+            <span class="flex items-center gap-1">
+                <form method="POST" action="{{ path('app_front_publication_like', {'id': publication.id}) }}" class="inline">
+                    <button type="submit" class="hover:text-green-600 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                    </button>
+                </form>
+                <span>{{ publication.likesCount|default(0) }}</span>
+            </span>
+
+            <!-- Dislikes -->
+            <span class="flex items-center gap-1">
+                <form method="POST" action="{{ path('app_front_publication_dislike', {'id': publication.id}) }}" class="inline">
+                    <button type="submit" class="hover:text-red-600 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                        </svg>
+                    </button>
+                </form>
+                <span>{{ publication.dislikesCount|default(0) }}</span>
+            </span>
+        </div>
+    </div>
+
+    {# Commentaires #}
+    <div class="bg-card p-5 rounded-xl shadow space-y-4 border border-border" style="padding-left: 2rem !important;">
+        <h2 class="text-xl font-semibold text-foreground mb-3">
+            Commentaires ({{ publication.pubCom|length }})
+        </h2>
+
+        {% for commentaire in rootComments %}
+            <div x-data="{ showReply: false }">
+                {% include 'front_publication/_comment_front.html.twig' with {
+                    commentaire: commentaire,
+                    publication: publication,
+                    userVotes: userVotes,
+                    depth: 0
+                } only %}
+            </div>
+        {% else %}
+            <p class="text-muted-foreground">Aucun commentaire pour le moment.</p>
+        {% endfor %}
+
+        {# Formulaire pour ajouter un commentaire #}
+        <form method="POST"
+              action="{{ path('app_front_commentaire_new', {id: publication.id}) }}"
+              class="mt-4 space-y-2">
+
+            <textarea name="contenu"
+                      id="main-comment-textarea"
+                      rows="3"
+                      class="w-full border border-border rounded-lg p-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Écrire un commentaire..."></textarea>
+
+            <input type="hidden" name="gif_url" id="main-comment-gif-url">
+
+            {# Giphy Picker #}
+            {% include 'front_publication/_giphy_picker.html.twig' with {
+                textareaId: 'main-comment-textarea',
+                hiddenInputId: 'main-comment-gif-url'
+            } only %}
+
+            <button type="submit"
+                    class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 inline-flex items-center gap-2 transition">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 4v16m8-8H4"/>
+                </svg>
+                Ajouter
+            </button>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

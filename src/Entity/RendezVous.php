@@ -16,7 +16,7 @@ class RendezVous
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'id_rendez_vous')]
+    #[ORM\Column(name: 'id')]
     private ?int $id = null;
 
     #[ORM\Column(name: 'date_rdv', type: Types::DATE_MUTABLE)]
@@ -41,11 +41,11 @@ class RendezVous
     private ?\DateTime $dateCreation = null;
 
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
-    #[ORM\JoinColumn(name: 'id_utilisateur', referencedColumnName: 'id')]
+    #[ORM\JoinColumn(name: 'utilisateur_id', referencedColumnName: 'id')]
     private ?Utilisateur $utilisateur = null;
 
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
-    #[ORM\JoinColumn(name: 'id_professionnel', referencedColumnName: 'id')]
+    #[ORM\JoinColumn(name: 'professionnel_id', referencedColumnName: 'id')]
     private ?Utilisateur $professionnel = null;
 
     /**

@@ -1,0 +1,181 @@
+{# Recursive partial for rendering a comment and its replies in frontoffice #}
+{# Variables: commentaire, publication, userVotes, depth (default 0) #}
+
+{% set depth = depth|default(0) %}
+{% set replyTextareaId = 'reply-textarea-' ~ commentaire.id %}
+{% set replyGifInputId = 'reply-gif-url-' ~ commentaire.id %}
+
+<div class="border border-border rounded-lg p-3 bg-background space-y-2 {% if depth > 0 %}ml-6 border-l-2 border-l-primary/30{% endif %}"
+     style="padding-left: 1.5rem !important;">
+
+    {# Comment content #}
+    <p class="text-foreground">{{ commentaire.contenu }}</p>
+
+    {# GIF attachment (if any) #}
+    {% if commentaire.gifUrl %}
+        <div class="mt-1">
+            <img src="{{ commentaire.gifUrl }}"
+                 alt="GIF"
+                 class="max-h-40 rounded-lg border border-border/50"
+                 loading="lazy">
+        </div>
+    {% endif %}
+
+    {# Bottom row: author/date + like/dislike + reply/edit/delete #}
+    <div class="flex items-center justify-between text-sm text-muted-foreground flex-wrap gap-2">
+
+        {# Author & date #}
+        <div>
+            <span class="font-medium">{{ commentaire.user ? commentaire.user.nom : 'Utilisateur' }}</span>
+            • {{ commentaire.dateCommentaire ? commentaire.dateCommentaire|date('d/m/Y H:i') : '' }}
+            {% if commentaire.parent %}
+                <span class="text-xs text-primary/60">↩ réponse</span>
+            {% endif %}
+        </div>
+
+        {# Actions row #}
+        <div class="flex items-center gap-3">
+
+            {# Like button #}
+            <form method="POST" action="{{ path('app_front_commentaire_like', {id: commentaire.id}) }}" class="inline">
+                <button type="submit"
+                        class="flex items-center gap-1 px-2 py-0.5 rounded transition
+                               {% if userVotes[commentaire.id] is defined and userVotes[commentaire.id] == 'like' %}
+                                   text-green-600 bg-green-50 font-semibold
+                               {% else %}
+                                   hover:text-green-600
+                               {% endif %}">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                    </svg>
+                    <span>{{ commentaire.likesCount }}</span>
+                </button>
+            </form>
+
+            {# Dislike button #}
+            <form method="POST" action="{{ path('app_front_commentaire_dislike', {id: commentaire.id}) }}" class="inline">
+                <button type="submit"
+                        class="flex items-center gap-1 px-2 py-0.5 rounded transition
+                               {% if userVotes[commentaire.id] is defined and userVotes[commentaire.id] == 'dislike' %}
+                                   text-red-600 bg-red-50 font-semibold
+                               {% else %}
+                                   hover:text-red-600
+                               {% endif %}">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                    </svg>
+                    <span>{{ commentaire.dislikesCount }}</span>
+                </button>
+            </form>
+
+            {# Reply button (Alpine.js toggle) #}
+            <button @click="showReply = !showReply"
+                    class="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-primary/10 hover:text-primary transition text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a5 5 0 015 5v6M3 10l6-6M3 10l6 6"/>
+                </svg>
+                Répondre
+            </button>
+
+            {# Edit (pencil) - only for comment author #}
+            {% if commentaire.user and commentaire.user.id == 1 %}
+                <div x-data="{ open: false }">
+                    <button @click="open = true" class="text-blue-600 hover:text-blue-800 text-sm">
+                        ✏️
+                    </button>
+                    <div x-show="open" x-cloak
+                         class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                        <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-lg relative">
+                            <h2 class="text-lg font-bold mb-4">Modifier le commentaire</h2>
+                            <form method="POST" action="{{ path('app_front_commentaire_edit', {id: commentaire.id}) }}" class="space-y-2">
+                                <textarea name="contenu"
+                                          id="edit-textarea-{{ commentaire.id }}"
+                                          rows="4"
+                                          class="w-full border rounded p-2">{{ commentaire.contenu }}</textarea>
+                                
+                                <input type="hidden" name="gif_url" id="edit-gif-{{ commentaire.id }}" value="{{ commentaire.gifUrl }}">
+                                
+                                {# Giphy Picker for Edit #}
+                                {% include 'front_publication/_giphy_picker.html.twig' with {
+                                    textareaId: 'edit-textarea-' ~ commentaire.id,
+                                    hiddenInputId: 'edit-gif-' ~ commentaire.id,
+                                    initialGif: commentaire.gifUrl
+                                } only %}
+
+                                <div class="flex justify-end gap-2 mt-2">
+                                    <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90">
+                                        Enregistrer
+                                    </button>
+                                    <button type="button" @click="open = false" class="px-4 py-2 border rounded hover:bg-gray-100">
+                                        Annuler
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Delete (trash) - for comment author OR publication author #}
+            {% if (commentaire.user and commentaire.user.id == 1) or (publication.user and publication.user.id == 1) %}
+                <form action="{{ path('app_front_commentaire_delete', {id: commentaire.id}) }}"
+                      method="POST"
+                      onsubmit="return confirm('Supprimer ce commentaire ?');">
+                    <button type="submit"
+                            class="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive transition">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-4 w-4"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M6 7h12M9 7v10m6-10v10M10 4h4a1 1 0 011 1v2H9V5a1 1 0 011-1z"/>
+                        </svg>
+                    </button>
+                </form>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {# Reply form (hidden by default) with Giphy picker #}
+    <div x-show="showReply" x-cloak class="mt-2">
+        <form method="POST"
+              action="{{ path('app_front_commentaire_reply', {id: commentaire.id}) }}"
+              class="space-y-2">
+            <div class="flex gap-2">
+                <input type="text" name="contenu"
+                       id="{{ replyTextareaId }}"
+                       class="flex-1 border border-border rounded-lg px-3 py-1.5 bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                       placeholder="Écrire une réponse...">
+                <button type="submit"
+                        class="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition">
+                    Répondre
+                </button>
+            </div>
+            <input type="hidden" name="gif_url" id="{{ replyGifInputId }}">
+            {% include 'front_publication/_giphy_picker.html.twig' with {
+                textareaId: replyTextareaId,
+                hiddenInputId: replyGifInputId
+            } only %}
+        </form>
+    </div>
+
+    {# Nested replies (recursive) #}
+    {% if commentaire.replies|length > 0 %}
+        <div class="mt-2 space-y-2">
+            {% for reply in commentaire.replies %}
+                <div x-data="{ showReply: false }">
+                    {% include 'front_publication/_comment_front.html.twig' with {
+                        commentaire: reply,
+                        publication: publication,
+                        userVotes: userVotes,
+                        depth: depth + 1
+                    } only %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

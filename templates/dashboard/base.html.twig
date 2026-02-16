@@ -14,9 +14,9 @@
     {% block stylesheets %}{% endblock %}
     {% block javascripts_head %}{% endblock %}
 </head>
-<body class="bg-background pt-20 lg:pt-32">
+<body class="bg-background {% block body_padding %}pt-20 lg:pt-32{% endblock %}">
     <div class="flex flex-col min-h-screen">
-        {% include "components/dashboard_navbar.html.twig" %}
+        {% block dashboard_navbar %}{% include "components/dashboard_navbar.html.twig" %}{% endblock %}
 
         <main class="flex-1 w-full px-6 py-8">
             {% block content %}{% endblock %}

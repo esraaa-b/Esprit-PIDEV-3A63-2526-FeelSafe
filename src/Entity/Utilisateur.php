@@ -10,6 +10,11 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use App\Entity\JournalEmotionnel;
+use App\Entity\Publication;
+use App\Entity\Commentaire;
+use App\Entity\ActiviteBienEtre;
+use App\Entity\SessionActivite;
+use App\Entity\TendanceEmotionnelle;
 
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
 #[ORM\Table(name: 'utilisateur')]
@@ -24,7 +29,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'json')]
     private array $role = [];
 
     /**
@@ -53,6 +58,16 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?ConfidentialiteUtilisateur $confidentialite = null;
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: JournalEmotionnel::class, orphanRemoval: true)]
     private Collection $journaux;
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Publication::class)]
+    private Collection $publications;
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Commentaire::class)]
+    private Collection $userCom;
+    #[ORM\OneToMany(mappedBy: 'creePar', targetEntity: ActiviteBienEtre::class)]
+    private Collection $activitesCrees;
+    #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: SessionActivite::class)]
+    private Collection $sessionsActivites;
+    #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: TendanceEmotionnelle::class)]
+    private Collection $usertend;
 
 
     public function __construct()
@@ -60,6 +75,11 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         $this->dateCreation = new \DateTimeImmutable();
         $this->role = ['ROLE_CLIENT']; // Rôle par défaut
         $this->journaux = new ArrayCollection();
+        $this->publications = new ArrayCollection();
+        $this->userCom = new ArrayCollection();
+        $this->activitesCrees = new ArrayCollection();
+        $this->sessionsActivites = new ArrayCollection();
+        $this->usertend = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -261,6 +281,126 @@ public function removeJournal(JournalEmotionnel $journal): static
         }
     }
 
+    return $this;
+}
+
+public function getPublications(): Collection
+{
+    return $this->publications;
+}
+
+public function addPublication(Publication $publication): static
+{
+    if (!$this->publications->contains($publication)) {
+        $this->publications->add($publication);
+        $publication->setUser($this);
+    }
+    return $this;
+}
+
+public function removePublication(Publication $publication): static
+{
+    if ($this->publications->removeElement($publication)) {
+        if ($publication->getUser() === $this) {
+            $publication->setUser(null);
+        }
+    }
+    return $this;
+}
+
+public function getUserCom(): Collection
+{
+    return $this->userCom;
+}
+
+public function addUserCom(Commentaire $commentaire): static
+{
+    if (!$this->userCom->contains($commentaire)) {
+        $this->userCom->add($commentaire);
+        $commentaire->setUser($this);
+    }
+    return $this;
+}
+
+public function removeUserCom(Commentaire $commentaire): static
+{
+    if ($this->userCom->removeElement($commentaire)) {
+        if ($commentaire->getUser() === $this) {
+            $commentaire->setUser(null);
+        }
+    }
+    return $this;
+}
+
+public function getActivitesCrees(): Collection
+{
+    return $this->activitesCrees;
+}
+
+public function addActivitesCree(ActiviteBienEtre $activite): static
+{
+    if (!$this->activitesCrees->contains($activite)) {
+        $this->activitesCrees->add($activite);
+        $activite->setCreePar($this);
+    }
+    return $this;
+}
+
+public function removeActivitesCree(ActiviteBienEtre $activite): static
+{
+    if ($this->activitesCrees->removeElement($activite)) {
+        if ($activite->getCreePar() === $this) {
+            $activite->setCreePar(null);
+        }
+    }
+    return $this;
+}
+
+public function getSessionsActivites(): Collection
+{
+    return $this->sessionsActivites;
+}
+
+public function addSessionsActivite(SessionActivite $session): static
+{
+    if (!$this->sessionsActivites->contains($session)) {
+        $this->sessionsActivites->add($session);
+        $session->setUtilisateur($this);
+    }
+    return $this;
+}
+
+public function removeSessionsActivite(SessionActivite $session): static
+{
+    if ($this->sessionsActivites->removeElement($session)) {
+        if ($session->getUtilisateur() === $this) {
+            $session->setUtilisateur(null);
+        }
+    }
+    return $this;
+}
+
+public function getUsertend(): Collection
+{
+    return $this->usertend;
+}
+
+public function addUsertend(TendanceEmotionnelle $tendance): static
+{
+    if (!$this->usertend->contains($tendance)) {
+        $this->usertend->add($tendance);
+        $tendance->setUtilisateur($this);
+    }
+    return $this;
+}
+
+public function removeUsertend(TendanceEmotionnelle $tendance): static
+{
+    if ($this->usertend->removeElement($tendance)) {
+        if ($tendance->getUtilisateur() === $this) {
+            $tendance->setUtilisateur(null);
+        }
+    }
     return $this;
 }
 

@@ -38,12 +38,14 @@ class ForumController extends AbstractController
         }
 
         $validSortFields = ['id', 'titre', 'datePublication'];
-        if (!in_array($sortBy, $validSortFields))
+        if (!in_array($sortBy, $validSortFields)) {
             $sortBy = 'datePublication';
+        }
 
         $validSortOrders = ['ASC', 'DESC'];
-        if (!in_array(strtoupper($sortOrder), $validSortOrders))
+        if (!in_array(strtoupper($sortOrder), $validSortOrders)) {
             $sortOrder = 'DESC';
+        }
 
         $queryBuilder->orderBy('p.' . $sortBy, $sortOrder);
 
@@ -59,10 +61,8 @@ class ForumController extends AbstractController
     {
         $publication = new Publication();
 
-        // Récupérer l'utilisateur admin par défaut (à adapter selon ton besoin)
         $user = $entityManager->getRepository(Utilisateur::class)->findOneBy(['role' => 'ROLE_ADMIN']);
         if (!$user) {
-            // Fallback: chercher le premier utilisateur
             $user = $entityManager->getRepository(Utilisateur::class)->findOneBy([], ['id' => 'ASC']);
         }
 
@@ -78,7 +78,6 @@ class ForumController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Gestion de l'image
             $imageFile = $form->get('image')->getData();
             if ($imageFile) {
                 $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
@@ -112,7 +111,6 @@ class ForumController extends AbstractController
     #[Route('/{id}', name: 'admin_forum_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(Publication $publication, EntityManagerInterface $entityManager): Response
     {
-        // Récupérer les commentaires de la publication
         $commentaires = $entityManager->getRepository(Commentaire::class)
             ->findBy(['publication' => $publication], ['dateCommentaire' => 'DESC']);
 
@@ -129,10 +127,8 @@ class ForumController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Gérer l'image uploadée
             $imageFile = $form->get('image')->getData();
             if ($imageFile) {
-                // Supprimer l'ancienne image si elle existe
                 if ($publication->getImage()) {
                     $oldImage = $this->getParameter('uploads_directory') . '/' . $publication->getImage();
                     if (file_exists($oldImage)) {
@@ -171,7 +167,6 @@ class ForumController extends AbstractController
     public function delete(Request $request, Publication $publication, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete' . $publication->getId(), $request->request->get('_token'))) {
-            // Supprimer l'image associée
             if ($publication->getImage()) {
                 $imagePath = $this->getParameter('uploads_directory') . '/' . $publication->getImage();
                 if (file_exists($imagePath)) {
@@ -190,17 +185,12 @@ class ForumController extends AbstractController
     #[Route('/stats', name: 'admin_forum_stats', methods: ['GET'])]
     public function stats(EntityManagerInterface $em): Response
     {
-        // Récupérer toutes les publications
         $publications = $em->getRepository(Publication::class)->findAll();
-
-        // Récupérer tous les commentaires
         $commentaires = $em->getRepository(Commentaire::class)->findAll();
 
-        // Initialiser le comptage des publications par mois
         $pubCounts = array_fill(0, 12, 0);
         $comCounts = array_fill(0, 12, 0);
 
-        // Compter les publications par mois
         foreach ($publications as $p) {
             if ($p->getDatePublication()) {
                 $month = (int) $p->getDatePublication()->format('n') - 1;
@@ -208,7 +198,6 @@ class ForumController extends AbstractController
             }
         }
 
-        // Compter les commentaires par mois
         foreach ($commentaires as $c) {
             if ($c->getDateCommentaire()) {
                 $month = (int) $c->getDateCommentaire()->format('n') - 1;
@@ -216,23 +205,20 @@ class ForumController extends AbstractController
             }
         }
 
-        // Statistiques supplémentaires
         $totalPublications = count($publications);
         $totalCommentaires = count($commentaires);
         $moyenneCommentaires = $totalPublications > 0 ? round($totalCommentaires / $totalPublications, 1) : 0;
 
-        // Publication la plus commentée
         $topPublication = null;
         $maxCommentaires = 0;
         foreach ($publications as $p) {
-            $nbCommentaires = count($p->getPubCom());  // ✅ Changé ici !
+            $nbCommentaires = count($p->getPubCom());
             if ($nbCommentaires > $maxCommentaires) {
                 $maxCommentaires = $nbCommentaires;
                 $topPublication = $p;
             }
         }
 
-        // Préparer les labels des mois
         $months = [];
         for ($i = 1; $i <= 12; $i++) {
             $months[] = date('F', mktime(0, 0, 0, $i, 1));
@@ -250,7 +236,6 @@ class ForumController extends AbstractController
         ]);
     }
 
-    // Routes supplémentaires pour la gestion des commentaires
     #[Route('/commentaire/{id}/delete', name: 'admin_forum_comment_delete', methods: ['POST'])]
     public function deleteComment(Request $request, Commentaire $commentaire, EntityManagerInterface $entityManager): Response
     {

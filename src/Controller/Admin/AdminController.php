@@ -16,23 +16,17 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 class AdminController extends AbstractController
 {
-    /**
-     * 📊 Dashboard principal - Affichage de tous les utilisateurs
-     */
     #[Route('', name: 'admin_home')]
     #[Route('/', name: 'admin_dashboard')]
     public function index(UtilisateurRepository $userRepository): Response
     {
-        // Récupérer TOUS les utilisateurs
         $users = $userRepository->findAll();
         
-        // Initialiser les compteurs
         $totalUsers = count($users);
         $totalClients = 0;
         $totalProfessionnels = 0;
         $totalAdmins = 0;
 
-        // Calculer les statistiques
         foreach ($users as $user) {
             $roles = $user->getRoles();
             
@@ -45,7 +39,6 @@ class AdminController extends AbstractController
             }
         }
 
-        // Préparer le tableau de stats
         $stats = [
             'total_users' => $totalUsers,
             'total_clients' => $totalClients,
@@ -53,16 +46,12 @@ class AdminController extends AbstractController
             'total_admins' => $totalAdmins,
         ];
 
-        // Rendu de la vue avec les données
         return $this->render('admin/dashboard/index.html.twig', [
             'users' => $users,
             'stats' => $stats,
         ]);
     }
 
-    /**
-     * ✏️ Modifier un utilisateur
-     */
     #[Route('/user/{id}/edit', name: 'admin_user_edit', methods: ['POST'])]
     public function editUser(
         Request $request,
@@ -70,14 +59,12 @@ class AdminController extends AbstractController
         EntityManagerInterface $entityManager
     ): Response {
         try {
-            // Vérifier le token CSRF
             $token = $request->request->get('_token');
             if (!$this->isCsrfTokenValid('user_edit_' . $user->getId(), $token)) {
                 $this->addFlash('error', '❌ Token de sécurité invalide.');
                 return $this->redirectToRoute('admin_dashboard');
             }
 
-            // Récupérer les données du formulaire
             $prenom = trim($request->request->get('prenom'));
             $nom = trim($request->request->get('nom'));
             $email = trim($request->request->get('email'));
@@ -85,33 +72,28 @@ class AdminController extends AbstractController
             $statut = $request->request->get('statut');
             $roles = $request->request->all('roles');
 
-            // Validation basique
             if (empty($prenom) || empty($nom) || empty($email)) {
                 $this->addFlash('error', '❌ Le prénom, nom et email sont obligatoires.');
                 return $this->redirectToRoute('admin_dashboard');
             }
 
-            // Validation email
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $this->addFlash('error', '❌ L\'adresse email n\'est pas valide.');
                 return $this->redirectToRoute('admin_dashboard');
             }
 
-            // Mettre à jour l'utilisateur
             $user->setPrenom($prenom);
             $user->setNom($nom);
             $user->setEmail($email);
             $user->setTelephone($telephone ?: null);
             $user->setStatut($statut);
 
-            // Gérer les rôles (au moins un rôle requis)
             if (!empty($roles) && is_array($roles)) {
                 $user->setRoles($roles);
             } else {
-                $user->setRoles(['ROLE_CLIENT']); // Rôle par défaut
+                $user->setRoles(['ROLE_CLIENT']);
             }
 
-            // Sauvegarder
             $entityManager->flush();
 
             $this->addFlash('success', sprintf(
@@ -126,9 +108,6 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_dashboard');
     }
 
-    /**
-     * 🗑️ Supprimer un utilisateur
-     */
     #[Route('/user/{id}/delete', name: 'admin_user_delete', methods: ['POST'])]
     public function deleteUser(
         Request $request,
@@ -136,26 +115,22 @@ class AdminController extends AbstractController
         EntityManagerInterface $entityManager
     ): Response {
         try {
-            // Vérifier le token CSRF
             $token = $request->request->get('_token');
             if (!$this->isCsrfTokenValid('user_delete_' . $user->getId(), $token)) {
                 $this->addFlash('error', '❌ Token de sécurité invalide.');
                 return $this->redirectToRoute('admin_dashboard');
             }
 
-            /** @var User $currentUser */
+            /** @var Utilisateur $currentUser */
             $currentUser = $this->getUser();
 
-            // Protection : ne pas supprimer son propre compte
             if ($user->getId() === $currentUser->getId()) {
                 $this->addFlash('error', '❌ Vous ne pouvez pas supprimer votre propre compte !');
                 return $this->redirectToRoute('admin_dashboard');
             }
 
-            // Sauvegarder le nom avant suppression
             $userName = $user->getFullName();
 
-            // Supprimer l'utilisateur
             $entityManager->remove($user);
             $entityManager->flush();
 
@@ -171,9 +146,6 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_dashboard');
     }
 
-    /**
-     * 📥 Exporter les utilisateurs en CSV
-     */
     #[Route('/users/export-csv', name: 'admin_users_export_csv')]
     public function exportCsv(UtilisateurRepository $userRepository): Response
     {
@@ -182,10 +154,8 @@ class AdminController extends AbstractController
         $response = new StreamedResponse(function() use ($users) {
             $handle = fopen('php://output', 'w');
             
-            // BOM UTF-8 pour Excel
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
             
-            // En-têtes du CSV
             fputcsv($handle, [
                 'ID',
                 'Prénom',
@@ -197,9 +167,7 @@ class AdminController extends AbstractController
                 'Date d\'inscription'
             ], ';');
 
-            // Données
             foreach ($users as $user) {
-                // Convertir les rôles en texte lisible
                 $roles = $user->getRoles();
                 $roleText = '';
                 
@@ -227,7 +195,7 @@ class AdminController extends AbstractController
         });
 
         $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-        $response->headers->set('Content-Disposition', 'attachment; filename="utilisateurs_' . date('Y-m-d_H-i') . '.csv"');
+        $response->headers->set('Content-Disposition', 'attachment; filename=\"utilisateurs_' . date('Y-m-d_H-i') . '.csv\"');
 
         return $response;
     }

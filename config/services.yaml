@@ -7,6 +7,7 @@ parameters:
     journal_images_dir: '%kernel.project_dir%/public/uploads/journals/images'
     journal_audio_dir: '%kernel.project_dir%/public/uploads/journals/audio'
     admin.secret.code: '%env(ADMIN_SECRET_CODE)%'
+    uploads_directory: '%kernel.project_dir%/public/uploads'
 
 services:
     # default configuration for services in *this* file

@@ -1,0 +1,139 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Détails de la Publication | FeelSafe{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        .admin-card {
+            background: white;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .btn-admin {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #0ea5e9; color: white; }
+        .btn-primary:hover { background: #0284c7; }
+        .btn-outline { border: 1px solid #e5e7eb; color: #374151; }
+        .btn-outline:hover { background: #f9fafb; }
+        
+        /* New Delete Hover Style */
+        .btn-delete {
+            border: 1px solid #e5e7eb;
+            color: #374151;
+            background: transparent;
+        }
+        .btn-delete:hover {
+            background: #ef4444 !important;
+            color: white !important;
+            border-color: #dc2626 !important;
+        }
+
+        /* New Back Hover Style */
+        .btn-back {
+            border: 1px solid #e5e7eb;
+            color: #374151;
+            background: transparent;
+        }
+        .btn-back:hover {
+            background: #f3f4f6 !important;
+            color: #0ea5e9 !important;
+            border-color: #0ea5e9 !important;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6 pb-12">
+    
+    <!-- Navigation & Actions -->
+    <div class="flex items-center justify-between">
+        <a href="{{ path('app_publication_index') }}" class="btn-admin btn-back">
+            <i data-feather="arrow-left" class="w-4 h-4"></i>
+            Retour
+        </a>
+        <div class="flex gap-3">
+            <a href="{{ path('app_publication_edit', {id: publication.id}) }}" class="btn-admin btn-primary">
+                <i data-feather="edit" class="w-4 h-4"></i>
+                Modifier
+            </a>
+            {{ include('publication/_delete_form.html.twig') }}
+        </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="admin-card space-y-6">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Publication #{{ publication.id }}</span>
+                <span class="text-sm text-gray-400">{{ publication.datePublication|date('d/m/Y H:i') }}</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ publication.titre }}</h1>
+        </div>
+
+        {% if publication.image %}
+            <div class="rounded-xl overflow-hidden border border-gray-100 flex justify-center bg-gray-50">
+                <img src="{{ asset('uploads/' ~ publication.image) }}" 
+                     class="w-auto h-auto max-h-[300px] object-contain"
+                     alt="{{ publication.titre }}">
+            </div>
+        {% endif %}
+
+        <div class="text-gray-700 leading-relaxed text-lg whitespace-pre-line">
+            {{ publication.contenu }}
+        </div>
+
+        <div class="pt-6 border-t border-gray-100 flex flex-wrap gap-6">
+            <div class="meta-item">
+                <i data-feather="user" class="w-4 h-4"></i>
+                <span>Auteur : <strong>{{ publication.user ? publication.user.nom : 'Inconnu' }}</strong></span>
+            </div>
+            <div class="meta-item text-green-600">
+                <i data-feather="thumbs-up" class="w-4 h-4"></i>
+                <span>{{ publication.likesCount }} Likes</span>
+            </div>
+            <div class="meta-item text-red-600">
+                <i data-feather="thumbs-down" class="w-4 h-4"></i>
+                <span>{{ publication.dislikesCount }} Dislikes</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="admin-card">
+        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <i data-feather="message-circle" class="w-5 h-5"></i>
+            Commentaires ({{ publication.pubCom|length }})
+        </h2>
+
+        <div class="space-y-4">
+            {% for comment in rootComments %}
+                {% include 'publication/_comment_admin.html.twig' with {
+                    comment: comment,
+                    publication: publication,
+                    depth: 0
+                } only %}
+            {% else %}
+                <p class="text-gray-400 italic text-center py-4">Aucun commentaire pour le moment.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
