@@ -4,11 +4,29 @@
 <div class="max-w-7xl mx-auto">
     <div class="space-y-8">
         <!-- Header -->
-        <div>
-            <h1 class="text-3xl font-serif font-bold text-foreground">Bien-être</h1>
-            <p class="text-muted-foreground mt-1">
-                Exercices de respiration, méditation et activités douces
-            </p>
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-serif font-bold text-foreground">Bien-être</h1>
+                <p class="text-muted-foreground mt-1">
+                    Prenez soin de vous avec nos activités de relaxation
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{{ path('app_wellness_activites') }}" class="px-4 py-2 bg-card border border-border rounded-lg font-medium text-foreground hover:bg-secondary transition-colors inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    Explorer
+                </a>
+                <a href="{{ path('app_wellness_stats') }}" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    Mes stats
+                </a>
+            </div>
         </div>
 
         <!-- Stats -->
@@ -17,11 +35,7 @@
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4.5 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path>
-                            <path d="M9 7h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2.5"></path>
-                            <path d="M15 15v1a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-1"></path>
-                            <path d="M7 9v4"></path>
-                            <path d="M15 9v4"></path>
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                         </svg>
                     </div>
                     <div>
@@ -48,13 +62,12 @@
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-chart-4/10 flex items-center justify-center">
                         <svg class="w-5 h-5 text-chart-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="8" r="6"></circle>
-                            <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"></path>
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                     </div>
                     <div>
-                        <p class="text-2xl font-bold text-foreground">12</p>
-                        <p class="text-xs text-muted-foreground">Série actuelle</p>
+                        <p class="text-2xl font-bold text-foreground">{{ recommendedActivities|length }}</p>
+                        <p class="text-xs text-muted-foreground">Activités disponibles</p>
                     </div>
                 </div>
             </div>
@@ -67,8 +80,8 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="text-2xl font-bold text-foreground">+15%</p>
-                        <p class="text-xs text-muted-foreground">vs semaine dernière</p>
+                        <p class="text-2xl font-bold text-foreground">{{ recentSessions|length }}</p>
+                        <p class="text-xs text-muted-foreground">Sessions récentes</p>
                     </div>
                 </div>
             </div>
@@ -98,229 +111,144 @@
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div x-data="{ activeTab: 'breathing' }" class="space-y-6">
-            <!-- Tabs Navigation -->
-            <div class="flex flex-wrap gap-2 border-b border-border pb-2">
-                <button @click="activeTab = 'breathing'"
-                        :class="activeTab === 'breathing' 
-                                ? 'border-b-2 border-primary text-primary font-medium' 
-                                : 'text-muted-foreground hover:text-foreground'"
-                        class="px-4 py-2 transition-colors">
-                    Respiration
-                </button>
-                <button @click="activeTab = 'activities'"
-                        :class="activeTab === 'activities' 
-                                ? 'border-b-2 border-primary text-primary font-medium' 
-                                : 'text-muted-foreground hover:text-foreground'"
-                        class="px-4 py-2 transition-colors">
-                    Activités
-                </button>
-                <button @click="activeTab = 'tracker'"
-                        :class="activeTab === 'tracker' 
-                                ? 'border-b-2 border-primary text-primary font-medium' 
-                                : 'text-muted-foreground hover:text-foreground'"
-                        class="px-4 py-2 transition-colors">
-                    Mood Tracker
-                </button>
+        <!-- Recommended Activities -->
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-foreground">Activités recommandées</h2>
+                <a href="{{ path('app_wellness_activites') }}" class="text-sm text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1">
+                    Voir tout
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
             </div>
-
-            <!-- Breathing Tab -->
-            <div x-show="activeTab === 'breathing'" class="space-y-6">
-                <!-- Active Breathing Exercise -->
-                <div class="bg-card rounded-lg border border-border overflow-hidden">
-                    <div class="bg-primary p-8 text-primary-foreground text-center">
-                        <h3 class="text-xl font-semibold mb-2">Respiration 4-7-8</h3>
-                        <p class="text-primary-foreground/80 text-sm mb-8">
-                            Technique de relaxation profonde pour réduire le stress
-                        </p>
-
-                        <!-- Breathing Circle -->
-                        <div x-data="{ 
-                            isBreathing: false, 
-                            breathPhase: 'inhale', 
-                            breathCount: 0, 
-                            timer: 4,
-                            startBreathing() {
-                                this.isBreathing = true;
-                                const phases = { inhale: 4, hold: 7, exhale: 8 };
-                                const nextPhase = { inhale: 'hold', hold: 'exhale', exhale: 'inhale' };
-                                
-                                const interval = setInterval(() => {
-                                    if (!this.isBreathing) {
-                                        clearInterval(interval);
-                                        return;
-                                    }
-                                    
-                                    this.timer--;
-                                    
-                                    if (this.timer <= 0) {
-                                        this.breathPhase = nextPhase[this.breathPhase];
-                                        this.timer = phases[this.breathPhase];
-                                        
-                                        if (this.breathPhase === 'inhale') {
-                                            this.breathCount++;
-                                        }
-                                    }
-                                }, 1000);
-                            },
-                            resetBreathing() {
-                                this.isBreathing = false;
-                                this.breathPhase = 'inhale';
-                                this.breathCount = 0;
-                                this.timer = 4;
-                            }
-                        }" class="space-y-8">
-                            
-                            <div class="relative w-48 h-48 mx-auto">
-                                <div :class="{
-                                    'scale-110': isBreathing && breathPhase === 'inhale',
-                                    'scale-90': isBreathing && breathPhase === 'exhale',
-                                    'scale-100': !isBreathing || breathPhase === 'hold'
-                                }" 
-                                class="absolute inset-0 rounded-full border-4 border-primary-foreground/30 flex items-center justify-center transition-transform duration-1000">
-                                    <div class="text-center">
-                                        <p class="text-5xl font-bold" x-text="timer"></p>
-                                        <p class="text-sm mt-2 capitalize" x-text="
-                                            breathPhase === 'inhale' ? 'Inspirez' :
-                                            breathPhase === 'hold' ? 'Retenez' :
-                                            'Expirez'
-                                        "></p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {% for activite in recommendedActivities %}
+                    <a href="{{ path('app_wellness_activite_show', {'id': activite.id}) }}" class="block group">
+                        <div class="bg-card rounded-lg border border-border overflow-hidden h-full hover:shadow-lg transition-all duration-300">
+                            <!-- Image -->
+                            <div class="relative h-32 overflow-hidden">
+                                {% if activite.imageUrl %}
+                                    <img src="{{ activite.imageUrl }}" alt="{{ activite.nomActivite }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                {% else %}
+                                    <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-chart-2/20 flex items-center justify-center">
+                                        <svg class="w-12 h-12 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-center gap-4">
-                                <button @click="resetBreathing()" type="button" class="w-10 h-10 rounded-lg bg-primary-foreground/20 text-primary-foreground flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="1 4 1 10 7 10"></polyline>
-                                        <polyline points="23 20 23 14 17 14"></polyline>
-                                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
-                                    </svg>
-                                </button>
-                                <button @click="isBreathing = !isBreathing; if (isBreathing) startBreathing()" 
-                                        type="button" 
-                                        class="px-8 py-2 rounded-lg bg-primary-foreground text-primary hover:bg-primary-foreground/90 transition-colors font-medium">
-                                    <template x-if="isBreathing">
-                                        <span class="flex items-center">
-                                            <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <rect x="6" y="4" width="4" height="16"></rect>
-                                                <rect x="14" y="4" width="4" height="16"></rect>
-                                            </svg>
-                                            Pause
+                                {% endif %}
+                                <div class="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent"></div>
+                                {% if activite.niveauDifficulte %}
+                                    <div class="absolute top-3 right-3">
+                                        <span class="px-2 py-1 text-xs rounded-full backdrop-blur-sm bg-card/80 text-foreground border border-border">
+                                            {{ activite.niveauDifficulte.value|capitalize }}
                                         </span>
-                                    </template>
-                                    <template x-if="!isBreathing">
-                                        <span class="flex items-center">
-                                            <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                            </svg>
-                                            Commencer
-                                        </span>
-                                    </template>
-                                </button>
+                                    </div>
+                                {% endif %}
                             </div>
-
-                            <p x-show="breathCount > 0" class="text-sm text-primary-foreground/80">
-                                Cycles complétés: <span x-text="breathCount"></span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Other Exercises -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {% for exercise in breathingExercises %}
-                        <div class="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow cursor-pointer">
-                            <div class="{{ exercise.color }} w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                                <svg class="w-6 h-6 text-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4.5 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path>
-                                    <path d="M9 7h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2.5"></path>
-                                    <path d="M15 15v1a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-1"></path>
-                                    <path d="M7 9v4"></path>
-                                    <path d="M15 9v4"></path>
-                                </svg>
-                            </div>
-                            <h3 class="font-semibold text-foreground">{{ exercise.name }}</h3>
-                            <p class="text-sm text-muted-foreground mt-1">{{ exercise.description }}</p>
-                            <div class="flex items-center gap-2 mt-3">
-                                <span class="px-2 py-1 text-xs rounded bg-secondary text-secondary-foreground">
-                                    {{ exercise.duration }}
-                                </span>
-                                <span class="px-2 py-1 text-xs rounded border border-input">
-                                    {{ exercise.level }}
-                                </span>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Activities Tab -->
-            <div x-show="activeTab === 'activities'" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {% for activity in activities %}
-                        <div class="bg-card rounded-lg border border-border overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group">
-                            <div class="relative h-40 bg-secondary">
-                                <div class="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                                    <svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                        <polyline points="21 15 16 10 5 21"></polyline>
-                                    </svg>
-                                </div>
-                                <span class="absolute top-4 left-4 px-2 py-1 text-xs rounded bg-secondary text-secondary-foreground">
-                                    {{ activity.category }}
-                                </span>
-                                <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card to-transparent">
-                                    <h3 class="font-semibold text-foreground text-lg">{{ activity.name }}</h3>
-                                    <div class="flex items-center gap-2 mt-1 text-muted-foreground text-sm">
-                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            
+                            <!-- Content -->
+                            <div class="p-4">
+                                <span class="text-xs text-primary font-medium">{{ activite.typeActivite }}</span>
+                                <h3 class="font-semibold text-foreground group-hover:text-primary transition-colors mt-1">
+                                    {{ activite.nomActivite }}
+                                </h3>
+                                <p class="text-sm text-muted-foreground mt-1 line-clamp-2">{{ activite.description|slice(0, 80) }}...</p>
+                                {% if activite.dureeSuggeree %}
+                                    <div class="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
+                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="12" cy="12" r="10"></circle>
                                             <polyline points="12 6 12 12 16 14"></polyline>
                                         </svg>
-                                        <span>{{ activity.duration }}</span>
+                                        <span>{{ activite.dureeSuggeree }} min</span>
                                     </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                {% else %}
+                    <div class="col-span-4 text-center py-12">
+                        <svg class="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <p class="text-muted-foreground">Aucune activité disponible pour le moment</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Sessions -->
+        {% if recentSessions is not empty %}
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-foreground">Sessions récentes</h2>
+                    <a href="{{ path('app_wellness_sessions_history') }}" class="text-sm text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1">
+                        Voir l'historique
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+                
+                <div class="space-y-3">
+                    {% for session in recentSessions %}
+                        <div class="bg-card rounded-lg border border-border p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-foreground">{{ session.activite.nomActivite }}</h3>
+                                    <p class="text-sm text-muted-foreground mt-1">
+                                        {{ session.dateDebut|date('d/m/Y à H:i') }}
+                                        {% if session.dureeReelle %}
+                                            · {{ session.dureeReelle }} min
+                                        {% endif %}
+                                    </p>
                                 </div>
-                                <button type="button" class="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                    </svg>
-                                </button>
+                                <div class="flex items-center gap-3">
+                                    {% if session.scoreHumeurAvant and session.scoreHumeurApres %}
+                                        <div class="flex items-center gap-2 text-sm">
+                                            <span class="text-muted-foreground">{{ session.scoreHumeurAvant }}/10</span>
+                                            <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                            <span class="font-medium {{ (session.scoreHumeurApres - session.scoreHumeurAvant) > 0 ? 'text-chart-2' : 'text-muted-foreground' }}">
+                                                {{ session.scoreHumeurApres }}/10
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                    <span class="px-2 py-1 text-xs rounded-full 
+                                        {% if session.statutSession.value == 'completee' %}
+                                            bg-chart-2/10 text-chart-2
+                                        {% elseif session.statutSession.value == 'en_cours' %}
+                                            bg-chart-4/10 text-chart-4
+                                        {% else %}
+                                            bg-secondary text-secondary-foreground
+                                        {% endif %}">
+                                        {{ session.statutSession.value|replace({'_': ' '})|capitalize }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
             </div>
+        {% endif %}
 
-            <!-- Mood Tracker Tab -->
-            <div x-show="activeTab === 'tracker'" class="space-y-6">
-                <div class="bg-card rounded-lg border border-border p-6">
-                    <div class="flex items-center gap-2 mb-4">
-                        <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                        </svg>
-                        <h2 class="text-xl font-semibold text-foreground">Historique d'humeur</h2>
-                    </div>
-                    <p class="text-muted-foreground mb-6">
-                        Visualisez vos tendances émotionnelles sur les 30 derniers jours
+        <!-- Quick Action -->
+        <div class="bg-primary text-primary-foreground rounded-lg border border-primary p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold">Commencez une activité maintenant</h3>
+                    <p class="text-primary-foreground/80 text-sm mt-1">
+                        Prenez quelques minutes pour vous détendre et vous ressourcer
                     </p>
-                    
-                    <div class="h-48 flex items-end justify-between gap-1">
-                        {% for i in 1..30 %}
-                            {% set height = random(10, 100) %}
-                            {% set color = height > 70 ? 'bg-primary' : (height > 40 ? 'bg-chart-2' : 'bg-destructive') %}
-                            <div class="{{ color }} flex-1 rounded-t-sm opacity-80 hover:opacity-100 transition-opacity cursor-pointer" 
-                                 style="height: {{ height }}%"
-                                 title="Jour {{ i }}">
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div class="flex justify-between mt-4 text-xs text-muted-foreground">
-                        <span>Il y a 30 jours</span>
-                        <span>Aujourd'hui</span>
-                    </div>
                 </div>
+                <a href="{{ path('app_wellness_activites') }}" class="px-6 py-3 bg-primary-foreground text-primary rounded-lg font-medium hover:bg-primary-foreground/90 transition-colors inline-flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Démarrer
+                </a>
             </div>
         </div>
     </div>
