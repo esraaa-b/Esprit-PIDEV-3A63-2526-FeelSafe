@@ -34,9 +34,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     /**
      * ✅ La colonne s'appelle "mot_de_passe" dans la base de données
-     * mais la propriété PHP reste $motDePasse
+     * Maintenant nullable pour OAuth
      */
-    #[ORM\Column(name: 'mot_de_passe', type: 'string')]
+    #[ORM\Column(name: 'mot_de_passe', type: 'string', nullable: true)]
     private ?string $motDePasse = null;
 
     #[ORM\Column(length: 100)]
@@ -54,21 +54,43 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?\DateTimeImmutable $dateCreation = null;
 
+    // ========================================
+    // 🆕 NOUVEAUX CHAMPS OAUTH (ajoutés)
+    // ========================================
+    
+    #[ORM\Column(name: 'google_id', length: 255, nullable: true)]
+    private ?string $googleId = null;
+
+    #[ORM\Column(name: 'github_id', length: 255, nullable: true)]
+    private ?string $githubId = null;
+
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $avatar = null;
+
+    // ========================================
+    // Relations existantes (non modifiées)
+    // ========================================
+    
     #[ORM\OneToOne(mappedBy: 'utilisateur', cascade: ['persist', 'remove'])]
     private ?ConfidentialiteUtilisateur $confidentialite = null;
+    
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: JournalEmotionnel::class, orphanRemoval: true)]
     private Collection $journaux;
+    
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Publication::class)]
     private Collection $publications;
+    
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Commentaire::class)]
     private Collection $userCom;
+    
     #[ORM\OneToMany(mappedBy: 'creePar', targetEntity: ActiviteBienEtre::class)]
     private Collection $activitesCrees;
+    
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: SessionActivite::class)]
     private Collection $sessionsActivites;
+    
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: TendanceEmotionnelle::class)]
     private Collection $usertend;
-
 
     public function __construct()
     {
@@ -106,7 +128,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->role;
-        // Garantir que tout utilisateur a au moins ROLE_USER
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }
@@ -119,36 +140,30 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     /**
      * Méthode requise par PasswordAuthenticatedUserInterface
-     * Retourne la valeur de la colonne "mot_de_passe"
      */
-    public function getPassword(): string
+    public function getPassword(): ?string
     {
         return $this->motDePasse;
     }
 
     /**
-     * ✅ Méthode setPassword() requise par Symfony Security
-     * Modifie la colonne "mot_de_passe" en base de données
+     * Méthode setPassword() requise par Symfony Security
      */
-    public function setPassword(string $password): static
+    public function setPassword(?string $password): static
     {
         $this->motDePasse = $password;
         return $this;
     }
 
     /**
-     * Méthode originale (conservée pour compatibilité avec votre code)
-     * Modifie également la colonne "mot_de_passe"
+     * Méthode originale (conservée)
      */
-    public function setMotDePasse(string $motDePasse): static
+    public function setMotDePasse(?string $motDePasse): static
     {
         $this->motDePasse = $motDePasse;
         return $this;
     }
 
-    /**
-     * Getter alternatif (optionnel, pour votre code)
-     */
     public function getMotDePasse(): ?string
     {
         return $this->motDePasse;
@@ -156,7 +171,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
-        // Si vous stockez des données sensibles temporaires, nettoyez-les ici
+        // Rien à effacer
     }
 
     public function getNom(): ?string
@@ -214,6 +229,47 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    // ========================================
+    // 🆕 GETTERS/SETTERS OAUTH (nouveaux)
+    // ========================================
+
+    public function getGoogleId(): ?string
+    {
+        return $this->googleId;
+    }
+
+    public function setGoogleId(?string $googleId): static
+    {
+        $this->googleId = $googleId;
+        return $this;
+    }
+
+    public function getGithubId(): ?string
+    {
+        return $this->githubId;
+    }
+
+    public function setGithubId(?string $githubId): static
+    {
+        $this->githubId = $githubId;
+        return $this;
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?string $avatar): static
+    {
+        $this->avatar = $avatar;
+        return $this;
+    }
+
+    // ========================================
+    // Méthodes existantes (non modifiées)
+    // ========================================
+
     public function getConfidentialite(): ?ConfidentialiteUtilisateur
     {
         return $this->confidentialite;
@@ -256,152 +312,153 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->hasRole('ROLE_CLIENT');
     }
+
     /**
- * @return Collection<int, JournalEmotionnel>
- */
-public function getJournaux(): Collection
-{
-    return $this->journaux;
-}
-public function addJournal(JournalEmotionnel $journal): static
-{
-    if (!$this->journaux->contains($journal)) {
-        $this->journaux->add($journal);
-        $journal->setUtilisateur($this);
+     * @return Collection<int, JournalEmotionnel>
+     */
+    public function getJournaux(): Collection
+    {
+        return $this->journaux;
     }
 
-    return $this;
-}
-
-public function removeJournal(JournalEmotionnel $journal): static
-{
-    if ($this->journaux->removeElement($journal)) {
-        if ($journal->getUtilisateur() === $this) {
-            $journal->setUtilisateur(null);
+    public function addJournal(JournalEmotionnel $journal): static
+    {
+        if (!$this->journaux->contains($journal)) {
+            $this->journaux->add($journal);
+            $journal->setUtilisateur($this);
         }
+
+        return $this;
     }
 
-    return $this;
-}
-
-public function getPublications(): Collection
-{
-    return $this->publications;
-}
-
-public function addPublication(Publication $publication): static
-{
-    if (!$this->publications->contains($publication)) {
-        $this->publications->add($publication);
-        $publication->setUser($this);
-    }
-    return $this;
-}
-
-public function removePublication(Publication $publication): static
-{
-    if ($this->publications->removeElement($publication)) {
-        if ($publication->getUser() === $this) {
-            $publication->setUser(null);
+    public function removeJournal(JournalEmotionnel $journal): static
+    {
+        if ($this->journaux->removeElement($journal)) {
+            if ($journal->getUtilisateur() === $this) {
+                $journal->setUtilisateur(null);
+            }
         }
+
+        return $this;
     }
-    return $this;
-}
 
-public function getUserCom(): Collection
-{
-    return $this->userCom;
-}
-
-public function addUserCom(Commentaire $commentaire): static
-{
-    if (!$this->userCom->contains($commentaire)) {
-        $this->userCom->add($commentaire);
-        $commentaire->setUser($this);
+    public function getPublications(): Collection
+    {
+        return $this->publications;
     }
-    return $this;
-}
 
-public function removeUserCom(Commentaire $commentaire): static
-{
-    if ($this->userCom->removeElement($commentaire)) {
-        if ($commentaire->getUser() === $this) {
-            $commentaire->setUser(null);
+    public function addPublication(Publication $publication): static
+    {
+        if (!$this->publications->contains($publication)) {
+            $this->publications->add($publication);
+            $publication->setUser($this);
         }
+        return $this;
     }
-    return $this;
-}
 
-public function getActivitesCrees(): Collection
-{
-    return $this->activitesCrees;
-}
-
-public function addActivitesCree(ActiviteBienEtre $activite): static
-{
-    if (!$this->activitesCrees->contains($activite)) {
-        $this->activitesCrees->add($activite);
-        $activite->setCreePar($this);
-    }
-    return $this;
-}
-
-public function removeActivitesCree(ActiviteBienEtre $activite): static
-{
-    if ($this->activitesCrees->removeElement($activite)) {
-        if ($activite->getCreePar() === $this) {
-            $activite->setCreePar(null);
+    public function removePublication(Publication $publication): static
+    {
+        if ($this->publications->removeElement($publication)) {
+            if ($publication->getUser() === $this) {
+                $publication->setUser(null);
+            }
         }
+        return $this;
     }
-    return $this;
-}
 
-public function getSessionsActivites(): Collection
-{
-    return $this->sessionsActivites;
-}
-
-public function addSessionsActivite(SessionActivite $session): static
-{
-    if (!$this->sessionsActivites->contains($session)) {
-        $this->sessionsActivites->add($session);
-        $session->setUtilisateur($this);
+    public function getUserCom(): Collection
+    {
+        return $this->userCom;
     }
-    return $this;
-}
 
-public function removeSessionsActivite(SessionActivite $session): static
-{
-    if ($this->sessionsActivites->removeElement($session)) {
-        if ($session->getUtilisateur() === $this) {
-            $session->setUtilisateur(null);
+    public function addUserCom(Commentaire $commentaire): static
+    {
+        if (!$this->userCom->contains($commentaire)) {
+            $this->userCom->add($commentaire);
+            $commentaire->setUser($this);
         }
+        return $this;
     }
-    return $this;
-}
 
-public function getUsertend(): Collection
-{
-    return $this->usertend;
-}
-
-public function addUsertend(TendanceEmotionnelle $tendance): static
-{
-    if (!$this->usertend->contains($tendance)) {
-        $this->usertend->add($tendance);
-        $tendance->setUtilisateur($this);
-    }
-    return $this;
-}
-
-public function removeUsertend(TendanceEmotionnelle $tendance): static
-{
-    if ($this->usertend->removeElement($tendance)) {
-        if ($tendance->getUtilisateur() === $this) {
-            $tendance->setUtilisateur(null);
+    public function removeUserCom(Commentaire $commentaire): static
+    {
+        if ($this->userCom->removeElement($commentaire)) {
+            if ($commentaire->getUser() === $this) {
+                $commentaire->setUser(null);
+            }
         }
+        return $this;
     }
-    return $this;
-}
 
+    public function getActivitesCrees(): Collection
+    {
+        return $this->activitesCrees;
+    }
+
+    public function addActivitesCree(ActiviteBienEtre $activite): static
+    {
+        if (!$this->activitesCrees->contains($activite)) {
+            $this->activitesCrees->add($activite);
+            $activite->setCreePar($this);
+        }
+        return $this;
+    }
+
+    public function removeActivitesCree(ActiviteBienEtre $activite): static
+    {
+        if ($this->activitesCrees->removeElement($activite)) {
+            if ($activite->getCreePar() === $this) {
+                $activite->setCreePar(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getSessionsActivites(): Collection
+    {
+        return $this->sessionsActivites;
+    }
+
+    public function addSessionsActivite(SessionActivite $session): static
+    {
+        if (!$this->sessionsActivites->contains($session)) {
+            $this->sessionsActivites->add($session);
+            $session->setUtilisateur($this);
+        }
+        return $this;
+    }
+
+    public function removeSessionsActivite(SessionActivite $session): static
+    {
+        if ($this->sessionsActivites->removeElement($session)) {
+            if ($session->getUtilisateur() === $this) {
+                $session->setUtilisateur(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getUsertend(): Collection
+    {
+        return $this->usertend;
+    }
+
+    public function addUsertend(TendanceEmotionnelle $tendance): static
+    {
+        if (!$this->usertend->contains($tendance)) {
+            $this->usertend->add($tendance);
+            $tendance->setUtilisateur($this);
+        }
+        return $this;
+    }
+
+    public function removeUsertend(TendanceEmotionnelle $tendance): static
+    {
+        if ($this->usertend->removeElement($tendance)) {
+            if ($tendance->getUtilisateur() === $this) {
+                $tendance->setUtilisateur(null);
+            }
+        }
+        return $this;
+    }
 }

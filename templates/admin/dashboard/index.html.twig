@@ -1030,6 +1030,7 @@ select.form-input option { padding: 6px; }
 </div>
 
 {# ✏️ MODAL ÉDITION UTILISATEUR #}
+
 <div id="editModal" class="modal" style="display: none;">
     <div class="modal-overlay" onclick="closeEditModal()"></div>
     <div class="modal-content" style="max-width: 600px;">
@@ -1057,20 +1058,35 @@ select.form-input option { padding: 6px; }
                         <label class="form-label">Téléphone</label>
                         <input type="text" name="telephone" id="edit_telephone" class="form-input">
                     </div>
+                    
+                    {# 🔥🔥🔥 NOUVEAU CHAMP MOT DE PASSE 🔥🔥🔥 #}
+                    <div>
+                        <label class="form-label">🔒 Nouveau mot de passe <small style="font-weight:400; color:var(--text-muted);">(Laisser vide pour ne pas modifier)</small></label>
+                        <div style="position: relative;">
+                            <input type="password" name="mot_de_passe" id="edit_password" class="form-input" placeholder="••••••••" style="padding-right: 48px;">
+                            <button type="button" onclick="toggleEditPassword()"
+                                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); line-height: 1;"
+                                    title="Afficher / masquer">👁️</button>
+                        </div>
+                        <small style="color: var(--text-muted); font-size: 12px; display: block; margin-top: 4px;">
+                            ℹ️ Laissez ce champ vide si vous ne souhaitez pas modifier le mot de passe
+                        </small>
+                    </div>
+                    
                     <div>
                         <label class="form-label">Rôle *</label>
                         <select name="roles[]" id="edit_roles" class="form-input" multiple required>
-                            <option value="ROLE_CLIENT">Client</option>
-                            <option value="ROLE_PROFESSIONNEL">Professionnel</option>
-                            <option value="ROLE_ADMIN">Administrateur</option>
+                            <option value="ROLE_CLIENT">👤 Client</option>
+                            <option value="ROLE_PROFESSIONNEL">💼 Professionnel</option>
+                            <option value="ROLE_ADMIN">👑 Administrateur</option>
                         </select>
                         <small style="color: var(--text-muted); font-size: 12px; display: block; margin-top: 4px;">Maintenez Ctrl/Cmd pour plusieurs rôles</small>
                     </div>
                     <div>
                         <label class="form-label">Statut *</label>
                         <select name="statut" id="edit_statut" class="form-input" required>
-                            <option value="actif">Actif</option>
-                            <option value="inactif">Inactif</option>
+                            <option value="actif">✅ Actif</option>
+                            <option value="inactif">⏸️ Inactif</option>
                         </select>
                     </div>
                 </div>
@@ -1137,6 +1153,14 @@ function openEditModal(row) {
     document.getElementById('edit_statut').value     = row.dataset.userStatut;
     document.getElementById('edit_csrf_token').value = row.dataset.editToken;
     document.getElementById('editForm').action       = '/admin/security/user/' + row.dataset.userId + '/update';
+    
+    // 🔥 RÉINITIALISER LE CHAMP MOT DE PASSE
+    const passwordInput = document.getElementById('edit_password');
+    if (passwordInput) {
+        passwordInput.value = '';
+        passwordInput.type = 'password';
+    }
+    
     Array.from(document.getElementById('edit_roles').options).forEach(o => { o.selected = roles.includes(o.value); });
     document.getElementById('editModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -1155,6 +1179,16 @@ function closeDeleteModal() { document.getElementById('deleteModal').style.displ
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeCreateModal(); closeEditModal(); closeDeleteModal(); closeAdminProfileModal(); }
 });
+
+// 👁️ TOGGLE PASSWORD POUR LE MODAL D'ÉDITION
+function toggleEditPassword() {
+    const input = document.getElementById('edit_password');
+    if (input.type === 'password') {
+        input.type = 'text';
+    } else {
+        input.type = 'password';
+    }
+}
 
 // ✅ AUTO-HIDE FLASH MESSAGES APRÈS 5 SECONDES
 setTimeout(() => {

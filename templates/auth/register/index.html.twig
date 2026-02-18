@@ -33,6 +33,10 @@
                     <i data-feather="star" class="w-5 h-5"></i>
                     <span>Accompagnement personnalisé</span>
                 </div>
+                <div class="flex items-center gap-3">
+                    <i data-feather="cpu" class="w-5 h-5"></i>
+                    <span>🤖 Validation intelligente par IA</span>
+                </div>
             </div>
         </div>
     </div>
@@ -132,13 +136,22 @@
                                 <i data-feather="key" class="w-4 h-4"></i>
                                 Code secret administrateur
                             </label>
-                            <input 
-                                type="password" 
-                                id="code_admin_secret" 
-                                name="code_admin_secret"
-                                placeholder="Entrez le code secret"
-                                class="w-full h-11 px-3 py-2 border rounded-md border-red-300 focus:border-red-500 focus:ring-red-500"
-                            />
+                            <div class="relative password-field">
+                                <input 
+                                    type="password" 
+                                    id="code_admin_secret" 
+                                    name="code_admin_secret"
+                                    placeholder="Entrez le code secret"
+                                    class="w-full h-11 px-3 py-2 border rounded-md border-red-300 focus:border-red-500 focus:ring-red-500"
+                                />
+                                <button
+                                    type="button"
+                                    class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    title="Afficher/Masquer"
+                                >
+                                    <i data-feather="eye" class="w-5 h-5"></i>
+                                </button>
+                            </div>
                             <p class="text-xs text-red-600 flex items-center gap-1">
                                 <i data-feather="alert-circle" class="w-3 h-3"></i>
                                 Un code secret est requis pour créer un compte administrateur
@@ -155,15 +168,48 @@
 
                         <div class="space-y-2">
                             {{ form_label(registrationForm.plainPassword.first, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
-                            {{ form_widget(registrationForm.plainPassword.first) }}
+                            <div class="relative password-field">
+                                {{ form_widget(registrationForm.plainPassword.first) }}
+                                <button
+                                    type="button"
+                                    class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    title="Afficher/Masquer le mot de passe"
+                                >
+                                    <i data-feather="eye" class="w-5 h-5"></i>
+                                </button>
+                            </div>
                             <div class="form-error">
                                 {{ form_errors(registrationForm.plainPassword.first) }}
+                            </div>
+                            
+                            {# ✅ BARRE DE PROGRESSION DU MOT DE PASSE #}
+                            <div id="password-strength" class="mt-2 hidden">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-medium flex items-center gap-1">
+                                        <i data-feather="shield" class="w-3 h-3"></i>
+                                        Force du mot de passe:
+                                    </span>
+                                    <span id="strength-level" class="text-xs font-bold"></span>
+                                </div>
+                                <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div id="strength-bar" class="h-full transition-all duration-300" style="width: 0%;"></div>
+                                </div>
+                                <div id="strength-suggestions" class="mt-2 text-xs text-muted-foreground"></div>
                             </div>
                         </div>
 
                         <div class="space-y-2 mt-4">
                             {{ form_label(registrationForm.plainPassword.second, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
-                            {{ form_widget(registrationForm.plainPassword.second) }}
+                            <div class="relative password-field">
+                                {{ form_widget(registrationForm.plainPassword.second) }}
+                                <button
+                                    type="button"
+                                    class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    title="Afficher/Masquer le mot de passe"
+                                >
+                                    <i data-feather="eye" class="w-5 h-5"></i>
+                                </button>
+                            </div>
                             <div class="form-error">
                                 {{ form_errors(registrationForm.plainPassword.second) }}
                             </div>
@@ -217,10 +263,11 @@
 
                     <button
                         type="submit"
+                        id="submit-button"
                         class="w-full h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                     >
                         <i data-feather="check-circle" class="w-5 h-5"></i>
-                        Créer mon compte
+                        <span id="submit-text">Créer mon compte</span>
                     </button>
 
                     {{ form_end(registrationForm) }}
@@ -250,15 +297,38 @@
                 feather.replace();
             }
             
+            // ✅ NOUVEAU: Toggle password visibility (fonctionne pour tous les champs)
+            document.querySelectorAll('.toggle-password').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const passwordField = this.closest('.password-field');
+                    const input = passwordField.querySelector('input');
+                    const icon = this.querySelector('i');
+                    
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.setAttribute('data-feather', 'eye-off');
+                    } else {
+                        input.type = 'password';
+                        icon.setAttribute('data-feather', 'eye');
+                    }
+                    
+                    // Rafraîchir les icônes
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                });
+            });
+            
             // ⚡ JavaScript pour afficher/cacher le champ code secret
             const roleSelect = document.querySelector('select[name="registration_form[role]"]');
             const adminCodeField = document.getElementById('admin-code-field');
             const adminCodeInput = document.getElementById('code_admin_secret');
             const registrationForm = document.getElementById('registrationForm');
             const globalError = document.getElementById('global-error');
+            const submitButton = document.getElementById('submit-button');
+            const submitText = document.getElementById('submit-text');
             
             if (roleSelect && adminCodeField && adminCodeInput) {
-                // Fonction pour afficher/cacher le champ
                 function toggleAdminCodeField() {
                     if (roleSelect.value === 'ROLE_ADMIN') {
                         adminCodeField.style.display = 'block';
@@ -271,46 +341,101 @@
                     }
                 }
                 
-                // Appeler au chargement
                 toggleAdminCodeField();
                 
-                // Appeler quand le rôle change
                 roleSelect.addEventListener('change', function() {
                     toggleAdminCodeField();
                 });
             }
             
-            // ⚡ Validation du formulaire - EMPÊCHER LA SOUMISSION SI VIDE
+            // ✅ Analyse du mot de passe en temps réel
+            const passwordInput = document.querySelector('input[name="registration_form[plainPassword][first]"]');
+            
+            if (passwordInput) {
+                const strengthDiv = document.getElementById('password-strength');
+                const strengthBar = document.getElementById('strength-bar');
+                const strengthLevel = document.getElementById('strength-level');
+                const strengthSuggestions = document.getElementById('strength-suggestions');
+                
+                let debounceTimer;
+                
+                passwordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    
+                    if (password.length === 0) {
+                        strengthDiv.classList.add('hidden');
+                        return;
+                    }
+                    
+                    strengthDiv.classList.remove('hidden');
+                    
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(async function() {
+                        try {
+                            const response = await fetch('/api/check-password-strength', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ password: password })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            strengthBar.style.width = data.score + '%';
+                            strengthBar.style.backgroundColor = data.color;
+                            strengthLevel.textContent = data.level;
+                            strengthLevel.style.color = data.color;
+                            
+                            if (data.suggestions.length > 0) {
+                                strengthSuggestions.innerHTML = '💡 ' + data.suggestions.join(', ');
+                            } else {
+                                strengthSuggestions.innerHTML = '✅ Excellent mot de passe!';
+                                strengthSuggestions.style.color = 'green';
+                            }
+                            
+                            if (typeof feather !== 'undefined') {
+                                feather.replace();
+                            }
+                            
+                        } catch (error) {
+                            console.error('Erreur analyse mot de passe:', error);
+                        }
+                    }, 500);
+                });
+            }
+            
+            // ⚡ Validation du formulaire
             if (registrationForm && globalError) {
                 registrationForm.addEventListener('submit', function(e) {
-                    // Cacher le message d'erreur
                     globalError.classList.add('hidden');
                     globalError.classList.remove('flex');
                     
-                    // Récupérer tous les champs input et select
-                    const inputs = registrationForm.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="password"], select');
+                    const requiredFields = [
+                        document.querySelector('input[name="registration_form[prenom]"]'),
+                        document.querySelector('input[name="registration_form[nom]"]'),
+                        document.querySelector('input[name="registration_form[email]"]'),
+                        document.querySelector('input[name="registration_form[telephone]"]'),
+                        document.querySelector('select[name="registration_form[role]"]'),
+                        document.querySelector('input[name="registration_form[plainPassword][first]"]'),
+                        document.querySelector('input[name="registration_form[plainPassword][second]"]'),
+                        document.querySelector('select[name="registration_form[visibiliteProfil]"]')
+                    ];
+                    
                     let hasEmptyField = false;
                     
-                    // Vérifier si au moins un champ est vide
-                    inputs.forEach(function(input) {
-                        // Ignorer les champs cachés et les checkboxes
-                        if (input.type !== 'hidden' && input.type !== 'checkbox') {
-                            const parentDiv = input.closest('.space-y-2, .space-y-3, div');
-                            // Vérifier si le champ parent n'est pas caché (pour admin code)
-                            if (parentDiv && parentDiv.style.display !== 'none' && !input.value.trim()) {
-                                hasEmptyField = true;
-                            }
+                    requiredFields.forEach(function(field) {
+                        if (field && !field.value.trim()) {
+                            hasEmptyField = true;
                         }
                     });
                     
-                    // Vérifier spécialement le code admin si visible
-                    if (roleSelect && roleSelect.value === 'ROLE_ADMIN' && adminCodeField.style.display !== 'none') {
-                        if (!adminCodeInput.value.trim()) {
+                    if (roleSelect && roleSelect.value === 'ROLE_ADMIN') {
+                        if (adminCodeField.style.display !== 'none' && !adminCodeInput.value.trim()) {
                             hasEmptyField = true;
                         }
                     }
                     
-                    // Si un champ est vide, afficher l'erreur et bloquer la soumission
                     if (hasEmptyField) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -322,15 +447,24 @@
                             feather.replace();
                         }
                         
-                        // Scroll vers le message d'erreur
                         globalError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         
                         return false;
                     }
+                    
+                    submitButton.disabled = true;
+                    submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    submitText.innerHTML = '<i data-feather="loader" class="w-5 h-5 animate-spin"></i> Validation IA en cours...';
+                    
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                    
+                    return true;
                 });
             }
             
-            // Auto-hide flash messages après 5 secondes
+            // Auto-hide flash messages
             const alerts = document.querySelectorAll('.alert-auto-hide');
             if (alerts.length > 0) {
                 alerts.forEach(function(alert) {
@@ -345,4 +479,31 @@
             }
         });
     </script>
+    
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Style pour les boutons toggle password */
+        .toggle-password {
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            z-index: 10;
+        }
+        
+        .password-field {
+            position: relative;
+        }
+        
+        .password-field input {
+            padding-right: 2.5rem !important;
+        }
+    </style>
 {% endblock %}

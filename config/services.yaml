@@ -37,3 +37,8 @@ services:
 
     # CSRF Token Manager
     Symfony\Component\Security\Csrf\CsrfTokenManagerInterface: '@security.csrf.token_manager'
+
+      # ✅ Service IA pour l'inscription
+    App\Service\RegistrationAIService:
+        arguments:
+            $openrouterApiKey: '%env(OPENROUTER_API_KEY)%'

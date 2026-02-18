@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-
 use App\Repository\PasswordResetTokenRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -12,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(columns: ['expires_at'], name: 'idx_expires_at')]
 class PasswordResetToken
 {
-   #[ORM\Id]
+    #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
@@ -36,7 +35,8 @@ class PasswordResetToken
     public function __construct()
     {
         $this->createdAt = new \DateTime();
-        $this->expiresAt = new \DateTime('+1 hour'); // Expire dans 1 heure
+        // ✅ Augmenté à 24 heures pour éviter l'expiration trop rapide
+        $this->expiresAt = new \DateTime('+24 hours'); 
         $this->isUsed = false;
     }
 
@@ -107,7 +107,3 @@ class PasswordResetToken
         return !$this->isUsed && $this->expiresAt > new \DateTime();
     }
 }
-
-
-
-
