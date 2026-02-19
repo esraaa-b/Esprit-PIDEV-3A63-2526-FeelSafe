@@ -323,13 +323,43 @@ PROMPT;
             $last = $chatRepo->findOneBy(['conversationId' => $convId, 'utilisateur' => $user], ['createdAt' => 'DESC']);
             $conversations[] = [
                 'conversationId' => $convId,
-                'lastMessage' => $last,
+                'lastMessage' => $last ? [
+                    'role' => $last->getRole(),
+                    'content' => mb_substr($last->getContent(), 0, 500),
+                    'createdAt' => $last->getCreatedAt()->format(DATE_ATOM),
+                ] : null,
             ];
         }
 
-        return $this->render('dashboard/conversations_list.html.twig', [
-            'conversations' => $conversations,
-        ]);
+        return $this->json(['conversations' => $conversations]);
+    }
+
+    #[Route('/dashboard/journal/ai/conversation/{conversationId}/messages', name: 'app_ai_journal_conversation_messages', methods: ['GET'])]
+    public function conversationMessages(string $conversationId, ChatMessageRepository $chatRepo): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $messages = $chatRepo->createQueryBuilder('c')
+            ->where('c.conversationId = :conv')
+            ->andWhere('c.utilisateur = :user')
+            ->setParameter('conv', $conversationId)
+            ->setParameter('user', $user)
+            ->orderBy('c.createdAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $out = array_map(function($m) {
+            return [
+                'role' => $m->getRole(),
+                'content' => $m->getContent(),
+                'createdAt' => $m->getCreatedAt()->format(DATE_ATOM),
+            ];
+        }, $messages);
+
+        return $this->json(['messages' => $out]);
     }
 
     // ─────────────────────────────────────────────────────────────
