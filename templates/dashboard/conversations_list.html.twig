@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Conversations{% endblock %}
+
+{% block body %}
+<div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Conversations</h1>
+
+    <div class="bg-white shadow rounded p-4">
+        <ul class="divide-y">
+            {% for item in conversations %}
+                <li class="py-3">
+                    <a href="{{ path('app_ai_journal_conversation_view', {'conversationId': item.conversationId}) }}" class="block">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="font-medium">Conversation {{ loop.index }}</div>
+                                {% if item.lastMessage %}
+                                    <div class="text-sm text-gray-600 mt-1">{{ item.lastMessage.getRole()|capitalize }} • {{ item.lastMessage.getCreatedAt().format('d/m/Y H:i') }}</div>
+                                    <div class="mt-2">{{ item.lastMessage.getContent()|raw|slice(0,200) }}</div>
+                                {% else %}
+                                    <div class="text-sm text-gray-500">Aucun message</div>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm text-gray-400">Voir</div>
+                        </div>
+                    </a>
+                </li>
+            {% else %}
+                <li>Aucune conversation encore.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

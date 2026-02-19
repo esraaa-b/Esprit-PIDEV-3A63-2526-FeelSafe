@@ -301,7 +301,7 @@ PROMPT;
     }
 
     #[Route('/dashboard/journal/ai/conversations', name: 'app_ai_journal_conversations', methods: ['GET'])]
-    public function listConversations(EntityManagerInterface $em, ChatMessageRepository $chatRepo): JsonResponse
+    public function listConversations(EntityManagerInterface $em, ChatMessageRepository $chatRepo): \Symfony\Component\HttpFoundation\Response
     {
         $user = $this->getUser();
         if (!$user) {
@@ -323,15 +323,13 @@ PROMPT;
             $last = $chatRepo->findOneBy(['conversationId' => $convId, 'utilisateur' => $user], ['createdAt' => 'DESC']);
             $conversations[] = [
                 'conversationId' => $convId,
-                'lastMessage' => $last ? [
-                    'role' => $last->getRole(),
-                    'content' => mb_substr($last->getContent(), 0, 500),
-                    'createdAt' => $last->getCreatedAt()->format(DATE_ATOM),
-                ] : null,
+                'lastMessage' => $last,
             ];
         }
 
-        return $this->json(['conversations' => $conversations]);
+        return $this->render('dashboard/conversations_list.html.twig', [
+            'conversations' => $conversations,
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────
