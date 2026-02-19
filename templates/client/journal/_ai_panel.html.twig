@@ -212,15 +212,27 @@
                 <p class="ai-intro-text">Parle avec l'assistant. Il est là pour t'écouter et te réconforter.</p>
 
                 <div class="ai-chat-window" style="display:flex;flex-direction:column;gap:8px;">
-                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-                        <select x-show="chat.conversations.length" x-on:change="loadConversation($event.target.value)" class="px-3 py-2 rounded bg-background text-foreground">
-                            <option value="">Sélectionner une conversation</option>
-                            <template x-for="c in chat.conversations" :key="c.conversationId">
-                                <option :value="c.conversationId" x-text="(c.lastMessage ? (c.lastMessage.role + ' • ' + c.lastMessage.createdAt) : c.conversationId)"></option>
+                    <div class="ai-chat-container" style="display:flex;gap:12px;align-items:flex-start;margin-bottom:6px;">
+                        <div class="ai-conversations-sidebar" style="width:160px;max-height:360px;overflow:auto;padding:6px;border-radius:8px;background:rgba(255,255,255,0.02);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                <strong style="font-size:13px;color:#c4b5fd;">Historique</strong>
+                                <button @click="loadConversations()" class="ai-action-btn" style="width:auto;padding:6px 8px;font-size:12px;">Rafraîchir</button>
+                            </div>
+                            <template x-if="!chat.conversations.length">
+                                <div class="text-sm text-gray-500">Aucune conversation.</div>
                             </template>
-                        </select>
-                        <button @click="loadConversations()" class="ai-action-btn" style="width:auto;padding:6px 10px;">Historique</button>
-                        <a x-show="chat.currentConversationId" :href="'{{ path('app_ai_journal_conversation_view', {'conversationId':'CONV'}) }}'.replace('CONV', chat.currentConversationId)" class="ml-auto text-sm text-gray-400">Ouvrir la conversation complète</a>
+                            <template x-for="c in chat.conversations" :key="c.conversationId">
+                                <div @click="loadConversation(c.conversationId)" :class="{'ai-conversation-item-active': chat.currentConversationId === c.conversationId}" class="ai-conversation-item" style="padding:8px;border-radius:8px;cursor:pointer;margin-bottom:6px;">
+                                    <div class="text-sm" x-text="c.lastMessage ? (c.lastMessage.content.length > 80 ? c.lastMessage.content.slice(0,80) + '…' : c.lastMessage.content) : 'Nouvelle conversation'"></div>
+                                    <div class="text-xs" style="color:#94a3b8;margin-top:6px;" x-text="c.lastMessage ? c.lastMessage.createdAt.slice(0,16).replace('T',' ') : ''"></div>
+                                </div>
+                            </template>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+                                <a x-show="chat.currentConversationId" :href="'{{ path('app_ai_journal_conversation_view', {'conversationId':'CONV'}) }}'.replace('CONV', chat.currentConversationId)" class="ml-auto text-sm text-gray-400">Ouvrir la conversation complète</a>
+                            </div>
+                        </div>
                     </div>
                     <div class="ai-chat-messages" x-ref="chatList" style="max-height:360px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);">
                         <template x-for="(m, i) in chat.messages" :key="i">
@@ -564,7 +576,7 @@ function aiJournalPanel() {
             });
         },
 
-        openDrawer()  { openAiDrawer(); },
+        openDrawer()  { openAiDrawer(); this.loadConversations(); },
         closeDrawer() { closeAiDrawer(); },
 
         async loadAffirmation() {
@@ -693,3 +705,9 @@ function aiJournalPanel() {
     };
 }
 </script>
+<style>
+.ai-conversations-sidebar::-webkit-scrollbar { width: 6px; }
+.ai-conversations-sidebar::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.15); border-radius: 6px; }
+.ai-conversation-item-active { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.12); }
+.ai-conversation-item:hover { background: rgba(255,255,255,0.02); }
+</style>
