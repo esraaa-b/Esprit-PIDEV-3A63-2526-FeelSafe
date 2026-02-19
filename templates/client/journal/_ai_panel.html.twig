@@ -706,6 +706,14 @@ function aiJournalPanel() {
 }
 </script>
 <style>
+/* Chat message styles: improve contrast and layout */
+.ai-chat-messages .ai-chat-msg { max-width: 86%; padding: 10px 12px; border-radius: 12px; word-break: break-word; color: #e6eef8; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02); }
+.ai-chat-messages .ai-chat-msg.user { margin-left: auto; background: rgba(59,130,246,0.14); color: #f8fbff; border-color: rgba(59,130,246,0.18); }
+.ai-chat-messages .ai-chat-msg.bot  { margin-right: auto; background: rgba(255,255,255,0.02); color: #e6eef8; }
+.ai-chat-messages .ai-chat-msg div { color: inherit !important; }
+.ai-chat-messages { background: rgba(255,255,255,0.02); }
+</style>
+<style>
 .ai-conversations-sidebar::-webkit-scrollbar { width: 6px; }
 .ai-conversations-sidebar::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.15); border-radius: 6px; }
 .ai-conversation-item-active { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.12); }
