@@ -3,19 +3,38 @@
 {% block title %}Conversation historique{% endblock %}
 
 {% block body %}
-<div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Historique de la conversation</h1>
-    <div class="bg-white shadow rounded p-4">
-        <div class="space-y-4">
-            {% for msg in messages %}
-                <div class="py-2">
-                    <div class="text-sm text-gray-500">{{ msg.getCreatedAt().format('d/m/Y H:i') }} • {{ msg.getRole() }}</div>
-                    <div class="mt-1 text-base">{{ msg.getContent()|e }}</div>
-                </div>
-                <hr />
-            {% else %}
-                <div>Aucun message pour cette conversation.</div>
-            {% endfor %}
+<div style="padding:20px; max-width:940px; margin:0 auto;">
+    <h1 style="color:#e6eef8; font-size:20px; margin-bottom:12px;">Historique de la conversation</h1>
+
+    <div style="display:flex;gap:18px;">
+        <div style="flex:1;">
+            <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:10px;">
+                {% if messages is empty %}
+                    <div style="color:#94a3b8">Aucun message pour cette conversation.</div>
+                {% else %}
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        {% for msg in messages %}
+                            <div style="max-width:75%;">
+                                {% if msg.getRole() == 'user' %}
+                                    <div style="margin-left:auto;background:rgba(59,130,246,0.12);color:#f8fbff;padding:10px;border-radius:10px;border:1px solid rgba(59,130,246,0.15);">
+                                        <div style="font-size:13px;">{{ msg.getContent()|e }}</div>
+                                        <div style="font-size:11px;color:#94a3b8;margin-top:6px;">{{ msg.getCreatedAt().format('d/m/Y H:i') }} • Vous</div>
+                                    </div>
+                                {% else %}
+                                    <div style="margin-right:auto;background:rgba(255,255,255,0.02);color:#e6eef8;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);">
+                                        <div style="font-size:13px;">{{ msg.getContent()|e }}</div>
+                                        <div style="font-size:11px;color:#94a3b8;margin-top:6px;">{{ msg.getCreatedAt().format('d/m/Y H:i') }} • Assistant</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div style="width:260px;">
+            <a href="{{ path('app_dashboard') }}" style="color:#94a3b8;">← Retour</a>
+            <div style="margin-top:12px;color:#94a3b8;">Conversation : <strong style="color:#e6eef8">{{ conversationId }}</strong></div>
         </div>
     </div>
 </div>
