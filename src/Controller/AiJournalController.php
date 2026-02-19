@@ -202,7 +202,7 @@ PROMPT;
     // Body: { _token: string, message: string }
     // ─────────────────────────────────────────────────────────────
     #[Route('/dashboard/journal/ai/chat', name: 'app_ai_journal_chat', methods: ['POST'])]
-    public function chat(Request $request, EntityManagerInterface $em): JsonResponse
+    public function chat(Request $request, EntityManagerInterface $em, ChatMessageRepository $chatRepo): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         if (!$this->isCsrfTokenValid('ai_journal', $data['_token'] ?? '')) {
@@ -215,6 +215,20 @@ PROMPT;
         }
 
         $user = $this->getUser();
+
+        // Determine conversation id (reuse provided or create new)
+        $conversationId = $data['conversationId'] ?? null;
+        if (empty($conversationId)) {
+            $conversationId = bin2hex(random_bytes(8));
+        }
+
+        // Persist user message
+        $userMsg = new \App\Entity\ChatMessage();
+        $userMsg->setConversationId($conversationId)
+            ->setRole('user')
+            ->setContent($message)
+            ->setUtilisateur($user);
+        $chatRepo->save($userMsg, true);
 
         // Provide lightweight context from recent entries
         $recent = $em->getRepository(JournalEmotionnel::class)
@@ -251,7 +265,39 @@ PROMPT;
             return $this->json($result, 500);
         }
 
-        return $this->json(['reply' => $result['text']]);
+        // Persist assistant reply
+        $replyText = $result['text'] ?? '';
+        $assistantMsg = new \App\Entity\ChatMessage();
+        $assistantMsg->setConversationId($conversationId)
+            ->setRole('assistant')
+            ->setContent($replyText)
+            ->setUtilisateur($user);
+        $chatRepo->save($assistantMsg, true);
+
+        return $this->json(['reply' => $replyText, 'conversationId' => $conversationId]);
+    }
+
+    #[Route('/dashboard/journal/ai/conversation/view/{conversationId}', name: 'app_ai_journal_conversation_view', methods: ['GET'])]
+    public function viewConversation(string $conversationId, ChatMessageRepository $chatRepo): JsonResponse|\Symfony\Component\HttpFoundation\Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $messages = $chatRepo->createQueryBuilder('c')
+            ->where('c.conversationId = :conv')
+            ->andWhere('c.utilisateur = :user')
+            ->setParameter('conv', $conversationId)
+            ->setParameter('user', $user)
+            ->orderBy('c.createdAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->render('dashboard/conversation_history.html.twig', [
+            'conversationId' => $conversationId,
+            'messages' => $messages,
+        ]);
     }
 
     #[Route('/dashboard/journal/ai/conversations', name: 'app_ai_journal_conversations', methods: ['GET'])]
