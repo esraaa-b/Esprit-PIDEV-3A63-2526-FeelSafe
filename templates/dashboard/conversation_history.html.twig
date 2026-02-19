@@ -10,7 +10,7 @@
         <div style="flex:1;">
             <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:10px;">
                 {% if messages is empty %}
-                    <div style="color:#94a3b8">Aucun message pour cette conversation.</div>
+                    <div style="color:#94a3b8;padding:18px;border-radius:8px;background:rgba(255,255,255,0.01);">Aucun message pour cette conversation.</div>
                 {% else %}
                     <div style="display:flex;flex-direction:column;gap:10px;">
                         {% for msg in messages %}

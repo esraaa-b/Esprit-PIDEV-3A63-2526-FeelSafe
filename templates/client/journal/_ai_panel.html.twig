@@ -707,10 +707,10 @@ function aiJournalPanel() {
 </script>
 <style>
 /* Chat message styles: tighter bubbles, better spacing */
-.ai-chat-messages { background: rgba(255,255,255,0.02); position: relative; }
+.ai-chat-messages { background: rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:6px; }
 .ai-chat-messages .ai-chat-msg {
-    display: inline-block;
-    max-width: 72%;
+    display: block;
+    max-width: 68%;
     padding: 8px 10px;
     border-radius: 10px;
     word-break: break-word;
@@ -719,19 +719,10 @@ function aiJournalPanel() {
     border: 1px solid rgba(255,255,255,0.02);
     font-size: 13px;
     line-height: 1.45;
-    position: relative;
+    align-self: flex-start;
 }
-.ai-chat-messages .ai-chat-msg.user {
-    margin-left: auto;
-    background: rgba(59,130,246,0.14);
-    color: #f8fbff;
-    border-color: rgba(59,130,246,0.18);
-}
-.ai-chat-messages .ai-chat-msg.bot {
-    margin-right: auto;
-    background: rgba(255,255,255,0.02);
-    color: #e6eef8;
-}
+.ai-chat-messages .ai-chat-msg.user { align-self: flex-end; background: rgba(59,130,246,0.16); color: #f8fbff; border-color: rgba(59,130,246,0.2); }
+.ai-chat-messages .ai-chat-msg.bot  { align-self: flex-start; background: rgba(255,255,255,0.02); color: #e6eef8; }
 .ai-chat-messages .ai-chat-msg div { color: inherit !important; }
 .ai-chat-messages .ai-chat-msg + .ai-chat-msg { margin-top: 6px; }
 .ai-chat-messages .ai-chat-msg .meta { display:block; font-size:11px; color:#94a3b8; margin-top:6px; }
