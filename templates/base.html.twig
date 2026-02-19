@@ -52,7 +52,63 @@
     });
     </script>
     
-    {% block javascripts %}{% endblock %}
+    {% block javascripts %}
+    <script>
+    document.addEventListener('alpine:init', function () {
+        Alpine.data('aiJournalPanel', function () {
+            return {
+                activeTab: 'affirmation',
+                affirmation: { text: null, loading: false, error: null, date: null },
+                prediction: { text: null, loading: false, error: null, html: null, predictsFor: null, entryCount: 0 },
+                analysis: { text: null, loading: false, error: null, html: null },
+                chat: { messages: [], input: '', loading: false },
+                init() {},
+                openDrawer() {
+                    document.getElementById('ai-drawer')?.classList.add('open');
+                    document.getElementById('ai-backdrop')?.classList.add('open');
+                },
+                closeDrawer() {
+                    document.getElementById('ai-drawer')?.classList.remove('open');
+                    document.getElementById('ai-backdrop')?.classList.remove('open');
+                },
+                loadAffirmation() {
+                    this.affirmation.loading = true;
+                    setTimeout(() => {
+                        this.affirmation.text = 'Vous êtes capable et résilient.';
+                        this.affirmation.date = new Date().toLocaleDateString();
+                        this.affirmation.loading = false;
+                    }, 600);
+                },
+                loadPrediction() {
+                    this.prediction.loading = true;
+                    setTimeout(() => {
+                        this.prediction.text = 'Une journée positive vous attend.';
+                        this.prediction.html = '<p>Bonne énergie</p>';
+                        this.prediction.loading = false;
+                    }, 600);
+                },
+                sendChat() {
+                    if (!this.chat.input || !this.chat.input.trim()) return;
+                    this.chat.loading = true;
+                    this.chat.messages.push({ role: 'user', text: this.chat.input });
+                    const userMsg = this.chat.input;
+                    this.chat.input = '';
+                    setTimeout(() => {
+                        this.chat.messages.push({ role: 'bot', text: "Merci de partager — je vous écoute." });
+                        this.chat.loading = false;
+                        try { this.$refs.chatList.scrollTop = this.$refs.chatList.scrollHeight; } catch (e) {}
+                    }, 600);
+                }
+            };
+        });
+    });
+
+    function closeAiDrawer() {
+        document.getElementById('ai-drawer')?.classList.remove('open');
+        document.getElementById('ai-backdrop')?.classList.remove('open');
+    }
+    </script>
+    {% endblock %}
 </body>
 <style>
   [x-cloak] { display: none !important; }

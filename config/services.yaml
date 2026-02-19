@@ -30,6 +30,9 @@ services:
     App\Controller\:
         resource: '../src/Controller/'
         tags: ['controller.service_arguments']
+    App\Controller\AiJournalController:
+        arguments:
+            $anthropicApiKey: '%env(ANTHROPIC_API_KEY)%'
 
     # Repositories
     App\Repository\:

@@ -89,7 +89,7 @@
                 </div>
 
                 <div x-show="affirmation.loading" class="ai-loading-state">
-                    <div class="ai-loading-ring" style="--ring-color: #4ade80;"></div>
+                    <div class="ai-loading-ring" x-cloak style="--ring-color: #4ade80;"></div>
                     <p class="ai-loading-label">Génération en cours…</p>
                 </div>
 
@@ -112,10 +112,10 @@
                 </div>
 
                 <button @click="loadAffirmation()" :disabled="affirmation.loading" class="ai-action-btn ai-action-green">
-                    <svg x-show="!affirmation.loading" viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <svg x-cloak x-show="!affirmation.loading" viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                     </svg>
-                    <svg x-show="affirmation.loading" class="ai-spin" viewBox="0 0 24 24" fill="none" width="14" height="14">
+                    <svg x-cloak x-show="affirmation.loading" class="ai-spin" viewBox="0 0 24 24" fill="none" width="14" height="14">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/>
                         <path fill="currentColor" opacity=".75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
@@ -138,7 +138,7 @@
                 </div>
 
                 <div x-show="prediction.loading" class="ai-loading-state">
-                    <div class="ai-loading-ring" style="--ring-color: #a78bfa;"></div>
+                    <div class="ai-loading-ring" x-cloak style="--ring-color: #a78bfa;"></div>
                     <p class="ai-loading-label">Analyse de vos émotions…</p>
                 </div>
 
@@ -161,10 +161,10 @@
                 </div>
 
                 <button @click="loadPrediction()" :disabled="prediction.loading" class="ai-action-btn ai-action-purple">
-                    <svg x-show="!prediction.loading" viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <svg x-cloak x-show="!prediction.loading" viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                         <path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                     </svg>
-                    <svg x-show="prediction.loading" class="ai-spin" viewBox="0 0 24 24" fill="none" width="14" height="14">
+                    <svg x-cloak x-show="prediction.loading" class="ai-spin" viewBox="0 0 24 24" fill="none" width="14" height="14">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/>
                         <path fill="currentColor" opacity=".75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
@@ -181,7 +181,7 @@
                 <p class="ai-intro-text">Analyse approfondie et réflexion personnalisée sur votre entrée de journal.</p>
 
                 <div x-show="analysis.loading" class="ai-loading-state">
-                    <div class="ai-loading-ring" style="--ring-color: #60a5fa;"></div>
+                    <div class="ai-loading-ring" x-cloak style="--ring-color: #60a5fa;"></div>
                     <p class="ai-loading-label">Analyse en cours…</p>
                 </div>
 
@@ -213,18 +213,18 @@
 
                 <div class="ai-chat-window" style="display:flex;flex-direction:column;gap:8px;">
                     <div class="ai-chat-container" style="display:flex;gap:12px;align-items:flex-start;margin-bottom:6px;">
-                        <div class="ai-conversations-sidebar" style="width:160px;max-height:360px;overflow:auto;padding:6px;border-radius:8px;background:rgba(255,255,255,0.02);">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div class="ai-conversations-sidebar" style="width:150px;max-height:320px;overflow:auto;padding:6px;border-radius:8px;background:rgba(255,255,255,0.02);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                                 <strong style="font-size:13px;color:#c4b5fd;">Historique</strong>
                                 <button @click="loadConversations()" class="ai-action-btn" style="width:auto;padding:6px 8px;font-size:12px;">Rafraîchir</button>
                             </div>
                             <template x-if="!chat.conversations.length">
-                                <div class="text-sm text-gray-500">Aucune conversation.</div>
+                                <div class="text-xs" style="color:#94a3b8;">Aucune conversation.</div>
                             </template>
                             <template x-for="c in chat.conversations" :key="c.conversationId">
-                                <div @click="loadConversation(c.conversationId)" :class="{'ai-conversation-item-active': chat.currentConversationId === c.conversationId}" class="ai-conversation-item" style="padding:8px;border-radius:8px;cursor:pointer;margin-bottom:6px;">
-                                    <div class="text-sm" x-text="c.lastMessage ? (c.lastMessage.content.length > 80 ? c.lastMessage.content.slice(0,80) + '…' : c.lastMessage.content) : 'Nouvelle conversation'"></div>
-                                    <div class="text-xs" style="color:#94a3b8;margin-top:6px;" x-text="c.lastMessage ? c.lastMessage.createdAt.slice(0,16).replace('T',' ') : ''"></div>
+                                <div @click="loadConversation(c.conversationId)" :class="{'ai-conversation-item-active': chat.currentConversationId === c.conversationId}" class="ai-conversation-item" style="padding:6px 8px;border-radius:6px;cursor:pointer;margin-bottom:6px;">
+                                    <div class="ai-conversation-title" x-text="c.lastMessage ? (c.lastMessage.content.length > 80 ? c.lastMessage.content.slice(0,80) + '…' : c.lastMessage.content) : 'Nouvelle conversation'"></div>
+                                    <div class="ai-conversation-date" x-text="c.lastMessage ? c.lastMessage.createdAt.slice(0,16).replace('T',' ') : ''"></div>
                                 </div>
                             </template>
                         </div>
@@ -236,12 +236,12 @@
                     </div>
                     <div class="ai-chat-messages" x-ref="chatList" style="max-height:360px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);">
                         <template x-for="(m, i) in chat.messages" :key="i">
-                            <div :class="m.role === 'user' ? 'ai-chat-msg user' : 'ai-chat-msg bot'" style="margin-bottom:8px;">
-                                <div style="font-size:12px;color:#94a3b8;">"<span x-text="m.text"></span>"</div>
+                            <div :class="m.role === 'user' ? 'ai-chat-msg user' : 'ai-chat-msg bot'" style="margin-bottom:6px;">
+                                <div class="ai-chat-text" x-text="m.text"></div>
                             </div>
                         </template>
                         <div x-show="chat.loading" class="ai-loading-state" style="padding:8px;display:flex;align-items:center;gap:8px;">
-                            <div class="ai-loading-ring" style="--ring-color:#60a5fa;width:20px;height:20px;border-width:2px"></div>
+                            <div class="ai-loading-ring" x-cloak style="--ring-color:#60a5fa;width:20px;height:20px;border-width:2px"></div>
                             <div class="text-sm text-muted-foreground">L'assistant réfléchit…</div>
                         </div>
                     </div>
@@ -710,26 +710,59 @@ function aiJournalPanel() {
 .ai-chat-messages { background: rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:6px; }
 .ai-chat-messages .ai-chat-msg {
     display: block;
-    max-width: 68%;
-    padding: 8px 10px;
-    border-radius: 10px;
+    max-width: 72%;
+    padding: 7px 10px;
+    border-radius: 8px;
     word-break: break-word;
     color: #e6eef8;
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.02);
-    font-size: 13px;
+    font-size: 12.5px;
     line-height: 1.45;
     align-self: flex-start;
+    overflow-wrap: anywhere;
 }
-.ai-chat-messages .ai-chat-msg.user { align-self: flex-end; background: rgba(59,130,246,0.16); color: #f8fbff; border-color: rgba(59,130,246,0.2); }
+.ai-chat-messages .ai-chat-msg.user { align-self: flex-end; background: rgba(59,130,246,0.16); color: #f8fbff; border-color: rgba(59,130,246,0.22); }
 .ai-chat-messages .ai-chat-msg.bot  { align-self: flex-start; background: rgba(255,255,255,0.02); color: #e6eef8; }
-.ai-chat-messages .ai-chat-msg div { color: inherit !important; }
+.ai-chat-messages .ai-chat-text { color: inherit !important; font-size: inherit; }
 .ai-chat-messages .ai-chat-msg + .ai-chat-msg { margin-top: 6px; }
 .ai-chat-messages .ai-chat-msg .meta { display:block; font-size:11px; color:#94a3b8; margin-top:6px; }
+
+/* Conversation list compact styles */
+.ai-conversation-item {
+    background: rgba(255,255,255,0.01);
+    color: #cbd5e1;
+    font-size: 12px;
+    min-height: 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+.ai-conversation-title {
+    font-size: 12px;
+    color: #e6eef8;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ai-conversation-date {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+.ai-conversation-item:hover { background: rgba(255,255,255,0.02); }
+.ai-conversation-item-active { background: rgba(167,139,250,0.10); border: 1px solid rgba(167,139,250,0.14); }
 </style>
 <style>
 .ai-conversations-sidebar::-webkit-scrollbar { width: 6px; }
 .ai-conversations-sidebar::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.15); border-radius: 6px; }
 .ai-conversation-item-active { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.12); }
 .ai-conversation-item:hover { background: rgba(255,255,255,0.02); }
+</style>
+<style>
+/* Hide elements marked with x-cloak until Alpine mounts to avoid loader flashes */
+[x-cloak] { display: none !important; }
 </style>

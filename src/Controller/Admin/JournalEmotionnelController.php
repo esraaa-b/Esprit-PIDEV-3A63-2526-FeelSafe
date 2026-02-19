@@ -12,10 +12,17 @@ use App\Form\JournalEmotionnelType;
 use App\Enum\EmotionEnum;
 use App\Entity\Utilisateur;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Mailer\MailerInterface;      // ← AJOUTER
+use Symfony\Component\Mime\Email;
+use Psr\Log\LoggerInterface;
 
 #[Route('/admin/journals')]
 class JournalEmotionnelController extends AbstractController
 {
+      public function __construct(
+        private MailerInterface $mailer,
+        private LoggerInterface $logger  // ← AJOUTER
+    ) {}
 #[Route('/', name: 'admin_dash')] // Ou la route que vous voulez
 public function index(Request $request, EntityManagerInterface $em): Response
 {
@@ -42,87 +49,105 @@ public function index(Request $request, EntityManagerInterface $em): Response
 // Dans App\Controller\Admin\JournalEmotionnelController.php
 
 #[Route('/admin/journal/{id}/delete', name: 'admin_journal_delete', methods: ['POST'])]
-public function delete(
-    JournalEmotionnel $journal,
-    EntityManagerInterface $em
-): Response {
-    $em->remove($journal);
-    $em->flush();
+    public function delete(
+        JournalEmotionnel $journal,
+        EntityManagerInterface $em
+    ): Response {
+        $utilisateur = $journal->getUtilisateur();
+        $userId = $utilisateur->getId();
 
-    $this->addFlash('success', 'Journal supprimé avec succès.');
-    return $this->redirectToRoute('admin_user_journals', [
-            'id' => $journal->getUtilisateur()->getId()
-        ]);
-    
-}
+        // ✅ Envoyer l'email AVANT la suppression
+        $this->sendEmail(
+            $utilisateur->getEmail(),
+            $utilisateur->getPrenom() . ' ' . $utilisateur->getNom(),
+            'journal_deleted',
+            [
+                'userName' => $utilisateur->getPrenom(),
+                'date'     => $journal->getDateCreation()->format('d/m/Y à H:i'),
+                'emotion'  => $journal->getEmotion()->label(),
+            ]
+        );
 
-#[Route('/{id}/edit', name: 'admin_journal_edit', methods: ['GET', 'POST'])]
-public function edit(Request $request, JournalEmotionnel $journal, EntityManagerInterface $em): Response
-{
-    $form = $this->createForm(JournalEmotionnelType::class, $journal, [
-        'journal' => $journal,
-    ]);
-
-    $form->handleRequest($request);
-
-    if ($form->isSubmitted() && $form->isValid()) {
-        
-        // ✅ GESTION MANUELLE DE L'ÉMOTION
-        $emotionValue = $request->request->get('emotion'); // Récupère la valeur du radio
-        if ($emotionValue) {
-            $emotion = \App\Enum\EmotionEnum::tryFrom($emotionValue);
-            if ($emotion) {
-                $journal->setEmotion($emotion);
-            }
-        }
-        
-        // IMAGE
-        if ($form->has('removeImage') && $form->get('removeImage')->getData()) {
-            if ($journal->getImage()) {
-                @unlink($this->getParameter('journal_images_dir') . '/' . $journal->getImage());
-                $journal->setImage(null);
-            }
-        }
-
-        if ($imageFile = $form->get('imageFile')->getData()) {
-            $imageName = uniqid() . '.' . $imageFile->guessExtension();
-            $imageFile->move(
-                $this->getParameter('journal_images_dir'),
-                $imageName
-            );
-            $journal->setImage($imageName);
-        }
-
-        // AUDIO
-        if ($form->has('removeAudio') && $form->get('removeAudio')->getData()) {
-            if ($journal->getAudio()) {
-                @unlink($this->getParameter('journal_audio_dir') . '/' . $journal->getAudio());
-                $journal->setAudio(null);
-            }
-        }
-
-        if ($audioFile = $form->get('audioFile')->getData()) {
-            $audioName = uniqid() . '.' . $audioFile->guessExtension();
-            $audioFile->move(
-                $this->getParameter('journal_audio_dir'),
-                $audioName
-            );
-            $journal->setAudio($audioName);
-        }
-
+        $em->remove($journal);
         $em->flush();
-        return $this->redirectToRoute('admin_user_journals', [
-            'id' => $journal->getUtilisateur()->getId()
-        ]);
+
+        $this->addFlash('success', 'Journal supprimé et email envoyé au client.');
+        return $this->redirectToRoute('admin_user_journals', ['id' => $userId]);
     }
 
-    return $this->render('admin/journal/_edit_modal.html.twig', [
-        'form' => $form->createView(),
-        'journal' => $journal,
-        'emotions' => \App\Enum\EmotionEnum::cases(),
-    ]);
-}
+#[Route('/{id}/edit', name: 'admin_journal_edit', methods: ['GET', 'POST'])]
+    public function edit(Request $request, JournalEmotionnel $journal, EntityManagerInterface $em): Response
+    {
+        $form = $this->createForm(JournalEmotionnelType::class, $journal, [
+            'journal' => $journal,
+        ]);
 
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $emotionValue = $request->request->get('emotion');
+            if ($emotionValue) {
+                $emotion = EmotionEnum::tryFrom($emotionValue);
+                if ($emotion) {
+                    $journal->setEmotion($emotion);
+                }
+            }
+
+            if ($form->has('removeImage') && $form->get('removeImage')->getData()) {
+                if ($journal->getImage()) {
+                    @unlink($this->getParameter('journal_images_dir') . '/' . $journal->getImage());
+                    $journal->setImage(null);
+                }
+            }
+
+            if ($imageFile = $form->get('imageFile')->getData()) {
+                $imageName = uniqid() . '.' . $imageFile->guessExtension();
+                $imageFile->move($this->getParameter('journal_images_dir'), $imageName);
+                $journal->setImage($imageName);
+            }
+
+            if ($form->has('removeAudio') && $form->get('removeAudio')->getData()) {
+                if ($journal->getAudio()) {
+                    @unlink($this->getParameter('journal_audio_dir') . '/' . $journal->getAudio());
+                    $journal->setAudio(null);
+                }
+            }
+
+            if ($audioFile = $form->get('audioFile')->getData()) {
+                $audioName = uniqid() . '.' . $audioFile->guessExtension();
+                $audioFile->move($this->getParameter('journal_audio_dir'), $audioName);
+                $journal->setAudio($audioName);
+            }
+
+            $em->flush();
+
+            // ✅ Envoyer l'email après la sauvegarde
+            $utilisateur = $journal->getUtilisateur();
+            $this->sendEmail(
+                $utilisateur->getEmail(),
+                $utilisateur->getPrenom() . ' ' . $utilisateur->getNom(),
+                'journal_modified',
+                [
+                    'userName' => $utilisateur->getPrenom(),
+                    'date'     => $journal->getDateCreation()->format('d/m/Y à H:i'),
+                    'emotion'  => $journal->getEmotion()->label(),
+                    'contenu'  => $journal->getContenu(),
+                ]
+            );
+
+            $this->addFlash('success', 'Journal modifié et email envoyé au client.');
+            return $this->redirectToRoute('admin_user_journals', [
+                'id' => $journal->getUtilisateur()->getId()
+            ]);
+        }
+
+        return $this->render('admin/journal/_edit_modal.html.twig', [
+            'form'     => $form->createView(),
+            'journal'  => $journal,
+            'emotions' => EmotionEnum::cases(),
+        ]);
+    }
 #[Route('/admin/users', name: 'admin_users_index')]
 public function usersIndex(Request $request, EntityManagerInterface $em): Response
 {
@@ -184,5 +209,29 @@ public function userJournals(Utilisateur $user): Response
         'user' => $user
     ]);
 }
+ // ✅ Méthode helper pour envoyer les emails
+    private function sendEmail(string $toEmail, string $toName, string $template, array $context): void
+    {
+        try {
+            $this->logger->info("📧 Tentative envoi email à : {$toEmail}, template: {$template}");
 
+            $email = (new Email())
+                ->from('zaied.ilef138@gmail.com')  // ← DOIT correspondre au compte SMTP
+                ->to($toEmail)
+                ->subject($template === 'journal_modified'
+                    ? '📝 Votre journal a été modifié'
+                    : '🗑️ Votre journal a été supprimé'
+                )
+                ->html($this->renderView("admin/journal/{$template}.html.twig", $context));
+
+            $this->mailer->send($email);
+            $this->logger->info("✅ Email envoyé avec succès à : {$toEmail}");
+
+        } catch (\Exception $e) {
+            // Avant il était silencieux — maintenant on log l'erreur
+            $this->logger->error("❌ Erreur envoi email : " . $e->getMessage());
+            // Afficher aussi dans les flash messages pour le debug
+            $this->addFlash('error', 'Erreur email : ' . $e->getMessage());
+        }
+    }
 }

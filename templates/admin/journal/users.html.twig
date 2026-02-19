@@ -6,79 +6,59 @@
     {{ parent() }}
     <style>
         .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #22c55e20;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #22c55e;
-            font-weight: 600;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #22c55e20; display: flex;
+            align-items: center; justify-content: center;
+            color: #22c55e; font-weight: 600;
         }
         .btn-journaux {
-            background: #22c55e;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 0.875rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+            background: #22c55e; color: white;
+            padding: 6px 12px; border-radius: 6px;
+            text-decoration: none; font-size: 0.875rem;
+            display: inline-flex; align-items: center; gap: 4px;
         }
         .btn-tendances {
-            background: #8b5cf6;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: none;
-            font-size: 0.875rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            max-width: 800px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 24px;
+            background: #8b5cf6; color: white;
+            padding: 6px 12px; border-radius: 6px;
+            border: none; font-size: 0.875rem;
+            cursor: pointer; display: inline-flex;
+            align-items: center; gap: 4px;
         }
         [x-cloak] { display: none !important; }
         .stat-card {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
+            background: #f8fafc; border-radius: 12px;
+            padding: 12px; text-align: center;
             border: 1px solid #e2e8f0;
+        }
+
+        /* Modal tendances */
+        #tendancesModal {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        #tendancesModal.open { display: flex; }
+        .modal-content {
+            background: white; border-radius: 16px;
+            max-width: 800px; width: 90%;
+            max-height: 90vh; overflow-y: auto; padding: 24px;
+        }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr);
+            gap: 12px; margin-bottom: 24px;
         }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="space-y-8" x-data="userApp()" @keydown.escape.window="closeModals">
-    
+<div class="space-y-8">
+
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold">Utilisateurs</h1>
-            
             <p class="text-muted-foreground mt-2">{{ users|length }} utilisateur(s)</p>
         </div>
     </div>
@@ -90,16 +70,14 @@
         </div>
     {% endfor %}
 
-    <!-- Search form -->
+    <!-- Search -->
     <form method="get" class="bg-white p-4 rounded-lg border">
         <div class="flex gap-2">
-            <input type="text" 
-                   name="search" 
+            <input type="text" name="search"
                    value="{{ app.request.get('search') }}"
                    placeholder="Rechercher par email ou nom..."
                    class="flex-1 border rounded px-3 py-2">
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Rechercher</button>
-
         </div>
     </form>
 
@@ -139,86 +117,91 @@
                                 <a href="{{ path('admin_user_journals', {id: user.id}) }}" class="btn-journaux">
                                     <i class="fas fa-book-open"></i> Journaux
                                 </a>
-                                <button @click="openTendances({{ user.id }}, '{{ user.email }}')" class="btn-tendances">
+                                <button 
+                                    onclick="openTendances({{ user.id }}, '{{ user.email }}')"
+                                    class="btn-tendances">
                                     <i class="fas fa-chart-line"></i> Tendances
                                 </button>
+                                <a href="{{ path('app_admin_journal_export_pdf', { userId: user.id }) }}"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-colors">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                    </svg>
+                                    Exporter PDF
+                                </a>
                             </div>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="4" class="text-center py-8 text-gray-500">
-                            Aucun utilisateur trouvé
-                        </td>
+                        <td colspan="4" class="text-center py-8 text-gray-500">Aucun utilisateur trouvé</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+</div>
 
-    <!-- MODAL TENDANCES -->
-    <div x-show="tendancesModalOpen" 
-         x-cloak
-         class="modal-overlay"
-         @click="tendancesModalOpen = false">
-        
-        <div class="modal-content" @click.stop>
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-xl font-bold">
-                        Tendances de <span class="text-purple-600" x-text="selectedUserEmail"></span>
-                    </h2>
-                    <p class="text-sm text-gray-500 mt-1">Analyse des 30 derniers jours</p>
-                </div>
-                <button @click="tendancesModalOpen = false" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+<!-- MODAL TENDANCES (vanilla JS, zéro Alpine) -->
+<div id="tendancesModal" onclick="if(event.target===this) closeTendances()">
+    <div class="modal-content">
+
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <div>
+                <h2 style="font-size:1.25rem; font-weight:700;">
+                    Tendances de <span id="modalUserEmail" style="color:#7c3aed;"></span>
+                </h2>
+                <p style="font-size:0.875rem; color:#6b7280; margin-top:4px;">Analyse des 30 derniers jours</p>
+            </div>
+            <button onclick="closeTendances()" style="font-size:1.5rem; background:none; border:none; cursor:pointer; color:#6b7280;">×</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="tendancesLoading" style="text-align:center; padding:48px 0;">
+            <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:#7c3aed;"></i>
+            <p style="margin-top:8px; color:#6b7280;">Calcul des tendances...</p>
+        </div>
+
+        <!-- Contenu -->
+        <div id="tendancesContent" style="display:none;">
+
+            <!-- Stats cards -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Message vide -->
+            <div id="emptyMessage" style="display:none; text-align:center; padding:32px; background:#f8fafc; border-radius:12px;">
+                <div style="font-size:2.5rem; margin-bottom:12px;">📊</div>
+                <p style="color:#6b7280;">Aucune donnée pour les 30 derniers jours</p>
+                <p style="font-size:0.875rem; color:#9ca3af; margin-top:4px;">L'utilisateur n'a pas encore de journal émotionnel</p>
             </div>
 
-            <!-- Loading -->
-            <div x-show="tendancesLoading" class="text-center py-12">
-                <i class="fas fa-spinner fa-spin text-3xl text-purple-600"></i>
-                <p class="mt-2 text-gray-500">Calcul des tendances...</p>
+            <!-- Chart -->
+            <div id="chartContainer" style="height:256px; margin-top:24px; display:none;">
+                <canvas id="tendancesChart"></canvas>
             </div>
 
-          <!-- Chart and Stats -->
-<div x-show="!tendancesLoading">
-    <!-- Stats cards -->
-    <div class="grid grid-cols-5 gap-3 mb-6">
-        <template x-for="stat in tendancesStats" :key="stat.emotion">
-            <div class="stat-card">
-                <div class="text-2xl mb-1" x-html="stat.icon"></div>
-                <div class="text-xs font-medium text-gray-500" x-text="stat.label"></div>
-                <div class="text-lg font-bold" x-text="stat.count"></div>
-                <div class="text-xs" :style="'color: ' + stat.color" x-text="stat.percentage + '%'"></div>
+            <!-- Légende -->
+            <div id="chartLegend" style="display:none; flex-wrap:wrap; gap:16px; justify-content:center; margin-top:16px; font-size:0.75rem;">
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;"></span> Très bien</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#86efac;display:inline-block;"></span> Bien</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#eab308;display:inline-block;"></span> Neutre</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#fecaca;display:inline-block;"></span> Pas bien</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#dc2626;display:inline-block;"></span> Très mal</div>
             </div>
-        </template>
-    </div>
-
-    <!-- Message si pas de données -->
-    <div x-show="tendancesStats.reduce((sum, stat) => sum + stat.count, 0) === 0" 
-         class="text-center py-8 bg-gray-50 rounded-lg">
-        <div class="text-4xl mb-3">📊</div>
-        <p class="text-gray-500">Aucune donnée pour les 30 derniers jours</p>
-        <p class="text-sm text-gray-400 mt-1">L'utilisateur n'a pas encore de journal émotionnel</p>
-    </div>
-
-    <!-- Chart (caché si pas de données) -->
-    <div x-show="tendancesStats.reduce((sum, stat) => sum + stat.count, 0) > 0" 
-         class="h-64 mt-6">
-        <canvas id="tendancesChart"></canvas>
-    </div>
-
-    <!-- Legend (cachée si pas de données) -->
-    <div x-show="tendancesStats.reduce((sum, stat) => sum + stat.count, 0) > 0" 
-         class="flex flex-wrap gap-4 justify-center mt-4 text-xs">
-        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-600"></span> Très bien</div>
-        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-300"></span> Bien</div>
-        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-300"></span> Neutre</div>
-        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-200"></span> Pas bien</div>
-        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-600"></span> Très mal</div>
+        </div>
     </div>
 </div>
 
+{% endblock %}
+{% block javascripts %}
+{{ parent() }}
+{# Chart.js doit être chargé AVANT que Alpine exécute initChart #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
+// userApp() doit être défini AVANT qu'Alpine s'initialise
+// Comme Alpine est en "defer" dans le head, ce script inline s'exécute avant
 function userApp() {
     return {
         tendancesModalOpen: false,
@@ -236,6 +219,7 @@ function userApp() {
 
             if (this.tendancesChart) {
                 this.tendancesChart.destroy();
+                this.tendancesChart = null;
             }
 
             fetch(`/api/user/${userId}/tendances`)
@@ -245,23 +229,25 @@ function userApp() {
                     this.tendancesLoading = false;
                     this.$nextTick(() => this.initChart(data.chartLabels, data.chartData));
                 })
-                .catch(() => this.tendancesLoading = false);
+                .catch(() => {
+                    this.tendancesLoading = false;
+                });
         },
 
         initChart(labels, data) {
             const ctx = document.getElementById('tendancesChart');
-            if (!ctx) return;
+            if (!ctx || typeof Chart === 'undefined') return;
 
             this.tendancesChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Très bien', data: data.tres_bien, borderColor: '#16a34a', tension: 0.4 },
-                        { label: 'Bien', data: data.bien, borderColor: '#86efac', tension: 0.4 },
-                        { label: 'Neutre', data: data.neutre, borderColor: '#eab308', tension: 0.4 },
-                        { label: 'Pas bien', data: data.pas_bien, borderColor: '#fecaca', tension: 0.4 },
-                        { label: 'Très mal', data: data.tres_mal, borderColor: '#dc2626', tension: 0.4 }
+                        { label: 'Très bien', data: data.tres_bien, borderColor: '#16a34a', tension: 0.4, fill: false },
+                        { label: 'Bien',      data: data.bien,      borderColor: '#86efac', tension: 0.4, fill: false },
+                        { label: 'Neutre',    data: data.neutre,    borderColor: '#eab308', tension: 0.4, fill: false },
+                        { label: 'Pas bien',  data: data.pas_bien,  borderColor: '#fecaca', tension: 0.4, fill: false },
+                        { label: 'Très mal',  data: data.tres_mal,  borderColor: '#dc2626', tension: 0.4, fill: false }
                     ]
                 },
                 options: {
@@ -278,5 +264,87 @@ function userApp() {
     }
 }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Global helpers for legacy inline onclick usage
+function closeTendances() {
+    const m = document.getElementById('tendancesModal');
+    if (m) m.classList.remove('open');
+}
+
+function openTendances(userId, email) {
+    const modal = document.getElementById('tendancesModal');
+    const loading = document.getElementById('tendancesLoading');
+    const content = document.getElementById('tendancesContent');
+    const empty = document.getElementById('emptyMessage');
+    const statsGrid = document.getElementById('statsGrid');
+    const chartContainer = document.getElementById('chartContainer');
+    const chartLegend = document.getElementById('chartLegend');
+    const modalEmail = document.getElementById('modalUserEmail');
+
+    if (!modal) return;
+    modal.classList.add('open');
+    modalEmail.textContent = email;
+    // show loading
+    loading.style.display = '';
+    content.style.display = 'none';
+    empty.style.display = 'none';
+    statsGrid.innerHTML = '';
+    chartContainer.style.display = 'none';
+    chartLegend.style.display = 'none';
+
+    fetch(`/api/user/${encodeURIComponent(userId)}/tendances`)
+        .then(r => r.json())
+        .then(data => {
+            loading.style.display = 'none';
+            if (!data || !data.chartLabels || !data.chartData) {
+                empty.style.display = '';
+                return;
+            }
+
+            // render stats cards if provided
+            if (data.stats && Array.isArray(data.stats)) {
+                data.stats.forEach(s => {
+                    const el = document.createElement('div');
+                    el.className = 'stat-card';
+                    el.innerHTML = `<div style="font-weight:700; font-size:1.1rem">${s.count}</div><div style="font-size:0.85rem; color:#6b7280">${s.label}</div>`;
+                    statsGrid.appendChild(el);
+                });
+            }
+
+            // show chart
+            chartContainer.style.display = '';
+            chartLegend.style.display = '';
+
+            // build Chart.js
+            const ctx = document.getElementById('tendancesChart');
+            if (ctx && typeof Chart !== 'undefined') {
+                // destroy existing chart if any
+                if (window._tendancesChart) {
+                    try { window._tendancesChart.destroy(); } catch(e){}
+                    window._tendancesChart = null;
+                }
+                window._tendancesChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.chartLabels,
+                        datasets: [
+                            { label: 'Très bien', data: data.chartData.tres_bien || [], borderColor: '#16a34a', tension:0.4, fill:false },
+                            { label: 'Bien',      data: data.chartData.bien || [],      borderColor: '#86efac', tension:0.4, fill:false },
+                            { label: 'Neutre',    data: data.chartData.neutre || [],    borderColor: '#eab308', tension:0.4, fill:false },
+                            { label: 'Pas bien',  data: data.chartData.pas_bien || [],  borderColor: '#fecaca', tension:0.4, fill:false },
+                            { label: 'Très mal',  data: data.chartData.tres_mal || [],  borderColor: '#dc2626', tension:0.4, fill:false }
+                        ]
+                    },
+                    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } }
+                });
+            }
+
+            content.style.display = '';
+        })
+        .catch(() => {
+            loading.style.display = 'none';
+            empty.style.display = '';
+        });
+}
+</script>
 {% endblock %}

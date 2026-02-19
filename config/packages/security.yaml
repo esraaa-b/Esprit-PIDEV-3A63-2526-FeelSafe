@@ -26,9 +26,10 @@ security:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
-                default_target_path: app_dashboard
-                always_use_default_target_path: false
-                use_referer: true
+                # Always redirect to the dashboard after successful login
+                default_target_path: /dashboard
+                always_use_default_target_path: true
+                use_referer: false
             
             logout:
                 path: app_logout

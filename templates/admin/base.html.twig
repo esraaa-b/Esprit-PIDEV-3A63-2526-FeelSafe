@@ -427,15 +427,14 @@
             }, 100);
         });
        
-        document.addEventListener('alpine:initialized', () => {
-            Alpine.$watch('sidebarOpen', () => {
-                setTimeout(() => {
-                    if (typeof feather !== 'undefined') {
-                        feather.replace();
-                    }
-                }, 150);
-            });
-        });
+       document.addEventListener('alpine:initialized', () => {
+    // Feather s'initialise une seule fois au démarrage
+    setTimeout(() => {
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }, 150);
+});
     </script>
    
     {% block javascripts %}{% endblock %}
