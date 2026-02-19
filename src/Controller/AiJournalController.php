@@ -277,28 +277,7 @@ PROMPT;
         return $this->json(['reply' => $replyText, 'conversationId' => $conversationId]);
     }
 
-    #[Route('/dashboard/journal/ai/conversation/view/{conversationId}', name: 'app_ai_journal_conversation_view', methods: ['GET'])]
-    public function viewConversation(string $conversationId, ChatMessageRepository $chatRepo): JsonResponse|\Symfony\Component\HttpFoundation\Response
-    {
-        $user = $this->getUser();
-        if (!$user) {
-            return $this->json(['error' => 'Unauthorized'], 401);
-        }
-
-        $messages = $chatRepo->createQueryBuilder('c')
-            ->where('c.conversationId = :conv')
-            ->andWhere('c.utilisateur = :user')
-            ->setParameter('conv', $conversationId)
-            ->setParameter('user', $user)
-            ->orderBy('c.createdAt', 'ASC')
-            ->getQuery()
-            ->getResult();
-
-        return $this->render('dashboard/conversation_history.html.twig', [
-            'conversationId' => $conversationId,
-            'messages' => $messages,
-        ]);
-    }
+    // (Removed viewConversation route - conversations are viewed inside the drawer)
 
     #[Route('/dashboard/journal/ai/conversations', name: 'app_ai_journal_conversations', methods: ['GET'])]
     public function listConversations(EntityManagerInterface $em, ChatMessageRepository $chatRepo): \Symfony\Component\HttpFoundation\Response
