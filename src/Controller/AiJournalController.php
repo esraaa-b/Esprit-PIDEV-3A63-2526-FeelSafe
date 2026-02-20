@@ -129,7 +129,7 @@ En te basant sur ces émotions et leur évolution au fil de la journée, génèr
 Important : ce sont des prédictions bienveillantes, pas des certitudes. Utilise un ton doux ("il est probable que", "tu pourrais ressentir"...). Parle directement à l'utilisateur (tu).
 PROMPT;
 
-    $result = $this->callClaude($prompt, 250);
+    $result = $this->callClaude($prompt, 200);
     if (isset($result['error'])) {
         return $this->json($result, 500);
     }

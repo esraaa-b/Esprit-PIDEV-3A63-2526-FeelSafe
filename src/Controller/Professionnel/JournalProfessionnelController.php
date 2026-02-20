@@ -181,29 +181,40 @@ class JournalProfessionnelController extends BaseDashboardController
     /**
      * Méthodes pour Collection (utilisées dans listPatients)
      */
-    private function calculateDominantEmotion(Collection $journals): ?array
-    {
-        if (count($journals) === 0) {
-            return null;
-        }
+   private function calculateDominantEmotion(Collection $journals): ?array
+{
+    if (count($journals) === 0) return null;
 
-        $counts = [];
-        foreach ($journals as $journal) {
-            $emotion = $journal->getEmotion()->value;
-            $counts[$emotion] = ($counts[$emotion] ?? 0) + 1;
-        }
-
-        arsort($counts);
-        $dominantValue = array_key_first($counts);
-        $dominantEmotion = EmotionEnum::tryFrom($dominantValue);
-        
-        return $dominantEmotion ? [
-            'emotion' => $dominantEmotion,
-            'count' => $counts[$dominantValue],
-            'percentage' => round(($counts[$dominantValue] / count($journals)) * 100),
-        ] : null;
+    $counts = [];
+    foreach ($journals as $journal) {
+        $emotion = $journal->getEmotion()->value;
+        $counts[$emotion] = ($counts[$emotion] ?? 0) + 1;
     }
 
+    arsort($counts);
+    $maxCount = reset($counts);
+    
+    // Trouver les émotions ex-aequo
+    $tied = array_keys(array_filter($counts, fn($c) => $c === $maxCount));
+    
+    if (count($tied) > 1) {
+        // Départager par la dernière entrée (la plus récente)
+        $sorted = $journals->toArray();
+        usort($sorted, fn($a, $b) => $b->getDateCreation() <=> $a->getDateCreation());
+        $lastEmotion = $sorted[0]->getEmotion()->value;
+        $dominantValue = in_array($lastEmotion, $tied) ? $lastEmotion : $tied[0];
+    } else {
+        $dominantValue = array_key_first($counts);
+    }
+
+    $dominantEmotion = EmotionEnum::tryFrom($dominantValue);
+    
+    return $dominantEmotion ? [
+        'emotion' => $dominantEmotion,
+        'count' => $counts[$dominantValue],
+        'percentage' => round(($counts[$dominantValue] / count($journals)) * 100),
+    ] : null;
+}
     private function checkForAlerts(Collection $journals): bool
     {
         if (count($journals) === 0) {
