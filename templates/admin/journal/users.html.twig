@@ -49,6 +49,36 @@
             display: grid; grid-template-columns: repeat(5, 1fr);
             gap: 12px; margin-bottom: 24px;
         }
+
+        /* Search styles */
+        #searchInput {
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #searchInput:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+        }
+        #clearSearch {
+            transition: background 0.2s;
+        }
+        #clearSearch:hover {
+            background: #e5e7eb;
+        }
+        .spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid #d1d5db;
+            border-top-color: #22c55e;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        tbody tr {
+            transition: background 0.15s;
+        }
     </style>
 {% endblock %}
 
@@ -59,7 +89,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold">Utilisateurs</h1>
-            <p class="text-muted-foreground mt-2">{{ users|length }} utilisateur(s)</p>
+            <p class="text-muted-foreground mt-2" id="userCount">{{ users|length }} utilisateur(s)</p>
         </div>
     </div>
 
@@ -70,16 +100,22 @@
         </div>
     {% endfor %}
 
-    <!-- Search -->
-    <form method="get" class="bg-white p-4 rounded-lg border">
+    <!-- Search Ajax -->
+    <div class="bg-white p-4 rounded-lg border">
         <div class="flex gap-2">
-            <input type="text" name="search"
-                   value="{{ app.request.get('search') }}"
-                   placeholder="Rechercher par email ou nom..."
-                   class="flex-1 border rounded px-3 py-2">
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Rechercher</button>
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Rechercher par email ou nom..."
+                class="flex-1 border rounded px-3 py-2"
+                autocomplete="off"
+            >
+            <button id="clearSearch" class="bg-gray-200 text-gray-600 px-4 py-2 rounded hidden">
+                ✕ Effacer
+            </button>
         </div>
-    </form>
+        <p id="searchStatus" class="text-sm text-gray-400 mt-2 min-h-[20px]"></p>
+    </div>
 
     <!-- Users Table -->
     <div class="bg-white rounded-lg border overflow-hidden">
@@ -92,9 +128,16 @@
                     <th class="px-4 py-3 text-center">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="usersTableBody">
                 {% for user in users %}
-                    <tr class="border-t hover:bg-gray-50">
+                    <tr class="border-t hover:bg-gray-50"
+                        data-id="{{ user.id }}"
+                        data-prenom="{{ user.prenom }}"
+                        data-nom="{{ user.nom }}"
+                        data-email="{{ user.email }}"
+                        data-nb="{{ user.journaux|length }}"
+                        data-journals-url="{{ path('admin_user_journals', {id: user.id}) }}"
+                        data-export-url="{{ path('app_admin_journal_export_pdf', {userId: user.id}) }}">
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-3">
                                 <div class="user-avatar">
@@ -117,7 +160,7 @@
                                 <a href="{{ path('admin_user_journals', {id: user.id}) }}" class="btn-journaux">
                                     <i class="fas fa-book-open"></i> Journaux
                                 </a>
-                                <button 
+                                <button
                                     onclick="openTendances({{ user.id }}, '{{ user.email }}')"
                                     class="btn-tendances">
                                     <i class="fas fa-chart-line"></i> Tendances
@@ -194,103 +237,134 @@
 </div>
 
 {% endblock %}
+
 {% block javascripts %}
 {{ parent() }}
-{# Chart.js doit être chargé AVANT que Alpine exécute initChart #}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-// userApp() doit être défini AVANT qu'Alpine s'initialise
-// Comme Alpine est en "defer" dans le head, ce script inline s'exécute avant
-function userApp() {
-    return {
-        tendancesModalOpen: false,
-        selectedUserId: null,
-        selectedUserEmail: '',
-        tendancesStats: [],
-        tendancesLoading: false,
-        tendancesChart: null,
+// ──────────────────────────────────────────────
+//  AJAX SEARCH
+// ──────────────────────────────────────────────
+(function () {
+    const searchUrl  = '{{ path('admin_users_index') }}';
+    const input      = document.getElementById('searchInput');
+    const tbody      = document.getElementById('usersTableBody');
+    const status     = document.getElementById('searchStatus');
+    const clearBtn   = document.getElementById('clearSearch');
+    const countLabel = document.getElementById('userCount');
+    let debounceTimer = null;
 
-        openTendances(userId, email) {
-            this.selectedUserId = userId;
-            this.selectedUserEmail = email;
-            this.tendancesModalOpen = true;
-            this.tendancesLoading = true;
-
-            if (this.tendancesChart) {
-                this.tendancesChart.destroy();
-                this.tendancesChart = null;
-            }
-
-            fetch(`/api/user/${userId}/tendances`)
-                .then(r => r.json())
-                .then(data => {
-                    this.tendancesStats = data.stats;
-                    this.tendancesLoading = false;
-                    this.$nextTick(() => this.initChart(data.chartLabels, data.chartData));
-                })
-                .catch(() => {
-                    this.tendancesLoading = false;
-                });
-        },
-
-        initChart(labels, data) {
-            const ctx = document.getElementById('tendancesChart');
-            if (!ctx || typeof Chart === 'undefined') return;
-
-            this.tendancesChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Très bien', data: data.tres_bien, borderColor: '#16a34a', tension: 0.4, fill: false },
-                        { label: 'Bien',      data: data.bien,      borderColor: '#86efac', tension: 0.4, fill: false },
-                        { label: 'Neutre',    data: data.neutre,    borderColor: '#eab308', tension: 0.4, fill: false },
-                        { label: 'Pas bien',  data: data.pas_bien,  borderColor: '#fecaca', tension: 0.4, fill: false },
-                        { label: 'Très mal',  data: data.tres_mal,  borderColor: '#dc2626', tension: 0.4, fill: false }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
-            });
-        },
-
-        closeModals() {
-            this.tendancesModalOpen = false;
-        }
+    // Build a table row from a JSON user object returned by the controller
+    function buildRow(u) {
+        const initials = (u.prenom.charAt(0) + u.nom.charAt(0)).toUpperCase();
+        return `
+        <tr class="border-t hover:bg-gray-50">
+            <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                    <div class="user-avatar">${initials}</div>
+                    <div>
+                        <div class="font-medium">${u.prenom} ${u.nom}</div>
+                        <div class="text-xs text-gray-500">ID: ${u.id}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-4 py-3">${u.email}</td>
+            <td class="px-4 py-3 text-center">
+                <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">${u.nbJournaux}</span>
+            </td>
+            <td class="px-4 py-3 text-center">
+                <div class="flex justify-center gap-2">
+                    <a href="${u.journalsUrl}" class="btn-journaux">
+                        <i class="fas fa-book-open"></i> Journaux
+                    </a>
+                    <button onclick="openTendances(${u.id}, '${u.email}')" class="btn-tendances">
+                        <i class="fas fa-chart-line"></i> Tendances
+                    </button>
+                    <a href="${u.exportUrl}"
+                       class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        </svg>
+                        Exporter PDF
+                    </a>
+                </div>
+            </td>
+        </tr>`;
     }
-}
+
+    function doSearch(term) {
+        status.innerHTML = '<span class="spinner"></span> Recherche en cours...';
+
+        fetch(`${searchUrl}?search=${encodeURIComponent(term)}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => {
+            if (!r.ok) throw new Error('Erreur réseau');
+            return r.json();
+        })
+        .then(users => {
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500">Aucun utilisateur trouvé</td></tr>`;
+                status.textContent = '0 résultat';
+                countLabel.textContent = '0 utilisateur(s)';
+            } else {
+                tbody.innerHTML = users.map(buildRow).join('');
+                status.textContent = `${users.length} utilisateur(s) trouvé(s)`;
+                countLabel.textContent = `${users.length} utilisateur(s)`;
+            }
+        })
+        .catch(() => {
+            status.textContent = '❌ Erreur lors de la recherche';
+        });
+    }
+
+    input.addEventListener('input', function () {
+        const term = this.value.trim();
+        clearBtn.classList.toggle('hidden', term === '');
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => doSearch(term), 300);
+    });
+
+    clearBtn.addEventListener('click', function () {
+        input.value = '';
+        clearBtn.classList.add('hidden');
+        status.textContent = '';
+        doSearch('');
+    });
+})();
 </script>
+
 <script>
-// Global helpers for legacy inline onclick usage
+// ──────────────────────────────────────────────
+//  MODAL TENDANCES
+// ──────────────────────────────────────────────
 function closeTendances() {
     const m = document.getElementById('tendancesModal');
     if (m) m.classList.remove('open');
 }
 
 function openTendances(userId, email) {
-    const modal = document.getElementById('tendancesModal');
-    const loading = document.getElementById('tendancesLoading');
-    const content = document.getElementById('tendancesContent');
-    const empty = document.getElementById('emptyMessage');
-    const statsGrid = document.getElementById('statsGrid');
+    const modal          = document.getElementById('tendancesModal');
+    const loading        = document.getElementById('tendancesLoading');
+    const content        = document.getElementById('tendancesContent');
+    const empty          = document.getElementById('emptyMessage');
+    const statsGrid      = document.getElementById('statsGrid');
     const chartContainer = document.getElementById('chartContainer');
-    const chartLegend = document.getElementById('chartLegend');
-    const modalEmail = document.getElementById('modalUserEmail');
+    const chartLegend    = document.getElementById('chartLegend');
+    const modalEmail     = document.getElementById('modalUserEmail');
 
     if (!modal) return;
     modal.classList.add('open');
     modalEmail.textContent = email;
-    // show loading
-    loading.style.display = '';
-    content.style.display = 'none';
-    empty.style.display = 'none';
-    statsGrid.innerHTML = '';
+
+    loading.style.display  = '';
+    content.style.display  = 'none';
+    empty.style.display    = 'none';
+    statsGrid.innerHTML    = '';
     chartContainer.style.display = 'none';
-    chartLegend.style.display = 'none';
+    chartLegend.style.display    = 'none';
 
     fetch(`/api/user/${encodeURIComponent(userId)}/tendances`)
         .then(r => r.json())
@@ -298,10 +372,10 @@ function openTendances(userId, email) {
             loading.style.display = 'none';
             if (!data || !data.chartLabels || !data.chartData) {
                 empty.style.display = '';
+                content.style.display = '';
                 return;
             }
 
-            // render stats cards if provided
             if (data.stats && Array.isArray(data.stats)) {
                 data.stats.forEach(s => {
                     const el = document.createElement('div');
@@ -311,16 +385,13 @@ function openTendances(userId, email) {
                 });
             }
 
-            // show chart
             chartContainer.style.display = '';
-            chartLegend.style.display = '';
+            chartLegend.style.display    = 'flex';
 
-            // build Chart.js
             const ctx = document.getElementById('tendancesChart');
             if (ctx && typeof Chart !== 'undefined') {
-                // destroy existing chart if any
                 if (window._tendancesChart) {
-                    try { window._tendancesChart.destroy(); } catch(e){}
+                    try { window._tendancesChart.destroy(); } catch(e) {}
                     window._tendancesChart = null;
                 }
                 window._tendancesChart = new Chart(ctx, {
@@ -328,14 +399,18 @@ function openTendances(userId, email) {
                     data: {
                         labels: data.chartLabels,
                         datasets: [
-                            { label: 'Très bien', data: data.chartData.tres_bien || [], borderColor: '#16a34a', tension:0.4, fill:false },
-                            { label: 'Bien',      data: data.chartData.bien || [],      borderColor: '#86efac', tension:0.4, fill:false },
-                            { label: 'Neutre',    data: data.chartData.neutre || [],    borderColor: '#eab308', tension:0.4, fill:false },
-                            { label: 'Pas bien',  data: data.chartData.pas_bien || [],  borderColor: '#fecaca', tension:0.4, fill:false },
-                            { label: 'Très mal',  data: data.chartData.tres_mal || [],  borderColor: '#dc2626', tension:0.4, fill:false }
+                            { label: 'Très bien', data: data.chartData.tres_bien || [], borderColor: '#16a34a', tension: 0.4, fill: false },
+                            { label: 'Bien',      data: data.chartData.bien      || [], borderColor: '#86efac', tension: 0.4, fill: false },
+                            { label: 'Neutre',    data: data.chartData.neutre    || [], borderColor: '#eab308', tension: 0.4, fill: false },
+                            { label: 'Pas bien',  data: data.chartData.pas_bien  || [], borderColor: '#fecaca', tension: 0.4, fill: false },
+                            { label: 'Très mal',  data: data.chartData.tres_mal  || [], borderColor: '#dc2626', tension: 0.4, fill: false }
                         ]
                     },
-                    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
                 });
             }
 
@@ -343,7 +418,8 @@ function openTendances(userId, email) {
         })
         .catch(() => {
             loading.style.display = 'none';
-            empty.style.display = '';
+            empty.style.display   = '';
+            content.style.display = '';
         });
 }
 </script>

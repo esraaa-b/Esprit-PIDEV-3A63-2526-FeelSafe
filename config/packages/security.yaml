@@ -26,9 +26,9 @@ security:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
-                # Always redirect to the dashboard after successful login
-                default_target_path: /dashboard
-                always_use_default_target_path: true
+                # Use a custom success handler to redirect users based on role
+                success_handler: App\Security\LoginSuccessHandler
+                # keep referer disabled
                 use_referer: false
             
             logout:

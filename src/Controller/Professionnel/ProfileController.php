@@ -32,7 +32,7 @@ class ProfileController extends BaseDashboardController
             'note' => 4.8,
         ];
 
-        return $this->render('professionnel/profile/index.html.twig', array_merge(
+        return $this->render('professionnel/security/index.html.twig', array_merge(
             $this->getUserData(),
             ['stats' => $stats]
         ));

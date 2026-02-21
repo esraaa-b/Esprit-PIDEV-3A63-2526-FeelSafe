@@ -1,12 +1,14 @@
 {% extends 'professionnel/base.html.twig' %}
 
 {% block title %}Accompagnement{% endblock %}
+{% block page_title %}Accompagnement{% endblock %}
+{% block page_subtitle %}Gérez les suivis et accompagnements de vos clients{% endblock %}
 
 {% block body %}
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900">
-            Accompagnement{% if selectedClient %} — {{ selectedClient.getFullName() }}{% endif %}
+            {% if selectedClient %} — {{ selectedClient.getFullName() }}{% endif %}
         </h1>
         <a href="{{ path('app_support') }}" class="btn btn-outline">← Rendez-vous</a>
     </div>

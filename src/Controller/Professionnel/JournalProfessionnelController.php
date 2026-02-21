@@ -45,33 +45,31 @@ class JournalProfessionnelController extends BaseDashboardController
 
         $patientsData = [];
         foreach ($patients as $patient) {
-            $journals = $patient->getJournaux(); // C'est une Collection
-            
-            if (count($journals) > 0) {
-                $tendances = $em->getRepository(TendanceEmotionnelle::class)
-                    ->findBy(
-                        ['utilisateur' => $patient],
-                        ['dateCalcul' => 'DESC'],
-                        5
-                    );
-                
-                $patientsData[] = [
-                    'patient' => $patient,
-                    'journalCount' => count($journals),
-                    'lastJournal' => $journals->last(),
-                    'dominantEmotion' => $this->calculateDominantEmotion($journals),
-                    'recentTendances' => $tendances,
-                    'hasAlert' => $this->checkForAlerts($journals),
-                ];
-            }
+            $journals = $patient->getJournaux();
+
+            $tendances = $em->getRepository(TendanceEmotionnelle::class)
+                ->findBy(
+                    ['utilisateur' => $patient],
+                    ['dateCalcul' => 'DESC'],
+                    5
+                );
+
+            $patientsData[] = [
+                'patient'          => $patient,
+                'journalCount'     => count($journals),
+                'lastJournal'      => count($journals) > 0 ? $journals->last() : null,
+                'dominantEmotion'  => count($journals) > 0 ? $this->calculateDominantEmotion($journals) : null,
+                'recentTendances'  => $tendances,
+                'hasAlert'         => count($journals) > 0 ? $this->checkForAlerts($journals) : false,
+            ];
         }
 
         return $this->render('professionnel/journal/patients_list.html.twig', array_merge(
             $this->getUserData(),
             [
                 'patientsData' => $patientsData,
-                'moodOptions' => EmotionEnum::cases(),
-                'emotionEnum' => EmotionEnum::class,
+                'moodOptions'  => EmotionEnum::cases(),
+                'emotionEnum'  => EmotionEnum::class,
             ]
         ));
     }
@@ -93,36 +91,34 @@ class JournalProfessionnelController extends BaseDashboardController
             ->findBy(
                 ['utilisateur' => $patient],
                 ['dateCreation' => 'DESC']
-            ); // C'est un array
+            );
 
-        // Récupérer les tendances enregistrées
         $tendances = $em->getRepository(TendanceEmotionnelle::class)
             ->findBy(
                 ['utilisateur' => $patient],
                 ['dateCalcul' => 'DESC']
             );
 
-        // Statistiques et tendances
         $stats = [
-            'total' => count($journals),
-            'dominantEmotion' => $this->calculateDominantEmotionArray($journals),
+            'total'            => count($journals),
+            'dominantEmotion'  => $this->calculateDominantEmotionArray($journals),
             'emotionDistribution' => $this->getEmotionDistributionArray($journals),
-            'moyenneHebdo' => $this->calculateWeeklyAverageArray($journals),
-            'evolution' => $this->calculateEvolutionArray($journals),
-            'moyenneHumeur' => $this->calculateAverageMoodArray($journals),
+            'moyenneHebdo'     => $this->calculateWeeklyAverageArray($journals),
+            'evolution'        => $this->calculateEvolutionArray($journals),
+            'moyenneHumeur'    => $this->calculateAverageMoodArray($journals),
         ];
 
         return $this->render('professionnel/journal/index.html.twig', array_merge(
-    $this->getUserData(),
-    [
-        'patient' => $patient,
-        'journals' => $journals,
-        'tendances' => $tendances,
-        'stats' => $stats,
-        'moodOptions' => EmotionEnum::cases(),
-        'emotionEnum' => EmotionEnum::class,
-    ]
-));
+            $this->getUserData(),
+            [
+                'patient'     => $patient,
+                'journals'    => $journals,
+                'tendances'   => $tendances,
+                'stats'       => $stats,
+                'moodOptions' => EmotionEnum::cases(),
+                'emotionEnum' => EmotionEnum::class,
+            ]
+        ));
     }
 
     #[Route('/{id}/view', name: 'app_pro_journal_view')]
@@ -135,7 +131,7 @@ class JournalProfessionnelController extends BaseDashboardController
         }
 
         return $this->render('professionnel/journal/_journal_modal.html.twig', [
-            'journal' => $journal,
+            'journal'     => $journal,
             'emotionEnum' => EmotionEnum::class,
         ]);
     }
@@ -166,11 +162,11 @@ class JournalProfessionnelController extends BaseDashboardController
         $results = [];
         foreach ($patients as $patient) {
             $results[] = [
-                'id' => $patient->getId(),
-                'nom' => $patient->getNom(),
-                'prenom' => $patient->getPrenom(),
-                'email' => $patient->getEmail(),
-                'fullName' => $patient->getPrenom() . ' ' . $patient->getNom(),
+                'id'           => $patient->getId(),
+                'nom'          => $patient->getNom(),
+                'prenom'       => $patient->getPrenom(),
+                'email'        => $patient->getEmail(),
+                'fullName'     => $patient->getPrenom() . ' ' . $patient->getNom(),
                 'journalCount' => count($patient->getJournaux()),
             ];
         }
@@ -179,47 +175,32 @@ class JournalProfessionnelController extends BaseDashboardController
     }
 
     /**
-     * Méthodes pour Collection (utilisées dans listPatients)
+     * Méthodes pour Collection
      */
-   private function calculateDominantEmotion(Collection $journals): ?array
-{
-    if (count($journals) === 0) return null;
+    private function calculateDominantEmotion(Collection $journals): ?array
+    {
+        if (count($journals) === 0) return null;
 
-    $counts = [];
-    foreach ($journals as $journal) {
-        $emotion = $journal->getEmotion()->value;
-        $counts[$emotion] = ($counts[$emotion] ?? 0) + 1;
-    }
+        $counts = [];
+        foreach ($journals as $journal) {
+            $emotion = $journal->getEmotion()->value;
+            $counts[$emotion] = ($counts[$emotion] ?? 0) + 1;
+        }
 
-    arsort($counts);
-    $maxCount = reset($counts);
-    
-    // Trouver les émotions ex-aequo
-    $tied = array_keys(array_filter($counts, fn($c) => $c === $maxCount));
-    
-    if (count($tied) > 1) {
-        // Départager par la dernière entrée (la plus récente)
-        $sorted = $journals->toArray();
-        usort($sorted, fn($a, $b) => $b->getDateCreation() <=> $a->getDateCreation());
-        $lastEmotion = $sorted[0]->getEmotion()->value;
-        $dominantValue = in_array($lastEmotion, $tied) ? $lastEmotion : $tied[0];
-    } else {
+        arsort($counts);
         $dominantValue = array_key_first($counts);
+        $dominantEmotion = EmotionEnum::tryFrom($dominantValue);
+        
+        return $dominantEmotion ? [
+            'emotion'    => $dominantEmotion,
+            'count'      => $counts[$dominantValue],
+            'percentage' => round(($counts[$dominantValue] / count($journals)) * 100),
+        ] : null;
     }
 
-    $dominantEmotion = EmotionEnum::tryFrom($dominantValue);
-    
-    return $dominantEmotion ? [
-        'emotion' => $dominantEmotion,
-        'count' => $counts[$dominantValue],
-        'percentage' => round(($counts[$dominantValue] / count($journals)) * 100),
-    ] : null;
-}
     private function checkForAlerts(Collection $journals): bool
     {
-        if (count($journals) === 0) {
-            return false;
-        }
+        if (count($journals) === 0) return false;
 
         $threeDaysAgo = (new \DateTime())->modify('-3 days');
         
@@ -235,13 +216,11 @@ class JournalProfessionnelController extends BaseDashboardController
     }
 
     /**
-     * Méthodes pour Array (utilisées dans patientJournals)
+     * Méthodes pour Array
      */
     private function calculateDominantEmotionArray(array $journals): ?array
     {
-        if (count($journals) === 0) {
-            return null;
-        }
+        if (count($journals) === 0) return null;
 
         $counts = [];
         foreach ($journals as $journal) {
@@ -254,8 +233,8 @@ class JournalProfessionnelController extends BaseDashboardController
         $dominantEmotion = EmotionEnum::tryFrom($dominantValue);
         
         return $dominantEmotion ? [
-            'emotion' => $dominantEmotion,
-            'count' => $counts[$dominantValue],
+            'emotion'    => $dominantEmotion,
+            'count'      => $counts[$dominantValue],
             'percentage' => round(($counts[$dominantValue] / count($journals)) * 100),
         ] : null;
     }
@@ -276,36 +255,29 @@ class JournalProfessionnelController extends BaseDashboardController
 
     private function calculateWeeklyAverageArray(array $journals): float
     {
-        if (count($journals) === 0) {
-            return 0;
-        }
+        if (count($journals) === 0) return 0;
 
         $lastWeek = (new \DateTime())->modify('-7 days');
-        $weekJournals = array_filter($journals, function($j) use ($lastWeek) {
-            return $j->getDateCreation() >= $lastWeek;
-        });
+        $weekJournals = array_filter($journals, fn($j) => $j->getDateCreation() >= $lastWeek);
 
         return round(count($weekJournals) / 7, 1);
     }
 
     private function calculateAverageMoodArray(array $journals): ?float
     {
-        if (count($journals) === 0) {
-            return null;
-        }
+        if (count($journals) === 0) return null;
 
         $moodValues = [
             'tres_mal' => 1,
             'pas_bien' => 2,
-            'neutre' => 3,
-            'bien' => 4,
-            'tres_bien' => 5,
+            'neutre'   => 3,
+            'bien'     => 4,
+            'tres_bien'=> 5,
         ];
 
         $sum = 0;
         foreach ($journals as $journal) {
-            $emotion = $journal->getEmotion()->value;
-            $sum += $moodValues[$emotion] ?? 3;
+            $sum += $moodValues[$journal->getEmotion()->value] ?? 3;
         }
 
         return round($sum / count($journals), 1);
@@ -318,10 +290,10 @@ class JournalProfessionnelController extends BaseDashboardController
         }
 
         $recent = array_slice($journals, 0, 5);
-        $older = array_slice($journals, -5, 5);
+        $older  = array_slice($journals, -5, 5);
 
         $recentAvg = $this->calculateAverageMoodArray($recent);
-        $olderAvg = $this->calculateAverageMoodArray($older);
+        $olderAvg  = $this->calculateAverageMoodArray($older);
 
         if ($recentAvg === null || $olderAvg === null) {
             return ['trend' => 'stable', 'message' => 'Données insuffisantes'];

@@ -14,6 +14,7 @@ use App\Entity\Utilisateur;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Mailer\MailerInterface;      // ← AJOUTER
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Address;
 use Psr\Log\LoggerInterface;
 
 #[Route('/admin/journals')]
@@ -151,19 +152,32 @@ public function index(Request $request, EntityManagerInterface $em): Response
 #[Route('/admin/users', name: 'admin_users_index')]
 public function usersIndex(Request $request, EntityManagerInterface $em): Response
 {
-    $search = $request->get('search');
-    
-    $qb = $em->getRepository(Utilisateur::class)->createQueryBuilder('u');
-    
-    // Utiliser LIKE pour chercher ROLE_CLIENT dans le JSON
-    $qb->where('u.role LIKE :role')
-       ->setParameter('role', '%ROLE_CLIENT%');
-    
+    $search = $request->get('search', '');
+
+    $qb = $em->getRepository(Utilisateur::class)->createQueryBuilder('u')
+        ->where('u.role LIKE :role')
+        ->setParameter('role', '%ROLE_CLIENT%');
+
     if ($search) {
         $qb->andWhere('u.email LIKE :search OR u.nom LIKE :search OR u.prenom LIKE :search')
            ->setParameter('search', '%' . $search . '%');
     }
-    
+
+    // Si c'est une requête Ajax, retourner du JSON
+    if ($request->isXmlHttpRequest()) {
+        $users = $qb->getQuery()->getResult();
+        return $this->json(array_map(fn($u) => [
+            'id'          => $u->getId(),
+            'prenom'      => $u->getPrenom(),
+            'nom'         => $u->getNom(),
+            'email'       => $u->getEmail(),
+            'nbJournaux'  => $u->getJournaux()->count(),
+            'journalsUrl' => $this->generateUrl('admin_user_journals', ['id' => $u->getId()]),
+            'exportUrl'   => $this->generateUrl('app_admin_journal_export_pdf', ['userId' => $u->getId()]),
+        ], $users));
+    }
+
+    // Sinon rendu HTML normal
     return $this->render('admin/journal/users.html.twig', [
         'users' => $qb->getQuery()->getResult()
     ]);
@@ -216,7 +230,7 @@ public function userJournals(Utilisateur $user): Response
             $this->logger->info("📧 Tentative envoi email à : {$toEmail}, template: {$template}");
 
             $email = (new Email())
-                ->from('zaied.ilef138@gmail.com')  // ← DOIT correspondre au compte SMTP
+                ->from(new Address('noreply@feelsafe.com', 'FeelSafe'))
                 ->to($toEmail)
                 ->subject($template === 'journal_modified'
                     ? '📝 Votre journal a été modifié'

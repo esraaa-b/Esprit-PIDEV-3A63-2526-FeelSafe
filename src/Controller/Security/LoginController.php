@@ -14,7 +14,15 @@ class LoginController extends AbstractController
     {
         // Si l'utilisateur est déjà connecté, le rediriger vers son dashboard
         if ($this->getUser()) {
-            return $this->redirectToRoute('dashboard');
+            $user = $this->getUser();
+
+            // Si l'utilisateur a le rôle admin, aller vers la page admin principale
+            if (method_exists($user, 'getRoles') && in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+                return $this->redirectToRoute('admin_home');
+            }
+
+            // Sinon rediriger vers le dashboard utilisateur
+            return $this->redirectToRoute('app_dashboard');
         }
 
         // get the login error if there is one

@@ -29,7 +29,8 @@ class LoginRedirectSubscriber implements EventSubscriberInterface
         
         // Vérifier les rôles et rediriger en conséquence
         if (in_array('ROLE_ADMIN', $user->getRoles())) {
-            $targetUrl = $this->urlGenerator->generate('admin_dashboard');
+            // Redirect admins to the admin root (/admin)
+            $targetUrl = $this->urlGenerator->generate('admin_home');
         } elseif (in_array('ROLE_PROFESSIONNEL', $user->getRoles())) {
             $targetUrl = $this->urlGenerator->generate('professionnel_dashboard');
         } elseif (in_array('ROLE_CLIENT', $user->getRoles())) {
