@@ -46,24 +46,24 @@ class AiJournalController extends AbstractController
             return $this->json(['error' => 'Cette entrée ne contient pas de texte à analyser.'], 422);
         }
 
-        $prompt = <<<PROMPT
+       $prompt = <<<PROMPT
 Tu es un assistant bienveillant en bien-être émotionnel.
 L'utilisateur a écrit le {$date}, émotion "{$emotionLabel}" :
 
 "{$content}"
 
-Réponds en français, MAXIMUM 2 phrases par section, style direct et chaleureux :
+Réponds en français, style direct et chaleureux. Chaque section = 2 phrase complète maximum.
 
-**Réflexion** : Ce que tu observes avec empathie.
-**Pattern** : Ce que cela révèle (pas de diagnostic).
-**Conseil** : Une action simple pour aujourd'hui.
+**Réflexion** : Ce que tu observes avec empathie (1 phrase).
+**Pattern** : Ce que cela révèle, sans diagnostic (1 phrase).
+**Conseil** : Une action simple pour aujourd'hui (2 phrase).
 
 Si l'émotion est très intense, ajoute :
-**Activité recommandée** : 1 activité concrète et immédiate (2 phrases max).
+**Activité recommandée** : 1 activité concrète et immédiate (2 phrase).
 
-Sois très concis. Pas de listes, prose naturelle.
+Sois extrêmement concis. Termine toujours chaque phrase avant de t'arrêter.
 PROMPT;
-        $result = $this->callClaude($prompt, 250);
+        $result = $this->callClaude($prompt, 500);
         if (isset($result['error'])) {
             return $this->json($result, 500);
         }
@@ -120,7 +120,7 @@ Voici les {$count} entrées de journal de l'utilisateur pour aujourd'hui :
 
 {$digest}
 
-En te basant sur ces émotions et leur évolution au fil de la journée, génère en français une prédiction douce et encourageante pour demain ({$tomorrow}), avec exactement ces 3 sections (2-3 phrases chacune) :
+En te basant sur ces émotions et leur évolution au fil de la journée, génère en français une prédiction douce et encourageante pour demain ({$tomorrow}), avec exactement ces 3 sections (1 phrases chacune) :
 
 1. **Ton énergie pour demain** : Prédit l'état émotionnel probable de demain en tenant compte de la trajectoire d'aujourd'hui.
 2. **À surveiller** : Un point d'attention ou un déclencheur potentiel à garder en tête, formulé positivement.
@@ -175,7 +175,7 @@ Tu es un guide bienveillant en bien-être émotionnel.
 {$context}
 Nous sommes le {$today}.
 
-Génère en français UNE affirmation positive personnalisée et authentique (3-4 phrases maximum).
+Génère en français UNE affirmation positive personnalisée et authentique (3 phrases maximum).
 Elle doit :
 - Être ancrée dans le moment présent
 - Être adaptée aux émotions récentes de l'utilisateur (si disponibles)
