@@ -9,7 +9,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class HomeController extends AbstractController
 {
-    #[Route('/client/dashboard', name: 'app_home')]
+    #[Route('/client/dashboard', name: 'app_client')]
     public function index(): Response
     {
         // Calculate greeting based on time of day

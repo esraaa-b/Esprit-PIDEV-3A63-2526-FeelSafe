@@ -22,7 +22,7 @@ class LoginController extends AbstractController
             }
 
             // Sinon rediriger vers le dashboard utilisateur
-            return $this->redirectToRoute('app_dashboard');
+            return $this->redirectToRoute('app_client');
         }
 
         // get the login error if there is one
