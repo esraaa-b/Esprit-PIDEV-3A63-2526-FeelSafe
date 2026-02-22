@@ -1,0 +1,298 @@
+<!-- dashboard_navbar.html.twig -->
+<div>
+    <!-- Fixed Navbar Container -->
+    <div
+      x-data="{
+        sidebarOpen: window.innerWidth >= 1024,
+        currentPath: window.location.pathname
+      }"
+      x-init="
+        window.addEventListener('resize', () => sidebarOpen = window.innerWidth >= 1024);
+        setInterval(() => {
+          if (currentPath !== window.location.pathname) {
+            currentPath = window.location.pathname;
+          }
+        }, 500);
+      "
+      class="fixed top-0 left-0 right-0 z-50"
+    >
+        {# Mobile Header #}
+        <header class="lg:hidden h-16 bg-card border-b grid grid-cols-3 items-center px-4">
+            <button type="button" @click="sidebarOpen = true" class="p-2 hover:bg-secondary rounded-lg transition-colors">
+                <svg class="w-5 h-5 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+           
+            <div class="flex items-center gap-2 mx-auto">
+                <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                    <svg class="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </div>
+                <span class="font-serif font-bold text-foreground whitespace-nowrap">FeelSafe</span>
+            </div>
+           
+            <div x-data="{ mobileUserDropdownOpen: false }" class="relative">
+                <button type="button" @click="mobileUserDropdownOpen = !mobileUserDropdownOpen" class="p-2 hover:bg-secondary rounded-lg transition-colors">
+                    <svg class="w-5 h-5 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                </button>
+                
+                {# Mobile Dropdown Menu #}
+                <div x-show="mobileUserDropdownOpen"
+                     @click.outside="mobileUserDropdownOpen = false"
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     class="absolute top-full right-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50"
+                     style="display: none;">
+                    
+                    <div class="py-2">
+                        {# User info at top of dropdown #}
+                        <div class="px-4 py-3 border-b border-border">
+                            <p class="text-sm font-medium text-foreground">
+                                {% if app.user %}
+                                    {{ app.user.prenom }} {{ app.user.nom }}
+                                {% else %}
+                                    Utilisateur
+                                {% endif %}
+                            </p>
+                            <p class="text-xs text-muted-foreground mt-0.5">
+                                {% if app.user %}
+                                    {{ app.user.email }}
+                                {% else %}
+                                    user@example.com
+                                {% endif %}
+                            </p>
+                        </div>
+                        
+                        {# Menu items #}
+                        <div class="py-1">
+                            <a href="{{ path('app_profile') }}" @click="mobileUserDropdownOpen = false" class="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors">
+                                <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>Profil</span>
+                            </a>
+                            
+                            <a href="{{ path('app_security') }}" @click="mobileUserDropdownOpen = false" class="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors">
+                                <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                                <span>Sécurité</span>
+                            </a>
+                            
+                            <a href="{{ path('app_settings') }}" @click="mobileUserDropdownOpen = false" class="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors">
+                                <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                <span>Paramètres</span>
+                            </a>
+                        </div>
+                        
+                        {# Separator #}
+                        <div class="border-t border-border my-1"></div>
+                        
+                        {# Logout #}
+                        <div class="py-1">
+                            <a href="{{ path('app_logout') }}" @click="mobileUserDropdownOpen = false" class="flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-secondary transition-colors">
+                                <svg class="w-4 h-4 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                                <span>Déconnexion</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        {# Mobile Sidebar Overlay #}
+        <div x-show="sidebarOpen && window.innerWidth < 1024"
+             x-transition.opacity
+             class="lg:hidden fixed inset-0 bg-foreground/50 z-40"
+             @click="sidebarOpen = false">
+        </div>
+
+        {# Desktop Sidebar #}
+        <aside class="hidden lg:flex h-24 bg-card border-b border-border items-center">
+            <div class="h-24 flex items-center px-4 w-full">
+                {# Logo Section #}
+                <div class="flex items-center gap-1.5 flex-shrink-0 mr-2">
+                    <a href="/" class="flex items-center gap-1.5">
+                        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                            <svg class="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </div>
+                        <span class="text-2xl font-serif font-bold text-foreground whitespace-nowrap">FeelSafe</span>
+                    </a>
+                </div>
+
+                {# Navigation Menu #}
+                <nav class="flex items-center gap-0 mx-1 flex-1 overflow-x-auto scrollbar-hide min-w-0">
+                    {% set current_route = app.request.get('_route') %}
+                    {% set modules = [
+                        {'name': 'Tableau de bord', 'href': '/', 'icon': 'grid', 'route': 'dashboard'},
+                        {'name': 'Securite & Profil', 'href': '/dashboard/security', 'icon': 'shield', 'route': 'dashboard_security'},
+                        {'name': 'Journal emotionnel', 'href': '/dashboard/journal', 'icon': 'book', 'route': 'dashboard_journal'},
+                        {'name': 'Accompagnement', 'href': '/dashboard/support', 'icon': 'heart', 'route': 'dashboard_support'},
+                        {'name': 'Bien-etre', 'href': '/dashboard/wellness', 'icon': 'sun', 'route': 'dashboard_wellness'},
+                        {'name': 'Urgence', 'href': '/dashboard/emergency', 'icon': 'alert-triangle', 'route': 'dashboard_emergency'},
+                        {'name': 'Communauté', 'href': '/dashboard/forum', 'icon': 'users', 'route': 'dashboard_forum'}
+                    ] %}
+                    
+                    {% for module in modules %}
+                        {% set is_active = current_route == module.route or app.request.pathInfo == module.href %}
+                        <a href="{{ module.href }}"
+                           class="flex items-center gap-1 px-3 py-3 rounded-lg transition-colors whitespace-nowrap font-medium {% if is_active %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:bg-secondary hover:text-secondary-foreground{% endif %}">
+                            
+                            {# SVG icons #}
+                            {% if module.icon == 'grid' %}
+                                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                </svg>
+                            {% elseif module.icon == 'shield' %}
+                                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            {% elseif module.icon == 'book' %}
+                                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+                                    <path d="M8 11h8"></path>
+                                    <path d="M8 6h8"></path>
+                                </svg>
+                            {% elseif module.icon == 'heart' %}
+                                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            {% elseif module.icon == 'sun' %}
+                                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="5"></circle>
+                                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                                </svg>
+                            {% elseif module.icon == 'alert-triangle' %}
+                                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                            {% elseif module.icon == 'users' %}
+                                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                            {% endif %}
+
+                            <span class="text-base">{{ module.name }}</span>
+                        </a>
+                    {% endfor %}
+                </nav>
+
+                {# User Menu - Desktop - Updated with app.user #}
+                <div class="flex items-center flex-shrink-0 ml-1">
+                    <div x-data="{ userDropdownOpen: false }" class="relative">
+                        <button @click="userDropdownOpen = !userDropdownOpen"
+                                class="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-secondary transition-colors">
+                            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium text-base flex-shrink-0">
+                                {% if app.user %}
+                                    {{ app.user.prenom|first|upper }}{{ app.user.nom|first|upper }}
+                                {% else %}
+                                    U
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 text-left min-w-0 max-w-[140px]">
+                                <p class="text-sm font-medium text-foreground truncate">
+                                    {% if app.user %}
+                                        {{ app.user.prenom }} {{ app.user.nom }}
+                                    {% else %}
+                                        Utilisateur
+                                    {% endif %}
+                                </p>
+                                <p class="text-xs text-muted-foreground truncate">
+                                    {% if app.user %}
+                                        {{ app.user.email }}
+                                    {% else %}
+                                        user@example.com
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <svg :class="userDropdownOpen ? 'rotate-180' : ''" class="w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                      
+                        {# Dropdown Menu - Updated with app.user and security link #}
+                        <div x-show="userDropdownOpen"
+                             @click.outside="userDropdownOpen = false"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute top-full right-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50"
+                             style="display: none;">
+                            
+                            <div class="py-2">
+                                {# User info at top of dropdown #}
+                                <div class="px-4 py-3 border-b border-border">
+                                    <p class="text-sm font-medium text-foreground">
+                                        {% if app.user %}
+                                            {{ app.user.prenom }} {{ app.user.nom }}
+                                        {% else %}
+                                            Utilisateur
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-xs text-muted-foreground mt-0.5">
+                                        {% if app.user %}
+                                            {{ app.user.email }}
+                                        {% else %}
+                                            user@example.com
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                {# Logout #}
+                                <div class="py-1">
+                                    <a href="{{ path('app_logout') }}" @click="userDropdownOpen = false" class="flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-secondary transition-colors">
+                                        <svg class="w-4 h-4 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                            <polyline points="16 17 21 12 16 7"></polyline>
+                                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                                        </svg>
+                                        <span>Déconnexion</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>

@@ -1,0 +1,596 @@
+{% extends "admin/base.html.twig" %}
+
+{% block title %}Emergency Management{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        [x-cloak] { display: none !important; }
+        .error-message {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .input-error {
+            border-color: #dc2626 !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data="emergencyForms()" x-cloak>
+    {# Header #}
+    <div>
+        <h1 class="text-3xl font-serif font-bold text-gray-900">
+            Emergency Management
+        </h1>
+        <p class="text-gray-600 mt-1">
+            Manage emergencies and interventions
+        </p>
+    </div>
+{# NEW: Real-time User Health Tracker Section #}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200" x-data="userHealthTracker()" x-init="initConnection()">
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-gray-900">
+                👤 Live User Health Monitoring
+            </h2>
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span class="text-sm text-gray-600">Live</span>
+            </div>
+        </div>
+        <p class="text-gray-600 mt-1">
+            Real-time health statistics from {{ users|length }} connected user(s)
+        </p>
+    </div>
+    
+    <div class="p-6">
+        <!-- Users table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+    <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Heart Rate</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stress</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mood</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">BP</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Level</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Update</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+    </tr>
+</thead>
+
+{# Update the table body #}
+<tbody class="bg-white divide-y divide-gray-200">
+    <tr x-show="loading && users.length === 0">
+        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+            Loading health data from API...
+        </td>
+    </tr>
+    
+    <template x-for="user in users" :key="user.id">
+        <tr>
+            <td class="px-6 py-4 whitespace-nowrap" x-text="user.name"></td>
+            <td class="px-6 py-4 whitespace-nowrap" x-text="user.email"></td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span x-text="user.heartRate" class="font-mono"></span> BPM
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span x-text="user.stressLevel" :class="getStressColor(user.stressLevel)"></span>/10
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap" x-text="user.mood"></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="user.bloodPressure"></td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs rounded-full" :class="getRiskBadgeColor(user.riskLevel)" x-text="user.riskLevel"></span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="user.lastUpdate"></td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <button @click="showUserDetails(user)" class="text-blue-600 hover:text-blue-900">
+                    View Details
+                </button>
+            </td>
+        </tr>
+    </template>
+</tbody>
+            </table>
+        </div>
+    </div>
+
+    {# User Details Modal #}
+    <div x-show="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" x-cloak>
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.away="closeModal()">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900" x-text="selectedUser?.name"></h3>
+                    <button @click="closeModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+                </div>
+                
+                <div class="space-y-4" x-show="selectedUser">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Email</p>
+                        <p class="font-medium" x-text="selectedUser.email"></p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600">Heart Rate</p>
+                            <p class="text-2xl font-bold" x-text="selectedUser.heartRate + ' BPM'"></p>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600">Stress Level</p>
+                            <p class="text-2xl font-bold" :class="getStressColor(selectedUser.stressLevel)" x-text="selectedUser.stressLevel + '/10'"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Current Mood</p>
+                        <p class="text-2xl font-bold" x-text="selectedUser.mood"></p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Last Update</p>
+                        <p class="font-medium" x-text="selectedUser.lastUpdate"></p>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex justify-end">
+                    <button @click="closeModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    {# Flash Messages #}
+    {% for message in app.flashes('success') %}
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ message }}</span>
+        </div>
+    {% endfor %}
+    
+    {% for message in app.flashes('error') %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ message }}</span>
+        </div>
+    {% endfor %}
+
+    {# EMERGENCY FORM #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">
+                {% if edit_emergency_id %}
+                    Edit Emergency #{{ edit_emergency_id }}
+                {% else %}
+                    Create New Emergency
+                {% endif %}
+            </h2>
+            {% if edit_emergency_id %}
+                <a href="{{ path('admin_emergency') }}" 
+                   class="inline-block mt-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm">
+                   ← Cancel Edit
+                </a>
+            {% endif %}
+        </div>
+        <div class="p-6">
+            {{ form_start(emergencyForm, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate', 'x-ref': 'emergencyForm', '@submit.prevent': 'validateEmergencyForm'}}) }}
+            
+            {# Custom Error Display #}
+            <div x-show="emergencyErrors.length > 0" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p class="text-red-800 font-medium mb-1">Please correct the following errors:</p>
+                <ul class="list-disc list-inside text-sm text-red-600">
+                    <template x-for="error in emergencyErrors" :key="error">
+                        <li x-text="error"></li>
+                    </template>
+                </ul>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    {{ form_label(emergencyForm.emergencyType, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(emergencyForm.emergencyType, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'x-bind:class': 'emergencyErrors.includes("Type is required") ? "input-error" : ""'}}) }}
+                </div>
+                
+                <div>
+                    {{ form_label(emergencyForm.severityLevel, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(emergencyForm.severityLevel, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'x-bind:class': 'emergencyErrors.includes("Severity must be between 1 and 5") ? "input-error" : ""'}}) }}
+                </div>
+                
+                <div class="md:col-span-2">
+                    {{ form_label(emergencyForm.emergencyDescription, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(emergencyForm.emergencyDescription, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'rows': 3, 'x-bind:class': 'emergencyErrors.includes("Description is required") ? "input-error" : ""'}}) }}
+                </div>
+                
+                <div>
+                    {{ form_label(emergencyForm.emergencyStatus, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(emergencyForm.emergencyStatus, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'}}) }}
+                </div>
+                
+                <div>
+                    {{ form_label(emergencyForm.location, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(emergencyForm.location, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'x-bind:class': 'emergencyErrors.includes("Location is required") ? "input-error" : ""'}}) }}
+                </div>
+            </div>            
+            {{ form_end(emergencyForm) }}
+        </div>
+    </div>
+
+    {# INTERVENTION FORM #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">
+                {% if edit_intervention_id %}
+                    Edit Intervention #{{ edit_intervention_id }}
+                {% else %}
+                    Create New Intervention
+                {% endif %}
+            </h2>
+            {% if edit_intervention_id %}
+                <a href="{{ path('admin_emergency') }}" 
+                   class="inline-block mt-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm">
+                   ← Cancel Edit
+                </a>
+            {% endif %}
+        </div>
+        <div class="p-6">
+            {{ form_start(interventionForm, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate', 'x-ref': 'interventionForm', '@submit.prevent': 'validateInterventionForm'}}) }}
+            
+            {# Custom Error Display #}
+            <div x-show="interventionErrors.length > 0" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p class="text-red-800 font-medium mb-1">Please correct the following errors:</p>
+                <ul class="list-disc list-inside text-sm text-red-600">
+                    <template x-for="error in interventionErrors" :key="error">
+                        <li x-text="error"></li>
+                    </template>
+                </ul>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {# Emergency selection only for new interventions #}
+                {% if not edit_intervention_id and interventionForm.urgence is defined %}
+                    <div>
+                        {{ form_label(interventionForm.urgence, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                        {{ form_widget(interventionForm.urgence, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'x-bind:class': 'interventionErrors.includes("Emergency selection is required") ? "input-error" : ""'}}) }}
+                    </div>
+                {% endif %}
+                
+                <div>
+                    {{ form_label(interventionForm.interventionType, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(interventionForm.interventionType, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'x-bind:class': 'interventionErrors.includes("Intervention type is required") ? "input-error" : ""'}}) }}
+                </div>
+                
+                <div>
+                    {{ form_label(interventionForm.result, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(interventionForm.result, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'x-bind:class': 'interventionErrors.includes("Result is required") ? "input-error" : ""'}}) }}
+                </div>
+                
+                <div>
+                    {{ form_label(interventionForm.interventionDate, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(interventionForm.interventionDate, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'x-bind:class': 'interventionErrors.includes("Date is required") ? "input-error" : ""'}}) }}
+                </div>
+                
+                <div class="md:col-span-2">
+                    {{ form_label(interventionForm.interventionNotes, null, {'label_attr': {'class': 'block text-sm font-medium text-gray-700 mb-1'}}) }}
+                    {{ form_widget(interventionForm.interventionNotes, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent', 'rows': 3}}) }}
+                </div>
+            </div>
+            {{ form_end(interventionForm) }}
+        </div>
+    </div>
+
+    {# Emergencies Table #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Emergencies</h2>
+        </div>
+        <div class="p-6">
+            {% if emergencies|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for emergency in emergencies %}
+                            <tr class="{% if edit_emergency_id == emergency.id %}bg-blue-50{% endif %}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ emergency.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emergency.typeUrgence }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ emergency.description|slice(0, 30) }}{% if emergency.description|length > 30 %}...{% endif %}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if emergency.severityLevel >= 4 %}bg-red-100 text-red-800
+                                        {% elseif emergency.severityLevel >= 3 %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-green-100 text-green-800{% endif %}">
+                                        Level {{ emergency.severityLevel }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if emergency.status == 'Resolved' %}bg-green-100 text-green-800
+                                        {% elseif emergency.status == 'In Progress' %}bg-blue-100 text-blue-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ emergency.status }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emergency.location }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emergency.createdAt|date('Y-m-d H:i') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="{{ path('admin_emergency', {'edit_emergency_id': emergency.id}) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+                                    <form method="post" action="{{ path('admin_emergency_delete', {'id': emergency.id}) }}" class="inline" onsubmit="return confirm('Are you sure?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ emergency.id) }}">
+                                        <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <p class="text-gray-500">No emergencies found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Interventions Table #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">Interventions</h2>
+        </div>
+        <div class="p-6">
+            {% if interventions|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emergency ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emergency Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Intervention Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for intervention in interventions %}
+                            <tr class="{% if edit_intervention_id == intervention.id %}bg-blue-50{% endif %}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ intervention.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.urgence ? intervention.urgence.id : 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.urgence ? intervention.urgence.typeUrgence : 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.interventionType }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if intervention.result == 'Success' %}bg-green-100 text-green-800
+                                        {% elseif intervention.result == 'Failed' %}bg-red-100 text-red-800
+                                        {% elseif intervention.result == 'Partial Success' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ intervention.result }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ intervention.interventionDate|date('Y-m-d') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="{{ path('admin_emergency', {'edit_intervention_id': intervention.id}) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+                                    <form method="post" action="{{ path('admin_intervention_delete', {'id': intervention.id}) }}" class="inline" onsubmit="return confirm('Are you sure?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ intervention.id) }}">
+                                        <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <p class="text-gray-500">No interventions found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    // Your existing emergencyForms component
+    Alpine.data('emergencyForms', () => ({
+        emergencyErrors: [],
+        interventionErrors: [],
+        
+        validateEmergencyForm() {
+            this.emergencyErrors = [];
+            
+            // Get form data
+            const form = this.$refs.emergencyForm;
+            const type = form.querySelector('[name$="[emergencyType]"]')?.value;
+            const severity = form.querySelector('[name$="[severityLevel]"]')?.value;
+            const description = form.querySelector('[name$="[emergencyDescription]"]')?.value;
+            const location = form.querySelector('[name$="[location]"]')?.value;
+            
+            // Validate type
+            if (!type || type.trim() === '') {
+                this.emergencyErrors.push('Type is required');
+            }
+            
+            // Validate severity (must be between 1 and 5)
+            if (!severity) {
+                this.emergencyErrors.push('Severity level is required');
+            } else {
+                const severityNum = parseInt(severity);
+                if (isNaN(severityNum) || severityNum < 1 || severityNum > 5) {
+                    this.emergencyErrors.push('Severity must be between 1 and 5');
+                }
+            }
+            
+            // Validate description
+            if (!description || description.trim() === '') {
+                this.emergencyErrors.push('Description is required');
+            } else if (description.trim().length < 5) {
+                this.emergencyErrors.push('Description must be at least 5 characters');
+            }
+            
+            // Validate location
+            if (!location || location.trim() === '') {
+                this.emergencyErrors.push('Location is required');
+            }
+            
+            // If no errors, submit the form
+            if (this.emergencyErrors.length === 0) {
+                form.submit();
+            }
+        },
+        
+        validateInterventionForm() {
+            this.interventionErrors = [];
+            
+            // Get form data
+            const form = this.$refs.interventionForm;
+            const urgence = form.querySelector('[name$="[urgence]"]')?.value;
+            const interventionType = form.querySelector('[name$="[interventionType]"]')?.value;
+            const result = form.querySelector('[name$="[result]"]')?.value;
+            const date = form.querySelector('[name$="[interventionDate]"]')?.value;
+            
+            // For new interventions, emergency is required
+            {% if not edit_intervention_id %}
+            if (!urgence) {
+                this.interventionErrors.push('Emergency selection is required');
+            }
+            {% endif %}
+            
+            // Validate intervention type
+            if (!interventionType || interventionType.trim() === '') {
+                this.interventionErrors.push('Intervention type is required');
+            }
+            
+            // Validate result
+            if (!result || result.trim() === '') {
+                this.interventionErrors.push('Result is required');
+            }
+            
+            // Validate date
+            if (!date) {
+                this.interventionErrors.push('Date is required');
+            }
+            
+            // If no errors, submit the form
+            if (this.interventionErrors.length === 0) {
+                form.submit();
+            }
+        }
+    }));
+
+    // User Health Tracker component with API data
+    Alpine.data('userHealthTracker', () => ({
+        users: [],
+        selectedUser: null,
+        showModal: false,
+        loading: true,
+        lastUpdate: null,
+        
+        initConnection() {
+            console.log('Initializing API connection to /admin/api/health/data...');
+            
+            // Initial data fetch
+            this.fetchHealthData();
+            
+            // Fetch new data every 5 seconds
+            setInterval(() => {
+                this.fetchHealthData();
+            }, 5000);
+        },
+        
+        fetchHealthData() {
+            this.loading = true;
+            
+            fetch('/admin/api/health/data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Transform API data to match our component structure
+                        this.users = data.data.map(user => ({
+                            id: user.user_id,
+                            name: user.name,
+                            email: user.email,
+                            heartRate: user.health.heart_rate,
+                            stressLevel: user.health.stress_level,
+                            mood: this.getMoodEmoji(user.health.mood),
+                            bloodPressure: user.health.blood_pressure.reading,
+                            oxygenLevel: user.health.oxygen_level.value,
+                            riskLevel: user.health.risk_level,
+                            lastUpdate: new Date().toLocaleTimeString()
+                        }));
+                        
+                        this.lastUpdate = new Date().toLocaleTimeString();
+                    }
+                    this.loading = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching health data:', error);
+                    this.loading = false;
+                });
+        },
+        
+        getMoodEmoji(mood) {
+            const moodEmojis = {
+                'Calm': '😊 Calm',
+                'Relaxed': '😌 Relaxed',
+                'Happy': '🙂 Happy',
+                'Content': '😐 Content',
+                'Anxious': '😟 Anxious',
+                'Stressed': '😫 Stressed',
+                'Very Stressed': '😰 Very Stressed',
+                'Panicked': '😱 Panicked',
+                'Tired': '😴 Tired',
+                'Energetic': '⚡ Energetic'
+            };
+            return moodEmojis[mood] || mood;
+        },
+        
+        getStressColor(level) {
+            if (level < 4) return 'text-green-600';
+            if (level < 7) return 'text-yellow-600';
+            return 'text-red-600';
+        },
+        
+        getRiskBadgeColor(riskLevel) {
+            const colors = {
+                'Low': 'bg-green-100 text-green-800',
+                'Moderate': 'bg-yellow-100 text-yellow-800',
+                'High': 'bg-orange-100 text-orange-800',
+                'Critical': 'bg-red-100 text-red-800'
+            };
+            return colors[riskLevel] || 'bg-gray-100 text-gray-800';
+        },
+        
+        showUserDetails(user) {
+            this.selectedUser = user;
+            this.showModal = true;
+        },
+        
+        closeModal() {
+            this.showModal = false;
+            this.selectedUser = null;
+        }
+    }));
+});
+</script>
+{% endblock %}

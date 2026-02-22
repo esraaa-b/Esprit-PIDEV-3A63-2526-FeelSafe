@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FeelSafe - Authentification{% endblock %}</title>
+    
+    {% block stylesheets %}
+        <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+        <style>
+            /* Styles additionnels */
+            .form-error {
+                color: #dc2626;
+                font-size: 0.875rem;
+                margin-top: 0.25rem;
+            }
+            
+            /* Checkbox personnalisé */
+            input[type="checkbox"]:checked {
+                background-color: var(--primary, #6366f1);
+                border-color: var(--primary, #6366f1);
+            }
+            
+            /* Smooth scrolling pour le formulaire */
+            .overflow-y-auto {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+            }
+            
+            .overflow-y-auto::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            .overflow-y-auto::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            
+            .overflow-y-auto::-webkit-scrollbar-thumb {
+                background-color: rgba(156, 163, 175, 0.5);
+                border-radius: 3px;
+            }
+        </style>
+    {% endblock %}
+</head>
+<body class="bg-gray-50">
+    {% block body %}{% endblock %}
+    
+    {% block javascripts %}
+        <script src="https://unpkg.com/feather-icons"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                feather.replace();
+                
+                // Auto-hide flash messages après 5 secondes
+                setTimeout(function() {
+                    const alerts = document.querySelectorAll('.alert-auto-hide');
+                    alerts.forEach(function(alert) {
+                        alert.style.transition = 'opacity 0.5s';
+                        alert.style.opacity = '0';
+                        setTimeout(() => alert.remove(), 500);
+                    });
+                }, 5000);
+            });
+        </script>
+    {% endblock %}
+</body>
+</html>

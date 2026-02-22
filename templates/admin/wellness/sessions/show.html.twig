@@ -1,0 +1,1071 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Détails Session{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header-session animate__animated animate__fadeInDown">
+                <div class="header-overlay-pattern"></div>
+                <div class="header-content-session">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="session-meta-header mb-3">
+                                <span class="status-badge-header status-{{ session.statutSession.value }}">
+                                    <i class="fas fa-{{ session.statutSession.value == 'completee' ? 'check-circle' : (session.statutSession.value == 'en_cours' ? 'clock' : (session.statutSession.value == 'planifiee' ? 'calendar' : 'times-circle')) }}"></i>
+                                    {{ session.statutSession.value|replace({'_': ' '})|capitalize }}
+                                </span>
+                                <span class="date-badge-header">
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    {{ session.dateDebut|date('d/m/Y à H:i') }}
+                                </span>
+                            </div>
+                            <h1 class="display-6 fw-bold text-white mb-2">Session #{{ session.id }}</h1>
+                            <p class="text-white-50 mb-0">
+                                <i class="fas fa-dumbbell me-2"></i>{{ session.activite.nomActivite }}
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ path('admin_wellness_sessions_edit', {'id': session.id}) }}" class="btn-action-header-session btn-warning">
+                                <i class="fas fa-edit me-2"></i>
+                                Modifier
+                            </a>
+                            <a href="{{ path('admin_wellness_sessions') }}" class="btn-action-header-session btn-light">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Retour
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu Principal -->
+    <div class="row g-4">
+        <!-- Colonne Gauche -->
+        <div class="col-lg-8">
+            <!-- Utilisateur -->
+            <div class="info-card-session mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                <div class="info-card-header">
+                    <i class="fas fa-user-circle me-2"></i>
+                    <h5>Utilisateur</h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="user-profile-display">
+                        <div class="user-avatar-large">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details-large">
+                            <h4>{{ session.utilisateur.nom }} {{ session.utilisateur.prenom }}</h4>
+                            <p class="text-muted mb-2">
+                                <i class="fas fa-envelope me-2"></i>{{ session.utilisateur.email }}
+                            </p>
+                            {% if session.utilisateur.telephone %}
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-phone me-2"></i>{{ session.utilisateur.telephone }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activité -->
+            <div class="info-card-session mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="info-card-header">
+                    <i class="fas fa-dumbbell me-2"></i>
+                    <h5>Activité pratiquée</h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="activity-display">
+                        <div class="activity-info-large">
+                            <h4>{{ session.activite.nomActivite }}</h4>
+                            <div class="activity-tags">
+                                <span class="tag-item">
+                                    <i class="fas fa-tag me-1"></i>
+                                    {{ session.activite.typeActivite }}
+                                </span>
+                                {% if session.activite.categorie %}
+                                    <span class="tag-item">
+                                        <i class="fas fa-folder me-1"></i>
+                                        {{ session.activite.categorie }}
+                                    </span>
+                                {% endif %}
+                                {% if session.activite.niveauDifficulte %}
+                                    <span class="tag-item tag-{{ session.activite.niveauDifficulte.value }}">
+                                        <i class="fas fa-signal me-1"></i>
+                                        {{ session.activite.niveauDifficulte.value|capitalize }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            {% if session.activite.description %}
+                                <p class="activity-description mt-3">{{ session.activite.description }}</p>
+                            {% endif %}
+                        </div>
+                        <a href="{{ path('admin_wellness_activites_show', {'id': session.activite.id}) }}" class="btn-link-activity">
+                            Voir l'activité
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Suivi Émotionnel -->
+            <div class="info-card-session mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                <div class="info-card-header">
+                    <i class="fas fa-heart me-2"></i>
+                    <h5>Suivi émotionnel</h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="mood-comparison-grid">
+                        <!-- Avant -->
+                        <div class="mood-panel mood-panel-before">
+                            <div class="mood-panel-header">
+                                <i class="fas fa-arrow-right me-2"></i>
+                                <h6>Avant la session</h6>
+                            </div>
+                            <div class="mood-panel-content">
+                                {% if session.humeurAvant %}
+                                    <div class="mood-display-large mood-{{ session.humeurAvant.value }}">
+                                        <i class="fas fa-{{ session.humeurAvant.value == 'tres_bien' or session.humeurAvant.value == 'bien' ? 'smile-beam' : (session.humeurAvant.value == 'neutre' ? 'meh' : 'frown') }}"></i>
+                                    </div>
+                                    <h4 class="mood-text">{{ session.humeurAvant.value|replace({'_': ' '})|capitalize }}</h4>
+                                    {% if session.scoreHumeurAvant %}
+                                        <div class="mood-score-display">
+                                            <span class="score-number">{{ session.scoreHumeurAvant }}</span>
+                                            <span class="score-max">/10</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if session.emotionAvant %}
+                                        <p class="emotion-text">
+                                            <i class="fas fa-comment-dots me-1"></i>
+                                            {{ session.emotionAvant }}
+                                        </p>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="mood-empty">
+                                        <i class="fas fa-question-circle"></i>
+                                        <p>Non renseignée</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Flèche Evolution -->
+                        {% if session.scoreHumeurAvant and session.scoreHumeurApres %}
+                            <div class="mood-evolution-center">
+                                {% set diff = session.scoreHumeurApres - session.scoreHumeurAvant %}
+                                <div class="evolution-arrow evolution-{{ diff > 0 ? 'up' : (diff < 0 ? 'down' : 'stable') }}">
+                                    <i class="fas fa-{{ diff > 0 ? 'arrow-up' : (diff < 0 ? 'arrow-down' : 'minus') }}"></i>
+                                </div>
+                                <div class="evolution-value">
+                                    <span class="evolution-number">{{ diff > 0 ? '+' : '' }}{{ diff }}</span>
+                                    <span class="evolution-label">{{ diff > 0 ? 'Amélioration' : (diff < 0 ? 'Baisse' : 'Stable') }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Après -->
+                        <div class="mood-panel mood-panel-after">
+                            <div class="mood-panel-header">
+                                <i class="fas fa-flag-checkered me-2"></i>
+                                <h6>Après la session</h6>
+                            </div>
+                            <div class="mood-panel-content">
+                                {% if session.humeurApres %}
+                                    <div class="mood-display-large mood-{{ session.humeurApres.value }}">
+                                        <i class="fas fa-{{ session.humeurApres.value == 'tres_bien' or session.humeurApres.value == 'bien' ? 'smile-beam' : (session.humeurApres.value == 'neutre' ? 'meh' : 'frown') }}"></i>
+                                    </div>
+                                    <h4 class="mood-text">{{ session.humeurApres.value|replace({'_': ' '})|capitalize }}</h4>
+                                    {% if session.scoreHumeurApres %}
+                                        <div class="mood-score-display">
+                                            <span class="score-number">{{ session.scoreHumeurApres }}</span>
+                                            <span class="score-max">/10</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if session.emotionApres %}
+                                        <p class="emotion-text">
+                                            <i class="fas fa-comment-dots me-1"></i>
+                                            {{ session.emotionApres }}
+                                        </p>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="mood-empty">
+                                        <i class="fas fa-question-circle"></i>
+                                        <p>Non renseignée</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Évaluation -->
+            <div class="info-card-session animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <div class="info-card-header">
+                    <i class="fas fa-star me-2"></i>
+                    <h5>Évaluation de la session</h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="evaluation-grid">
+                        {% if session.noteSatisfaction %}
+                            <div class="eval-item">
+                                <label>Note de satisfaction</label>
+                                <div class="stars-display">
+                                    {% for i in 1..5 %}
+                                        <i class="fas fa-star {{ i <= session.noteSatisfaction ? 'star-filled' : 'star-empty' }}"></i>
+                                    {% endfor %}
+                                    <span class="star-count">{{ session.noteSatisfaction }}/5</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if session.impactPercu %}
+                            <div class="eval-item">
+                                <label>Impact perçu</label>
+                                <span class="impact-badge-large impact-{{ session.impactPercu.value }}">
+                                    <i class="fas fa-{{ session.impactPercu.value == 'tres_positif' or session.impactPercu.value == 'positif' ? 'thumbs-up' : (session.impactPercu.value == 'neutre' ? 'minus' : 'thumbs-down') }} me-2"></i>
+                                    {{ session.impactPercu.value|replace({'_': ' '})|capitalize }}
+                                </span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="eval-item">
+                            <label>Objectif atteint</label>
+                            <span class="objective-badge objective-{{ session.estObjectifAtteint ? 'yes' : 'no' }}">
+                                <i class="fas fa-{{ session.estObjectifAtteint ? 'check-circle' : 'times-circle' }} me-2"></i>
+                                {{ session.estObjectifAtteint ? 'Oui' : 'Non' }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    {% if session.commentaire %}
+                        <div class="comment-box mt-4">
+                            <label>
+                                <i class="fas fa-comment-alt me-2"></i>
+                                Commentaire
+                            </label>
+                            <p>{{ session.commentaire }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne Droite -->
+        <div class="col-lg-4">
+            <!-- Informations Générales -->
+            <div class="info-card-session mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="info-card-header">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <h5>Informations</h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <i class="fas fa-calendar-plus text-primary"></i>
+                            <div>
+                                <small>Date de début</small>
+                                <p>{{ session.dateDebut|date('d/m/Y à H:i') }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if session.dateFin %}
+                            <div class="detail-row">
+                                <i class="fas fa-calendar-check text-success"></i>
+                                <div>
+                                    <small>Date de fin</small>
+                                    <p>{{ session.dateFin|date('d/m/Y à H:i') }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if session.dureeReelle %}
+                            <div class="detail-row">
+                                <i class="fas fa-stopwatch text-info"></i>
+                                <div>
+                                    <small>Durée réelle</small>
+                                    <p>{{ session.dureeReelle }} minutes</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="detail-row">
+                            <i class="fas fa-fingerprint text-secondary"></i>
+                            <div>
+                                <small>ID Session</small>
+                                <p>#{{ session.id }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommandations -->
+            {% if session.recommandePar or session.frequenceSouhaitee or session.scoreRecommandationIa %}
+                <div class="info-card-session mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                    <div class="info-card-header">
+                        <i class="fas fa-robot me-2"></i>
+                        <h5>Recommandations</h5>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="recommendation-list">
+                            {% if session.recommandePar %}
+                                <div class="reco-item">
+                                    <label>Recommandée par</label>
+                                    <span class="reco-badge reco-{{ session.recommandePar.value }}">
+                                        <i class="fas fa-{{ session.recommandePar.value == 'ia' ? 'robot' : (session.recommandePar.value == 'professionnel' ? 'user-md' : 'user') }} me-2"></i>
+                                        {{ session.recommandePar.value|replace({'_': ' '})|capitalize }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            
+                            {% if session.frequenceSouhaitee %}
+                                <div class="reco-item">
+                                    <label>Fréquence souhaitée</label>
+                                    <span class="frequency-badge">
+                                        <i class="fas fa-calendar-week me-2"></i>
+                                        {{ session.frequenceSouhaitee.value|replace({'_': ' '})|capitalize }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            
+                            {% if session.scoreRecommandationIa %}
+                                <div class="reco-item">
+                                    <label>Score IA</label>
+                                    <div class="ai-score-display">
+                                        <div class="progress-circle">
+                                            <svg width="80" height="80">
+                                                <circle cx="40" cy="40" r="35" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+                                                <circle cx="40" cy="40" r="35" fill="none" stroke="#667eea" stroke-width="6" 
+                                                        stroke-dasharray="{{ (session.scoreRecommandationIa * 220)|round }}, 220" 
+                                                        stroke-linecap="round" transform="rotate(-90 40 40)"/>
+                                            </svg>
+                                            <span class="score-percent">{{ (session.scoreRecommandationIa * 100)|round }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="actions-card-session animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <h6 class="mb-3">
+                    <i class="fas fa-tools me-2"></i>
+                    Actions
+                </h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ path('admin_wellness_sessions_edit', {'id': session.id}) }}" class="btn-action-card btn-warning-card">
+                        <i class="fas fa-edit me-2"></i>
+                        Modifier la session
+                    </a>
+                    <button type="button" class="btn-action-card btn-danger-card" onclick="confirmDelete()">
+                        <i class="fas fa-trash me-2"></i>
+                        Supprimer la session
+                    </button>
+                    <form method="post" id="deleteForm" action="{{ path('admin_wellness_sessions_delete', {'id': session.id}) }}" style="display:none;"></form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Page Header Session */
+.page-header-session {
+    position: relative;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+}
+
+.header-overlay-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.05)"/></svg>');
+    background-size: 50px 50px;
+    opacity: 0.3;
+}
+
+.header-content-session {
+    position: relative;
+    z-index: 1;
+}
+
+.session-meta-header {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.status-badge-header {
+    padding: 0.6rem 1.2rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.status-completee {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+.status-en_cours {
+    background: rgba(245, 158, 11, 0.9);
+    color: white;
+}
+
+.status-planifiee {
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+}
+
+.status-abandonnee {
+    background: rgba(100, 116, 139, 0.9);
+    color: white;
+}
+
+.date-badge-header {
+    padding: 0.6rem 1.2rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.btn-action-header-session {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    border: none;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    color: white;
+}
+
+.btn-light {
+    background: white;
+    color: #475569;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-light:hover {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+/* Info Card Session */
+.info-card-session {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.info-card-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+}
+
+.info-card-header i {
+    color: #10b981;
+    font-size: 1.2rem;
+}
+
+.info-card-header h5 {
+    margin: 0;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.info-card-body {
+    padding: 2rem;
+}
+
+/* User Profile Display */
+.user-profile-display {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.user-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    flex-shrink: 0;
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.user-details-large h4 {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.user-details-large p {
+    margin-bottom: 0.5rem;
+}
+
+/* Activity Display */
+.activity-display {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.activity-info-large h4 {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.activity-tags {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.tag-item {
+    padding: 0.5rem 1rem;
+    background: #f1f5f9;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    color: #475569;
+    font-weight: 600;
+}
+
+.tag-facile {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.tag-modere {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.tag-difficile {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.activity-description {
+    color: #64748b;
+    line-height: 1.8;
+}
+
+.btn-link-activity {
+    color: #10b981;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.btn-link-activity:hover {
+    color: #059669;
+    transform: translateX(3px);
+}
+
+/* Mood Comparison Grid */
+.mood-comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+
+.mood-panel {
+    background: #f8fafc;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.mood-panel-before {
+    border: 2px solid #e2e8f0;
+}
+
+.mood-panel-after {
+    border: 2px solid #10b981;
+}
+
+.mood-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.mood-panel-header i {
+    color: #94a3b8;
+}
+
+.mood-panel-header h6 {
+    margin: 0;
+    font-weight: 700;
+    color: #475569;
+}
+
+.mood-display-large {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+}
+
+.mood-display-large.mood-tres_bien,
+.mood-display-large.mood-bien {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.mood-display-large.mood-neutre {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.mood-display-large.mood-pas_bien,
+.mood-display-large.mood-tres_mal {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.mood-text {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.mood-score-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.score-number {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #10b981;
+}
+
+.score-max {
+    font-size: 1.5rem;
+    color: #94a3b8;
+}
+
+.emotion-text {
+    color: #64748b;
+    font-style: italic;
+    margin: 0;
+}
+
+.mood-empty {
+    padding: 2rem;
+    color: #cbd5e1;
+}
+
+.mood-empty i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.mood-empty p {
+    margin: 0;
+}
+
+/* Evolution Center */
+.mood-evolution-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.evolution-arrow {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.evolution-up {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.evolution-down {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.evolution-stable {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
+.evolution-value {
+    text-align: center;
+}
+
+.evolution-number {
+    font-size: 2rem;
+    font-weight: 800;
+    display: block;
+    color: #1e293b;
+}
+
+.evolution-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Evaluation Grid */
+.evaluation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+}
+
+.eval-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.eval-item label {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+.stars-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stars-display i {
+    font-size: 1.5rem;
+}
+
+.star-filled {
+    color: #f59e0b;
+}
+
+.star-empty {
+    color: #e2e8f0;
+}
+
+.star-count {
+    font-weight: 700;
+    color: #1e293b;
+    margin-left: 0.5rem;
+}
+
+.impact-badge-large {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+}
+
+.impact-tres_positif,
+.impact-positif {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.impact-neutre {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.impact-negatif {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.objective-badge {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+}
+
+.objective-yes {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.objective-no {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.comment-box {
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    border-left: 4px solid #10b981;
+}
+
+.comment-box label {
+    font-weight: 700;
+    color: #1e293b;
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.comment-box p {
+    color: #475569;
+    line-height: 1.8;
+    margin: 0;
+}
+
+/* Detail List */
+.detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.detail-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.detail-row i {
+    font-size: 1.5rem;
+    margin-top: 0.25rem;
+}
+
+.detail-row small {
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 0.25rem;
+}
+
+.detail-row p {
+    margin: 0;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Recommendations */
+.recommendation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.reco-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.reco-item label {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+.reco-badge,
+.frequency-badge {
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+}
+
+.reco-ia {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+}
+
+.reco-professionnel {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.reco-auto {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+}
+
+.frequency-badge {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.ai-score-display {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.progress-circle {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.score-percent {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #667eea;
+}
+
+/* Actions Card */
+.actions-card-session {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.actions-card-session h6 {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.btn-action-card {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-warning-card {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.btn-warning-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+    color: white;
+}
+
+.btn-danger-card {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.btn-danger-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+.animate__animated {
+    animation-duration: 0.6s;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .mood-comparison-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .mood-evolution-center {
+        flex-direction: row;
+        justify-content: center;
+    }
+    
+    .user-profile-display {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+
+<script>
+function confirmDelete() {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette session ?')) {
+        document.getElementById('deleteForm').submit();
+    }
+}
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+{% endblock %}

@@ -1,0 +1,655 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Wellness - Tableau de bord{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .stats-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats-card-success .stats-value {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+        }
+
+        .stats-card-warning .stats-value {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+        }
+
+        .stats-card-info .stats-value {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+        }
+
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .stats-progress {
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+
+        .header-wellness {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 1.25rem;
+            color: white;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .icon-wrapper {
+            width: 60px;
+            height: 60px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .badge-status {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pulse-dot {
+            animation: pulse 2s infinite;
+            color: #4ade80;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 1.25rem;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-modern {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-modern:hover::before {
+            left: 100%;
+        }
+
+        .btn-modern-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-modern-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-modern-secondary {
+            background: white;
+            border-color: #e2e8f0;
+            color: #1e293b;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-modern-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            background: rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .btn-modern-secondary .btn-icon {
+            background: #f1f5f9;
+            color: #667eea;
+        }
+
+        .btn-arrow {
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-modern:hover .btn-arrow {
+            transform: translateX(5px);
+        }
+
+        .sessions-card {
+            background: white;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .sessions-header {
+            padding: 2rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .header-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-right: 1rem;
+        }
+
+        .session-item {
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            animation: slideIn 0.5s ease;
+        }
+
+        .session-item:hover {
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transform: translateX(5px);
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .activity-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-completee {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-en_cours {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .mood-value {
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .mood-tres_bien, .mood-bien {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .mood-neutre {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .mood-pas_bien, .mood-tres_mal {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-action {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 2rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 768px) {
+            .session-info {
+                grid-template-columns: 1fr !important;
+                gap: 1rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8 p-4 lg:p-8">
+    <!-- En-tête avec Animation -->
+    <div class="header-wellness animate__animated animate__fadeInDown">
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center">
+            <div>
+                <div class="flex items-center mb-4">
+                    <div class="icon-wrapper mr-4">
+                        <i class="fas fa-spa"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl lg:text-3xl font-bold mb-1">Module Wellness</h1>
+                        <p class="text-white/90">Activités de Bien-être et Suivi Émotionnel</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 lg:mt-0">
+                <span class="badge-status">
+                    <i class="fas fa-circle pulse-dot"></i>
+                    Actif
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques Améliorées avec Animations -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card 1 -->
+        <div class="stats-card stats-card-primary animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-grow">
+                        <p class="stats-label">TOTAL ACTIVITÉS</p>
+                        <h2 class="stats-value">{{ statsActivites.total }}</h2>
+                        <div class="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span>{{ statsActivites.actives }} actives</span>
+                        </div>
+                    </div>
+                    <div class="stats-icon bg-blue-500">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar bg-blue-500" style="width: {{ statsActivites.total > 0 ? (statsActivites.actives / statsActivites.total * 100) : 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="stats-card stats-card-success animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-grow">
+                        <p class="stats-label">TOTAL SESSIONS</p>
+                        <h2 class="stats-value">{{ statsSessions.total }}</h2>
+                        <div class="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span>{{ statsSessions.completees }} complétées</span>
+                        </div>
+                    </div>
+                    <div class="stats-icon bg-green-500">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar bg-green-500" style="width: {{ statsSessions.total > 0 ? (statsSessions.completees / statsSessions.total * 100) : 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="stats-card stats-card-warning animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-grow">
+                        <p class="stats-label">EN COURS</p>
+                        <h2 class="stats-value">{{ statsSessions.en_cours }}</h2>
+                        <div class="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                            <i class="fas fa-clock text-yellow-500"></i>
+                            <span>Sessions actives</span>
+                        </div>
+                    </div>
+                    <div class="stats-icon bg-yellow-500">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar bg-yellow-500" style="width: 60%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="stats-card stats-card-info animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-grow">
+                        <p class="stats-label">CATALOGUE</p>
+                        <h2 class="stats-value">{{ statsActivites.predefinies }}</h2>
+                        <div class="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                            <i class="fas fa-star text-blue-500"></i>
+                            <span>Prédéfinies</span>
+                        </div>
+                    </div>
+                    <div class="stats-icon bg-blue-400">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                </div>
+                <div class="stats-progress">
+                    <div class="progress-bar bg-blue-400" style="width: 85%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Rapides Stylées -->
+    <div class="action-card animate__animated animate__fadeInUp" style="animation-delay: 0.5s;">
+        <div class="flex items-center gap-4 mb-6">
+            <i class="fas fa-bolt text-yellow-500 text-xl"></i>
+            <h5 class="text-lg font-bold mb-0">Actions rapides</h5>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="{{ path('admin_wellness_activites_new') }}" class="btn-modern btn-modern-primary">
+                <div class="btn-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="flex flex-col flex-grow">
+                    <span class="font-bold">Nouvelle Activité</span>
+                    <span class="text-sm opacity-80">Créer une activité</span>
+                </div>
+                <i class="fas fa-arrow-right btn-arrow"></i>
+            </a>
+            
+            <a href="{{ path('admin_wellness_activites') }}" class="btn-modern btn-modern-secondary">
+                <div class="btn-icon">
+                    <i class="fas fa-th-list"></i>
+                </div>
+                <div class="flex flex-col flex-grow">
+                    <span class="font-bold">Voir Activités</span>
+                    <span class="text-sm text-gray-600">{{ statsActivites.total }} activités</span>
+                </div>
+                <i class="fas fa-arrow-right btn-arrow"></i>
+            </a>
+            
+            <a href="{{ path('admin_wellness_sessions') }}" class="btn-modern btn-modern-success">
+                <div class="btn-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="flex flex-col flex-grow">
+                    <span class="font-bold">Voir Sessions</span>
+                    <span class="text-sm opacity-80">{{ statsSessions.total }} sessions</span>
+                </div>
+                <i class="fas fa-arrow-right btn-arrow"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Sessions Récentes Ultra Stylées -->
+    <div class="sessions-card animate__animated animate__fadeInUp" style="animation-delay: 0.6s;">
+        <div class="sessions-header">
+            <div class="flex items-center">
+                <div class="header-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div>
+                    <h5 class="font-bold text-gray-900 mb-0">Sessions récentes</h5>
+                    <p class="text-sm text-gray-600 mb-0">7 derniers jours</p>
+                </div>
+            </div>
+            <a href="{{ path('admin_wellness_sessions') }}" class="text-blue-600 font-semibold hover:text-blue-800 transition-colors flex items-center">
+                Voir tout
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+        
+        {% if sessionsRecentes is not empty %}
+            <div class="p-4">
+                {% for session in sessionsRecentes %}
+                    <div class="session-item">
+                        <div class="grid grid-cols-1 lg:grid-cols-6 gap-4 items-center">
+                            <!-- Utilisateur -->
+                            <div class="session-user flex items-center">
+                                <div class="user-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h6 class="font-semibold text-gray-900 mb-0">{{ session.utilisateur.nom }} {{ session.utilisateur.prenom }}</h6>
+                                    <small class="text-gray-600">{{ session.utilisateur.email }}</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Activité -->
+                            <div class="session-activity">
+                                <span class="activity-badge">
+                                    <i class="fas fa-dumbbell mr-2"></i>
+                                    {{ session.activite.nomActivite }}
+                                </span>
+                            </div>
+                            
+                            <!-- Statut -->
+                            <div class="session-status">
+                                <span class="status-badge status-{{ session.statutSession.value }}">
+                                    <i class="fas fa-{{ session.statutSession.value == 'completee' ? 'check-circle' : (session.statutSession.value == 'en_cours' ? 'clock' : 'circle') }} mr-1"></i>
+                                    {{ session.statutSession.value|replace({'_': ' '})|capitalize }}
+                                </span>
+                            </div>
+                            
+                            <!-- Humeur -->
+                            <div class="session-mood flex items-center">
+                                {% if session.humeurAvant %}
+                                    <div class="mood-indicator flex flex-col items-center mr-3">
+                                        <span class="mood-label text-xs text-gray-500 uppercase">Avant</span>
+                                        <span class="mood-value mood-{{ session.humeurAvant.value }}">
+                                            {{ session.scoreHumeurAvant ?? '?' }}/10
+                                        </span>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if session.humeurApres %}
+                                    <i class="fas fa-arrow-right text-gray-400 mx-2"></i>
+                                    <div class="mood-indicator flex flex-col items-center ml-3">
+                                        <span class="mood-label text-xs text-gray-500 uppercase">Après</span>
+                                        <span class="mood-value mood-{{ session.humeurApres.value }}">
+                                            {{ session.scoreHumeurApres ?? '?' }}/10
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Date -->
+                            <div class="session-date text-sm text-gray-600">
+                                <i class="fas fa-calendar-alt mr-2"></i>
+                                {{ session.dateDebut|date('d/m/Y H:i') }}
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="session-actions flex justify-end">
+                                <a href="{{ path('admin_wellness_sessions_show', {'id': session.id}) }}" class="btn-action" title="Voir détails">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h5 class="text-lg font-semibold text-gray-700 mb-2">Aucune session récente</h5>
+                <p class="text-gray-500 max-w-md mx-auto">
+                    Les sessions apparaîtront ici lorsque les utilisateurs commenceront à utiliser l'application.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

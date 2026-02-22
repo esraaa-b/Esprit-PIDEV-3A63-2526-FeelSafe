@@ -1,0 +1,457 @@
+{% extends 'admin/base.html.twig' %}
+
+{# Gérer les deux cas : si 'user' est défini, on l'utilise #}
+{% if user is defined %}
+    {% set currentUser = user %}
+{% else %}
+    {% set currentUser = null %}
+{% endif %}
+
+{% block title %}Journaux de {{ currentUser.email ?? 'Utilisateur' }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header avec bouton retour -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold">
+                Journaux de <span class="text-green-600">{{ currentUser.email ?? 'Utilisateur' }}</span>
+            </h1>
+            <p class="text-muted-foreground mt-2">
+                {% if currentUser %}
+                    {{ currentUser.journaux|length }} entrée(s)
+                {% else %}
+                    0 entrée(s)
+                {% endif %}
+            </p>
+        </div>
+        <a href="{{ path('admin_users_index') }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg">
+            <i class="fas fa-arrow-left"></i> Retour aux utilisateurs
+        </a>
+    </div>
+
+    <!-- Flash messages -->
+    {% for message in app.flashes('success') %}
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <!-- Journals Table -->
+    <div class="bg-white rounded-lg border overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left">Émotion</th>
+                    <th class="px-4 py-3 text-left">Contenu</th>
+                    <th class="px-4 py-3 text-center">Image</th>
+                    <th class="px-4 py-3 text-center">Audio</th>
+                    <th class="px-4 py-3 text-left">Date</th>
+                    <th class="px-4 py-3 text-center" colspan="2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if currentUser %}
+                    {% for journal in currentUser.journaux %}
+                        <tr class="border-t hover:bg-gray-50">
+                            <!-- Émotion -->
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs {{ journal.emotion.color() }}">
+                                    {{ journal.emotion.icon() }} {{ journal.emotion.label() }}
+                                </span>
+                            </td>
+                            
+                            <!-- Contenu -->
+                            <td class="px-4 py-3 max-w-xs">
+                                {% if journal.contenu %}
+                                    <div class="truncate" title="{{ journal.contenu }}">
+                                        {{ journal.contenu|slice(0, 100) }}{% if journal.contenu|length > 100 %}...{% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-400 text-xs">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Image -->
+                            <td class="px-4 py-3 text-center">
+                                {% if journal.image %}
+                                    <img src="{{ asset('uploads/journals/images/' ~ journal.image) }}" 
+                                         alt="Journal image"
+                                         class="w-12 h-12 object-cover rounded cursor-pointer mx-auto"
+                                         onclick="openImageModal(this.src)">
+                                {% else %}
+                                    <span class="text-gray-400 text-xs">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Audio -->
+                            <td class="px-4 py-3 text-center">
+                                {% if journal.audio %}
+                                    <audio controls class="h-8 w-32">
+                                        <source src="{{ asset('uploads/journals/audio/' ~ journal.audio) }}">
+                                    </audio>
+                                {% else %}
+                                    <span class="text-gray-400 text-xs">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Date -->
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                {{ journal.dateCreation|date('d/m/Y') }}<br>
+                                <span class="text-xs text-gray-500">{{ journal.dateCreation|date('H:i') }}</span>
+                            </td>
+
+                            <!-- Actions - Modifier -->
+                            <td class="px-4 py-3 text-center">
+                                <a href="#"
+                                   class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded open-modal"
+                                   data-url="{{ path('admin_journal_edit', {id: journal.id}) }}">
+                                    <i class="fas fa-edit"></i> Modifier
+                                </a>
+                            </td>
+
+                            <!-- Actions - Supprimer -->
+                            <td class="px-4 py-3 text-center">
+                                <button type="button"
+                                        class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded open-delete-modal"
+                                        data-id="{{ journal.id }}"
+                                        data-url="{{ path('admin_journal_delete', {id: journal.id}) }}"
+                                        data-email="{{ currentUser.email }}"
+                                        data-emotion="{{ journal.emotion.label() }}"
+                                        data-date="{{ journal.dateCreation|date('d/m/Y H:i') }}"
+                                        data-token="{{ csrf_token('delete' ~ journal.id) }}">
+                                    <i class="fas fa-trash"></i> Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-8 text-gray-500">
+                                Aucun journal pour cet utilisateur
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-gray-500">
+                            Aucun utilisateur sélectionné
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal preview image -->
+<div id="imageModal" class="modal-overlay" style="display: none; background: rgba(0,0,0,0.8);" onclick="this.style.display='none'">
+    <img id="modalImage" src="" style="max-width: 90%; max-height: 90%; border-radius: 8px;">
+</div>
+
+<script>
+// Fonction pour ouvrir l'image en grand
+function openImageModal(src) {
+    document.getElementById('modalImage').src = src;
+    document.getElementById('imageModal').style.display = 'flex';
+}
+
+// ===== NOUVEAU SCRIPT UNIFIÉ =====
+document.addEventListener('click', function(e) {
+    // 1. OUVRIR LE MODAL D'ÉDITION
+    const editBtn = e.target.closest('.open-modal');
+    if (editBtn) {
+        e.preventDefault();
+        
+        // Fermer les modals existants
+        const existingModal = document.querySelector('[data-modal]');
+        if (existingModal) existingModal.remove();
+        
+        // Charger le modal
+        fetch(editBtn.dataset.url)
+            .then(response => response.text())
+            .then(html => {
+                document.body.insertAdjacentHTML('beforeend', html);
+                console.log('✅ Modal chargé');
+            })
+            .catch(err => console.error('Erreur:', err));
+        return;
+    }
+    
+    // 2. GÉRER LES ÉMOTIONS DANS LE MODAL
+    if (e.target.closest('.emotion-label')) {
+        e.preventDefault();
+        const label = e.target.closest('.emotion-label');
+        const modal = label.closest('[data-modal]');
+        if (!modal) return;
+        
+        // Réinitialiser tous les labels
+        modal.querySelectorAll('.emotion-label').forEach(l => {
+            l.style.background = '#f8fff8';
+            l.style.color = '#3a5a3a';
+            l.style.borderColor = '#d8e8d8';
+        });
+        
+        // Appliquer la couleur
+        const value = label.dataset.value;
+        const colors = {
+            'tres_bien': '#2b5e2b',
+            'bien': '#3b7a3b',
+            'neutre': '#b8a83b',
+            'pas_bien': '#b85a5a',
+            'tres_mal': '#b33a3a'
+        };
+        
+        label.style.background = colors[value];
+        label.style.color = 'white';
+        label.style.borderColor = colors[value];
+        
+        // Cocher le radio
+        const radioId = label.getAttribute('for');
+        if (radioId) {
+            const radio = document.getElementById(radioId);
+            if (radio) radio.checked = true;
+        }
+        return;
+    }
+    
+    // 3. FERMER LE MODAL (X et Annuler)
+    if (e.target.closest('[data-close]')) {
+        e.preventDefault();
+        const modal = e.target.closest('[data-modal]');
+        if (modal) modal.remove();
+        return;
+    }
+    
+    // 4. CLIQUER SUR L'OVERLAY
+    if (e.target.classList.contains('modal-overlay') && e.target.closest('[data-modal]')) {
+        e.target.closest('[data-modal]').remove();
+        return;
+    }
+    
+    // 5. MODAL DE SUPPRESSION
+    const deleteBtn = e.target.closest('.open-delete-modal');
+    if (deleteBtn) {
+        e.preventDefault();
+        
+        const url = deleteBtn.dataset.url;
+        const userEmail = deleteBtn.dataset.email;
+        const emotion = deleteBtn.dataset.emotion;
+        const date = deleteBtn.dataset.date;
+        const token = deleteBtn.dataset.token;
+        
+        const existingModal = document.querySelector('.admin-modal-overlay');
+        if (existingModal) existingModal.remove();
+        
+        const modal = document.createElement('div');
+        modal.className = 'admin-modal-overlay';
+        modal.innerHTML = `
+            <div class="admin-modal">
+                <div class="admin-modal-header">
+                    <div class="admin-modal-title">Confirmer la suppression</div>
+                    <div class="admin-modal-subtitle">Cette action est irréversible</div>
+                </div>
+                
+                <div class="admin-modal-body">
+                    <div class="admin-modal-user">
+                        <div class="admin-modal-email">${userEmail}</div>
+                        <div class="admin-modal-meta">
+                            <span><i class="fas fa-calendar-alt"></i> ${date}</span>
+                        </div>
+                        <span class="admin-modal-emotion">${emotion}</span>
+                    </div>
+                    
+                    <div class="admin-modal-warning">
+                        Cette action supprimera définitivement le journal et tous ses fichiers associés.
+                    </div>
+                </div>
+                
+                <div class="admin-modal-footer">
+                    <button type="button" class="admin-modal-btn admin-modal-btn-cancel" data-close-modal>
+                        Annuler
+                    </button>
+                    
+                    <form method="post" action="${url}" style="display: inline;">
+                        <input type="hidden" name="_token" value="${token}">
+                        <button type="submit" class="admin-modal-btn admin-modal-btn-delete">
+                            Supprimer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        return;
+    }
+    
+    // 6. FERMER LE MODAL DE SUPPRESSION
+    if (e.target.closest('[data-close-modal]') || e.target.classList.contains('admin-modal-overlay')) {
+        const modal = e.target.closest('.admin-modal-overlay');
+        if (modal) modal.remove();
+        return;
+    }
+});
+
+// Gestionnaire pour les fichiers
+document.addEventListener('change', function(e) {
+    if (e.target.matches('[id*="imageFile"]')) {
+        const span = document.getElementById('image-file-name');
+        if (span) span.textContent = e.target.files[0]?.name || 'Aucun fichier choisi';
+    }
+    if (e.target.matches('[id*="audioFile"]')) {
+        const span = document.getElementById('audio-file-name');
+        if (span) span.textContent = e.target.files[0]?.name || 'Aucun fichier choisi';
+    }
+});
+
+// Touche Echap
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        // Fermer le modal d'édition
+        const editModal = document.querySelector('[data-modal]');
+        if (editModal) editModal.remove();
+        
+        // Fermer le modal de suppression
+        const deleteModal = document.querySelector('.admin-modal-overlay');
+        if (deleteModal) deleteModal.remove();
+        
+        // Fermer le modal d'image
+        document.getElementById('imageModal').style.display = 'none';
+    }
+});
+
+console.log('✅ Script unifié chargé');
+</script>
+
+<style>
+/* Styles pour le modal de suppression */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.admin-modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.admin-modal-header {
+    padding: 20px 24px 0;
+}
+
+.admin-modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.admin-modal-subtitle {
+    font-size: 0.85rem;
+    color: #ef4444;
+}
+
+.admin-modal-body {
+    padding: 20px 24px;
+}
+
+.admin-modal-user {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.admin-modal-email {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.admin-modal-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.admin-modal-emotion {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    color: #334155;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.admin-modal-warning {
+    font-size: 0.85rem;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.admin-modal-footer {
+    padding: 16px 24px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.admin-modal-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: none;
+}
+
+.admin-modal-btn-cancel {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.admin-modal-btn-cancel:hover {
+    background: #e2e8f0;
+}
+
+.admin-modal-btn-delete {
+    background: #ef4444;
+    color: white;
+}
+
+.admin-modal-btn-delete:hover {
+    background: #dc2626;
+}
+
+#imageModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+</style>
+{% endblock %}

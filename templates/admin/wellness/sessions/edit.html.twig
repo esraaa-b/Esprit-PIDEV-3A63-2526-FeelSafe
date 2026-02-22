@@ -1,0 +1,814 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Modifier Session{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header animate__animated animate__fadeInDown">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="header-icon-wrapper bg-gradient-warning">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h1 class="h3 mb-0 fw-bold">Modifier la session</h1>
+                            <p class="text-muted mb-0">Session #{{ session.id }} - {{ session.activite.nomActivite }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ path('admin_wellness_sessions_show', {'id': session.id}) }}" class="btn-view">
+                            <i class="fas fa-eye me-2"></i>
+                            Voir
+                        </a>
+                        <a href="{{ path('admin_wellness_sessions') }}" class="btn-back">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Retour
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulaire -->
+    <form method="post" class="animate__animated animate__fadeInUp">
+        <div class="row g-4">
+            <!-- Colonne Gauche -->
+            <div class="col-lg-8">
+                <!-- Informations générales -->
+                <div class="form-card mb-4">
+                    <div class="form-card-header">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <h5>Informations générales</h5>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group-modern">
+                                    <label for="activite_id" class="form-label-modern">
+                                        <i class="fas fa-dumbbell me-1"></i>
+                                        Activité <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select-modern" id="activite_id" name="activite_id" required>
+                                        {% for activite in activites %}
+                                            <option value="{{ activite.id }}" {% if session.activite.id == activite.id %}selected{% endif %}>
+                                                {{ activite.nomActivite }} ({{ activite.typeActivite }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group-modern">
+                                    <label for="statut_session" class="form-label-modern">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Statut <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select-modern" id="statut_session" name="statut_session" required>
+                                        {% for statut in statutsSessions %}
+                                            <option value="{{ statut.value }}" {% if session.statutSession.value == statut.value %}selected{% endif %}>
+                                                {{ statut.value|replace({'_': ' '})|capitalize }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="date_debut" class="form-label-modern">
+                                        <i class="fas fa-calendar-plus me-1"></i>
+                                        Date de début <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="datetime-local" class="form-control-modern" id="date_debut" name="date_debut" value="{{ session.dateDebut|date('Y-m-d\\TH:i') }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="date_fin" class="form-label-modern">
+                                        <i class="fas fa-calendar-check me-1"></i>
+                                        Date de fin
+                                    </label>
+                                    <input type="datetime-local" class="form-control-modern" id="date_fin" name="date_fin" value="{{ session.dateFin ? session.dateFin|date('Y-m-d\\TH:i') : '' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="duree_reelle" class="form-label-modern">
+                                        <i class="fas fa-stopwatch me-1"></i>
+                                        Durée réelle (min)
+                                    </label>
+                                    <input type="number" class="form-control-modern" id="duree_reelle" name="duree_reelle" value="{{ session.dureeReelle }}" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Humeur avant -->
+                <div class="form-card mb-4">
+                    <div class="form-card-header">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        <h5>Humeur avant la session</h5>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="humeur_avant" class="form-label-modern">
+                                        <i class="fas fa-smile me-1"></i>
+                                        Humeur
+                                    </label>
+                                    <select class="form-select-modern" id="humeur_avant" name="humeur_avant">
+                                        <option value="">Sélectionner...</option>
+                                        {% for humeur in humeurs %}
+                                            <option value="{{ humeur.value }}" {% if session.humeurAvant and session.humeurAvant.value == humeur.value %}selected{% endif %}>
+                                                {{ humeur.value|replace({'_': ' '})|capitalize }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="score_humeur_avant" class="form-label-modern">
+                                        <i class="fas fa-chart-line me-1"></i>
+                                        Score (1-10)
+                                    </label>
+                                    <input type="number" class="form-control-modern" id="score_humeur_avant" name="score_humeur_avant" value="{{ session.scoreHumeurAvant }}" min="1" max="10" step="1">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="emotion_avant" class="form-label-modern">
+                                        <i class="fas fa-comment-dots me-1"></i>
+                                        Émotion ressentie
+                                    </label>
+                                    <input type="text" class="form-control-modern" id="emotion_avant" name="emotion_avant" value="{{ session.emotionAvant }}" placeholder="Ex: Anxieux, Calme...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Humeur après -->
+                <div class="form-card mb-4">
+                    <div class="form-card-header">
+                        <i class="fas fa-flag-checkered me-2"></i>
+                        <h5>Humeur après la session</h5>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="humeur_apres" class="form-label-modern">
+                                        <i class="fas fa-smile-beam me-1"></i>
+                                        Humeur
+                                    </label>
+                                    <select class="form-select-modern" id="humeur_apres" name="humeur_apres">
+                                        <option value="">Sélectionner...</option>
+                                        {% for humeur in humeurs %}
+                                            <option value="{{ humeur.value }}" {% if session.humeurApres and session.humeurApres.value == humeur.value %}selected{% endif %}>
+                                                {{ humeur.value|replace({'_': ' '})|capitalize }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="score_humeur_apres" class="form-label-modern">
+                                        <i class="fas fa-chart-line me-1"></i>
+                                        Score (1-10)
+                                    </label>
+                                    <input type="number" class="form-control-modern" id="score_humeur_apres" name="score_humeur_apres" value="{{ session.scoreHumeurApres }}" min="1" max="10" step="1">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="emotion_apres" class="form-label-modern">
+                                        <i class="fas fa-comment-dots me-1"></i>
+                                        Émotion ressentie
+                                    </label>
+                                    <input type="text" class="form-control-modern" id="emotion_apres" name="emotion_apres" value="{{ session.emotionApres }}" placeholder="Ex: Détendu, Énergique...">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicateur d'évolution -->
+                        <div class="evolution-indicator mt-3" id="evolutionIndicator" style="display: none;">
+                            <div class="evolution-card">
+                                <i class="fas fa-chart-line me-2"></i>
+                                <span id="evolutionText"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Évaluation -->
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <i class="fas fa-star me-2"></i>
+                        <h5>Évaluation de la session</h5>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="note_satisfaction" class="form-label-modern">
+                                        <i class="fas fa-star me-1"></i>
+                                        Note de satisfaction (1-5)
+                                    </label>
+                                    <input type="number" class="form-control-modern" id="note_satisfaction" name="note_satisfaction" value="{{ session.noteSatisfaction }}" min="1" max="5" step="1">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label for="impact_percu" class="form-label-modern">
+                                        <i class="fas fa-heart me-1"></i>
+                                        Impact perçu
+                                    </label>
+                                    <select class="form-select-modern" id="impact_percu" name="impact_percu">
+                                        <option value="">Sélectionner...</option>
+                                        {% for impact in impactsPercus %}
+                                            <option value="{{ impact.value }}" {% if session.impactPercu and session.impactPercu.value == impact.value %}selected{% endif %}>
+                                                {{ impact.value|replace({'_': ' '})|capitalize }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-modern">
+                                    <label class="form-label-modern">
+                                        <i class="fas fa-bullseye me-1"></i>
+                                        Objectif atteint
+                                    </label>
+                                    <div class="checkbox-modern">
+                                        <input type="checkbox" id="est_objectif_atteint" name="est_objectif_atteint" value="1" {% if session.estObjectifAtteint %}checked{% endif %}>
+                                        <label for="est_objectif_atteint">
+                                            <span class="checkbox-box">
+                                                <i class="fas fa-check"></i>
+                                            </span>
+                                            Oui, l'objectif a été atteint
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-group-modern">
+                                    <label for="commentaire" class="form-label-modern">
+                                        <i class="fas fa-comment-alt me-1"></i>
+                                        Commentaire
+                                    </label>
+                                    <textarea class="form-control-modern" id="commentaire" name="commentaire" rows="4" maxlength="500" placeholder="Partagez votre expérience...">{{ session.commentaire }}</textarea>
+                                    <small class="form-text">Maximum 500 caractères</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne Droite -->
+            <div class="col-lg-4">
+                <!-- Recommandations -->
+                <div class="form-card mb-4">
+                    <div class="form-card-header">
+                        <i class="fas fa-robot me-2"></i>
+                        <h5>Recommandations</h5>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="form-group-modern">
+                            <label for="frequence_souhaitee" class="form-label-modern">
+                                <i class="fas fa-calendar-week me-1"></i>
+                                Fréquence souhaitée
+                            </label>
+                            <select class="form-select-modern" id="frequence_souhaitee" name="frequence_souhaitee">
+                                <option value="">Sélectionner...</option>
+                                {% for frequence in frequencesSouhaitees %}
+                                    <option value="{{ frequence.value }}" {% if session.frequenceSouhaitee and session.frequenceSouhaitee.value == frequence.value %}selected{% endif %}>
+                                        {{ frequence.value|replace({'_': ' '})|capitalize }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group-modern">
+                            <label for="recommande_par" class="form-label-modern">
+                                <i class="fas fa-user-check me-1"></i>
+                                Recommandée par
+                            </label>
+                            <select class="form-select-modern" id="recommande_par" name="recommande_par">
+                                <option value="">Sélectionner...</option>
+                                {% for recommandation in recommandePar %}
+                                    <option value="{{ recommandation.value }}" {% if session.recommandePar and session.recommandePar.value == recommandation.value %}selected{% endif %}>
+                                        {{ recommandation.value|replace({'_': ' '})|capitalize }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group-modern">
+                            <label for="score_recommandation_ia" class="form-label-modern">
+                                <i class="fas fa-brain me-1"></i>
+                                Score IA (0.00 - 1.00)
+                            </label>
+                            <input type="number" class="form-control-modern" id="score_recommandation_ia" name="score_recommandation_ia" value="{{ session.scoreRecommandationIa }}" min="0" max="1" step="0.01" placeholder="0.85">
+                            <small class="form-text">Score de pertinence de la recommandation IA</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aperçu de l'utilisateur -->
+                <div class="info-preview-card mb-4">
+                    <div class="info-preview-header">
+                        <i class="fas fa-user me-2"></i>
+                        <h6>Utilisateur</h6>
+                    </div>
+                    <div class="info-preview-body">
+                        <div class="user-preview">
+                            <div class="user-avatar-preview">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <h6>{{ session.utilisateur.nom }} {{ session.utilisateur.prenom }}</h6>
+                                <small>{{ session.utilisateur.email }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informations système -->
+                <div class="info-preview-card mb-4">
+                    <div class="info-preview-header">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <h6>Informations</h6>
+                    </div>
+                    <div class="info-preview-body">
+                        <div class="info-row-small">
+                            <i class="fas fa-fingerprint text-secondary"></i>
+                            <div>
+                                <small>ID Session</small>
+                                <p>#{{ session.id }}</p>
+                            </div>
+                        </div>
+                        <div class="info-row-small">
+                            <i class="fas fa-calendar-plus text-primary"></i>
+                            <div>
+                                <small>Créée le</small>
+                                <p>{{ session.dateDebut|date('d/m/Y') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="action-buttons">
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-save me-2"></i>
+                        Enregistrer les modifications
+                    </button>
+                    <a href="{{ path('admin_wellness_sessions') }}" class="btn-cancel">
+                        <i class="fas fa-times me-2"></i>
+                        Annuler
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+/* Réutilisation des styles de edit activité */
+.page-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.header-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: white;
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.btn-view {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-view:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    color: white;
+}
+
+.btn-back {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-back:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #475569;
+}
+
+.form-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.form-card-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+}
+
+.form-card-header i {
+    color: #10b981;
+    font-size: 1.2rem;
+}
+
+.form-card-header h5 {
+    margin: 0;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.form-card-body {
+    padding: 2rem;
+}
+
+.form-group-modern {
+    margin-bottom: 1.5rem;
+}
+
+.form-label-modern {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-label-modern i {
+    color: #94a3b8;
+}
+
+.form-control-modern,
+.form-select-modern {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-control-modern:focus,
+.form-select-modern:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-control-modern::placeholder {
+    color: #cbd5e1;
+}
+
+textarea.form-control-modern {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+/* Checkbox Modern */
+.checkbox-modern {
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-top: 0.5rem;
+}
+
+.checkbox-modern input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-modern label {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: #475569;
+    margin: 0;
+}
+
+.checkbox-box {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.checkbox-box i {
+    color: white;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.checkbox-modern input[type="checkbox"]:checked + label .checkbox-box {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #10b981;
+}
+
+.checkbox-modern input[type="checkbox"]:checked + label .checkbox-box i {
+    opacity: 1;
+}
+
+/* Evolution Indicator */
+.evolution-indicator {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 12px;
+    border-left: 4px solid #10b981;
+}
+
+.evolution-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 600;
+    color: #065f46;
+}
+
+.evolution-card i {
+    font-size: 1.5rem;
+}
+
+/* Info Preview Card */
+.info-preview-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.info-preview-header {
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+}
+
+.info-preview-header i {
+    color: #10b981;
+}
+
+.info-preview-header h6 {
+    margin: 0;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.info-preview-body {
+    padding: 1.5rem;
+}
+
+.user-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.user-preview h6 {
+    margin: 0;
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.user-preview small {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.info-row-small {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.info-row-small:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.info-row-small i {
+    font-size: 1.25rem;
+    margin-top: 0.25rem;
+}
+
+.info-row-small small {
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 0.25rem;
+}
+
+.info-row-small p {
+    margin: 0;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.9rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-cancel {
+    width: 100%;
+    padding: 1rem;
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-cancel:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #475569;
+}
+
+.animate__animated {
+    animation-duration: 0.6s;
+}
+
+@media (max-width: 992px) {
+    .form-card-body {
+        padding: 1.5rem;
+    }
+}
+</style>
+
+<script>
+// Calcul de l'évolution de l'humeur
+function updateEvolution() {
+    const scoreBefore = parseFloat(document.getElementById('score_humeur_avant').value);
+    const scoreAfter = parseFloat(document.getElementById('score_humeur_apres').value);
+    const indicator = document.getElementById('evolutionIndicator');
+    const evolutionText = document.getElementById('evolutionText');
+    
+    if (!isNaN(scoreBefore) && !isNaN(scoreAfter)) {
+        const diff = scoreAfter - scoreBefore;
+        indicator.style.display = 'block';
+        
+        if (diff > 0) {
+            indicator.querySelector('.evolution-card').style.background = 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)';
+            indicator.querySelector('.evolution-card').style.borderColor = '#10b981';
+            indicator.querySelector('.evolution-card').style.color = '#065f46';
+            evolutionText.innerHTML = `<strong>Amélioration de ${diff} point${diff > 1 ? 's' : ''}</strong> - Évolution positive ! 🎉`;
+        } else if (diff < 0) {
+            indicator.querySelector('.evolution-card').style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
+            indicator.querySelector('.evolution-card').style.borderColor = '#ef4444';
+            indicator.querySelector('.evolution-card').style.color = '#991b1b';
+            evolutionText.innerHTML = `<strong>Baisse de ${Math.abs(diff)} point${Math.abs(diff) > 1 ? 's' : ''}</strong> - Attention à surveiller`;
+        } else {
+            indicator.querySelector('.evolution-card').style.background = 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)';
+            indicator.querySelector('.evolution-card').style.borderColor = '#94a3b8';
+            indicator.querySelector('.evolution-card').style.color = '#475569';
+            evolutionText.innerHTML = `<strong>Humeur stable</strong> - Aucun changement`;
+        }
+    } else {
+        indicator.style.display = 'none';
+    }
+}
+
+// Event listeners
+document.getElementById('score_humeur_avant').addEventListener('input', updateEvolution);
+document.getElementById('score_humeur_apres').addEventListener('input', updateEvolution);
+
+// Initialiser l'évolution au chargement
+document.addEventListener('DOMContentLoaded', updateEvolution);
+
+// Limiter les caractères du commentaire
+const commentaire = document.getElementById('commentaire');
+if (commentaire) {
+    commentaire.addEventListener('input', function() {
+        if (this.value.length > 500) {
+            this.value = this.value.substring(0, 500);
+        }
+    });
+}
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+{% endblock %}

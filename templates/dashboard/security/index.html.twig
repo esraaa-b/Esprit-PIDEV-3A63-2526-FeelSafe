@@ -1,0 +1,713 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sécurité & Profil — FeelSafe{% endblock %}
+
+{% block stylesheets %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --brand:         #22c55e;
+  --brand-dark:    #16a34a;
+  --brand-light:   #dcfce7;
+  --brand-glow:    rgba(34,197,94,.18);
+  --danger:        #ef4444;
+  --danger-light:  rgba(239,68,68,.08);
+  --danger-border: rgba(239,68,68,.22);
+  --bg:            #f7f9f7;
+  --surface:       #ffffff;
+  --surface-2:     #f4f6f4;
+  --border:        #e4e8e4;
+  --text-main:     #111827;
+  --text-muted:    #6b7280;
+  --text-light:    #9ca3af;
+  --radius-sm:     8px;
+  --radius:        14px;
+  --radius-lg:     20px;
+  --shadow-sm:     0 1px 4px rgba(0,0,0,.07);
+  --shadow-md:     0 4px 20px rgba(0,0,0,.09);
+  --transition:    all .22s cubic-bezier(.4,0,.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { font-family: 'Figtree', sans-serif; background: var(--bg); }
+
+/* ── Page header ── */
+.page-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  color: var(--text-main);
+  margin: 0 0 4px;
+}
+.page-sub { font-size: .9rem; color: var(--text-muted); margin: 0 0 28px; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 28px;
+}
+.tab-btn {
+  padding: 10px 22px;
+  border: none;
+  background: none;
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: var(--transition);
+}
+.tab-btn:hover { color: var(--brand); background: var(--brand-light); }
+.tab-btn.active { color: var(--brand-dark); border-bottom-color: var(--brand); background: var(--brand-light); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.card:hover { box-shadow: var(--shadow-md); }
+.card-danger { border-color: var(--danger-border); border-width: 1.5px; }
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+.card-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-light);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 18px;
+}
+.card-icon.danger { background: var(--danger-light); }
+.card-head-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem; font-weight: 700;
+  color: var(--text-main); margin: 0 0 3px;
+  letter-spacing: -.02em;
+}
+.card-head-sub { font-size: .82rem; color: var(--text-muted); margin: 0; }
+
+/* ── Avatar block ── */
+.avatar-block {
+  display: flex; align-items: center; gap: 18px;
+  padding: 16px 18px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.avatar-circle {
+  width: 62px; height: 62px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 20px; font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px var(--brand-glow);
+}
+.avatar-name {
+  font-family: 'Syne', sans-serif;
+  font-size: .95rem; font-weight: 700;
+  color: var(--text-main); margin: 0 0 4px;
+}
+.avatar-role {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: .7rem; font-weight: 700;
+  background: var(--brand-light); color: var(--brand-dark);
+  border: 1px solid rgba(34,197,94,.25);
+  letter-spacing: .03em;
+}
+.avatar-since { font-size: .75rem; color: var(--text-light); margin-top: 4px; }
+
+/* ── Form ── */
+.form-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-bottom: 18px;
+}
+@media(max-width:640px){ .form-grid { grid-template-columns:1fr; } }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label {
+  font-size: .7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text-muted);
+}
+.pw-wrap { position: relative; }
+.form-input {
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem; color: var(--text-main);
+  background: var(--surface-2);
+  transition: var(--transition); width: 100%;
+}
+.form-input.with-eye { padding-right: 44px; }
+.form-input:focus {
+  border-color: var(--brand); outline: none;
+  box-shadow: 0 0 0 3px var(--brand-glow);
+  background: var(--surface);
+}
+.form-input::placeholder { color: var(--text-light); }
+.eye-btn {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; color: var(--text-light);
+  transition: var(--transition); line-height: 1; padding: 2px;
+}
+.eye-btn:hover { color: var(--brand); }
+
+/* ── Strength bars ── */
+.strength-bars { display: flex; gap: 4px; margin-top: 6px; }
+.sbar { height: 4px; flex: 1; border-radius: 2px; background: var(--border); transition: var(--transition); }
+.slabel { font-size: .7rem; color: var(--text-light); margin-top: 3px; }
+
+/* ── Buttons ── */
+.btn {
+  padding: 11px 22px; border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .875rem; font-weight: 700;
+  cursor: pointer; transition: var(--transition);
+  display: inline-flex; align-items: center; gap: 8px;
+  letter-spacing: -.01em;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: white;
+  box-shadow: 0 4px 14px var(--brand-glow);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--brand-dark), #14532d);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(34,197,94,.3);
+}
+.btn-danger {
+  background: var(--danger); color: white;
+  box-shadow: 0 4px 14px rgba(239,68,68,.25);
+}
+.btn-danger:hover {
+  background: #dc2626; transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239,68,68,.35);
+}
+.btn-ghost {
+  background: var(--surface-2); color: var(--text-muted);
+  border: 1.5px solid var(--border);
+}
+.btn-ghost:hover { background: var(--border); color: var(--text-main); }
+
+/* ── Alerts ── */
+.alert {
+  padding: 12px 16px; border-radius: var(--radius-sm);
+  font-size: .875rem; font-weight: 500;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 10px;
+  animation: slideDown .3s ease both;
+}
+.alert-success { background: var(--brand-light); color: var(--brand-dark); border: 1px solid rgba(34,197,94,.3); }
+.alert-error   { background: var(--danger-light); color: var(--danger);    border: 1px solid var(--danger-border); }
+
+/* ── Toggle switch ── */
+.toggle-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label .tl-title { font-size: .9rem; font-weight: 600; color: var(--text-main); }
+.toggle-label .tl-desc  { font-size: .78rem; color: var(--text-muted); margin-top: 2px; }
+.toggle { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: #d1d5db; border-radius: 13px;
+  cursor: pointer; transition: .25s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 20px; height: 20px; left: 3px; top: 3px;
+  background: white; border-radius: 50%; transition: .25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.toggle input:checked + .toggle-slider { background: var(--brand); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* ── Select ── */
+.form-select {
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem; color: var(--text-main);
+  background: var(--surface-2);
+  transition: var(--transition); width: 100%; cursor: pointer;
+  max-width: 280px;
+}
+.form-select:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-glow); }
+
+/* ── Info rows ── */
+.info-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 13px 0; border-bottom: 1px solid var(--border);
+  font-size: .875rem;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row-label { color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+.info-row-value { font-weight: 600; color: var(--text-main); }
+
+/* ── Danger rows ── */
+.danger-row {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 20px;
+  padding: 16px 0; border-bottom: 1px solid var(--danger-border);
+}
+.danger-row:last-child { border-bottom: none; }
+.danger-row .dr-title { font-size: .9rem; font-weight: 600; color: var(--text-main); }
+.danger-row .dr-desc  { font-size: .78rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Tip box ── */
+.tip-box {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid rgba(34,197,94,.2);
+  border-radius: var(--radius);
+  padding: 14px 16px; margin-top: 20px;
+  display: flex; gap: 12px;
+}
+.tip-box p { font-size: .82rem; color: var(--brand-dark); line-height: 1.6; margin: 0; }
+
+/* ── Nouveau style pour la date de modification ── */
+.last-modified {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+  font-size: .8rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.last-modified strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* ── Modal ── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .2s ease;
+}
+.modal-box {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 32px; max-width: 440px; width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  animation: slideUp .25s ease;
+}
+.modal-box h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem; font-weight: 800;
+  color: var(--danger); margin: 0 0 10px;
+}
+.modal-box p { font-size: .875rem; color: var(--text-muted); line-height: 1.6; margin: 0 0 18px; }
+.confirm-input {
+  padding: 11px 14px;
+  border: 1.5px solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem; width: 100%; margin-bottom: 16px;
+  transition: var(--transition);
+}
+.confirm-input:focus { border-color: var(--danger); outline: none; box-shadow: 0 0 0 3px var(--danger-light); }
+
+/* ── Animations ── */
+@keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+@keyframes slideUp  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideDown{ from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Determine active tab from URL param ── #}
+{% set activeTab = app.request.query.get('tab', 'profil') %}
+{% if activeTab not in ['profil', 'securite', 'confidentialite'] %}
+  {% set activeTab = 'profil' %}
+{% endif %}
+
+<h1 class="page-title">Sécurité & Profil</h1>
+<p class="page-sub">Gérez vos informations personnelles et vos paramètres de sécurité</p>
+
+{# ── TABS ── #}
+<div class="tabs">
+  <button class="tab-btn {% if activeTab=='profil' %}active{% endif %}" onclick="switchTab('profil',this)">👤 Profil</button>
+  <button class="tab-btn {% if activeTab=='securite' %}active{% endif %}" onclick="switchTab('securite',this)">🔒 Sécurité</button>
+  <button class="tab-btn {% if activeTab=='confidentialite' %}active{% endif %}" onclick="switchTab('confidentialite',this)">🛡️ Confidentialité</button>
+</div>
+
+{# ══════════════════════════════════════
+   TAB : PROFIL
+   ══════════════════════════════════════ #}
+<div id="tab-profil" class="tab-panel {% if activeTab=='profil' %}active{% endif %}">
+
+  {% for msg in app.flashes('success_profil') %}
+    <div class="alert alert-success">✅ {{ msg }}</div>
+  {% endfor %}
+  {% for msg in app.flashes('error_profil') %}
+    <div class="alert alert-error">⚠️ {{ msg }}</div>
+  {% endfor %}
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">👤</div>
+      <div>
+        <p class="card-head-title">Informations personnelles</p>
+        <p class="card-head-sub">Mettez à jour vos informations de profil</p>
+      </div>
+    </div>
+
+    {# Avatar #}
+    <div class="avatar-block">
+      <div class="avatar-circle">
+        {{ user.prenom|slice(0,1)|upper }}{{ user.nom|slice(0,1)|upper }}
+      </div>
+      <div>
+        <p class="avatar-name">{{ user.prenom }} {{ user.nom }}</p>
+        <span class="avatar-role">
+          {% if user.isAdmin() %}👑 Administrateur
+          {% elseif user.isProfessionnel() %}💼 Professionnel
+          {% else %}👤 Client{% endif %}
+        </span>
+        <p class="avatar-since">Membre depuis le {{ user.dateCreation|date('d/m/Y') }}</p>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ path('app_security_profil_update') }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Prénom *</label>
+          <input class="form-input" type="text" name="prenom"
+                 value="{{ user.prenom }}" placeholder="Votre prénom">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom *</label>
+          <input class="form-input" type="text" name="nom"
+                 value="{{ user.nom }}" placeholder="Votre nom">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input class="form-input" type="email" name="email"
+                 value="{{ user.email }}" placeholder="votre@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input class="form-input" type="tel" name="telephone"
+                 value="{{ user.telephone }}" placeholder="+216 XX XXX XXX">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">💾 Sauvegarder les modifications</button>
+    </form>
+  </div>
+
+</div>
+
+{# ══════════════════════════════════════
+   TAB : SÉCURITÉ
+   ══════════════════════════════════════ #}
+<div id="tab-securite" class="tab-panel {% if activeTab=='securite' %}active{% endif %}">
+
+  {% for msg in app.flashes('success_password') %}
+    <div class="alert alert-success">✅ {{ msg }}</div>
+  {% endfor %}
+  {% for msg in app.flashes('error_password') %}
+    <div class="alert alert-error">⚠️ {{ msg }}</div>
+  {% endfor %}
+
+  {# Mot de passe #}
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">🔑</div>
+      <div>
+        <p class="card-head-title">Mot de passe</p>
+        <p class="card-head-sub">Changez votre mot de passe régulièrement pour plus de sécurité</p>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ path('app_security_password_update') }}">
+      <div class="form-group" style="margin-bottom:18px;">
+        <label class="form-label">Mot de passe actuel *</label>
+        <div class="pw-wrap">
+          <input class="form-input with-eye" type="password"
+                 name="mot_de_passe_actuel" placeholder="Mot de passe actuel" id="pw_actuel">
+          <button type="button" class="eye-btn" onclick="togglePw('pw_actuel')">👁️</button>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nouveau mot de passe *</label>
+          <div class="pw-wrap">
+            <input class="form-input with-eye" type="password"
+                   name="nouveau_mot_de_passe" placeholder="Min. 8 caractères"
+                   id="pw_nouveau" oninput="checkStrength(this.value)">
+            <button type="button" class="eye-btn" onclick="togglePw('pw_nouveau')">👁️</button>
+          </div>
+          <div class="strength-bars">
+            <div class="sbar" id="sb1"></div>
+            <div class="sbar" id="sb2"></div>
+            <div class="sbar" id="sb3"></div>
+            <div class="sbar" id="sb4"></div>
+          </div>
+          <span class="slabel" id="slabel"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmer le nouveau mot de passe *</label>
+          <div class="pw-wrap">
+            <input class="form-input with-eye" type="password"
+                   name="confirmer_mot_de_passe" placeholder="Répétez le mot de passe"
+                   id="pw_confirm" oninput="checkMatch()">
+            <button type="button" class="eye-btn" onclick="togglePw('pw_confirm')">👁️</button>
+          </div>
+          <span class="slabel" id="matchlabel"></span>
+        </div>
+      </div>
+      <div style="margin-top:18px;">
+        <button type="submit" class="btn btn-primary">🔒 Mettre à jour le mot de passe</button>
+      </div>
+    </form>
+
+    <div class="tip-box">
+      <span style="font-size:20px;flex-shrink:0;">💡</span>
+      <p><strong>Conseils :</strong> Utilisez au moins 8 caractères, mélangez majuscules, minuscules, chiffres et symboles.</p>
+    </div>
+  </div>
+
+  {# Infos compte #}
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">🛡️</div>
+      <div>
+        <p class="card-head-title">Informations du compte</p>
+        <p class="card-head-sub">Détails et statut de votre compte</p>
+      </div>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">🆔 Identifiant</span>
+      <span class="info-row-value">#{{ user.id }}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">✉️ Email</span>
+      <span class="info-row-value">{{ user.email }}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">📱 Téléphone</span>
+      <span class="info-row-value">{{ user.telephone ?: '—' }}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">📅 Membre depuis</span>
+      <span class="info-row-value">{{ user.dateCreation|date('d/m/Y') }}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">✅ Statut</span>
+      <span class="info-row-value" style="color:{% if user.statut=='actif' %}var(--brand){% else %}var(--danger){% endif %}">
+        ● {{ user.statut|capitalize }}
+      </span>
+    </div>
+  </div>
+
+</div>
+
+{# ══════════════════════════════════════
+   TAB : CONFIDENTIALITÉ
+   ══════════════════════════════════════ #}
+<div id="tab-confidentialite" class="tab-panel {% if activeTab=='confidentialite' %}active{% endif %}">
+
+  {% for msg in app.flashes('success_conf') %}
+    <div class="alert alert-success">✅ {{ msg }}</div>
+  {% endfor %}
+  {% for msg in app.flashes('error_conf') %}
+    <div class="alert alert-error">⚠️ {{ msg }}</div>
+  {% endfor %}
+
+  {% set conf = user.confidentialite %}
+
+  {# Paramètres confidentialité #}
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">🔒</div>
+      <div>
+        <p class="card-head-title">Paramètres de confidentialité</p>
+        <p class="card-head-sub">Contrôlez qui peut voir vos informations</p>
+      </div>
+    </div>
+    <form method="POST" action="{{ path('app_security_confidentialite_update') }}">
+      <div class="toggle-row">
+        <label class="toggle-label" for="partage_donnees">
+          <span class="tl-title">Partage de données</span>
+          <span class="tl-desc">Permettre le partage anonyme pour améliorer FeelSafe</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="partage_donnees" name="partage_donnees" value="1"
+                 {% if conf and conf.isPartageDonnees() %}checked{% endif %}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <label class="toggle-label" for="notifications_email">
+          <span class="tl-title">Notifications email</span>
+          <span class="tl-desc">Recevoir des rappels et mises à jour par email</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="notifications_email" name="notifications_email" value="1"
+                 {% if conf and conf.isNotificationsEmail() %}checked{% endif %}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row" style="flex-direction:column;align-items:flex-start;gap:12px;">
+        <div class="toggle-label">
+          <span class="tl-title">Visibilité du profil</span>
+          <span class="tl-desc" style="display:block;margin-top:2px;">Qui peut voir votre profil sur FeelSafe</span>
+        </div>
+        <select class="form-select" name="visibilite_profil">
+          <option value="public" {% if conf and conf.getVisibiliteProfil()=='public' %}selected{% endif %}>🌍 Public</option>
+          <option value="prive"  {% if not conf or conf.getVisibiliteProfil()=='prive' %}selected{% endif %}>🔒 Privé</option>
+          <option value="amis"   {% if conf and conf.getVisibiliteProfil()=='amis' %}selected{% endif %}>👥 Amis uniquement</option>
+        </select>
+      </div>
+
+      {# === NOUVEAU : AFFICHAGE DE LA DATE DE DERNIÈRE MODIFICATION === #}
+      {% if conf and conf.getDateModification() %}
+        <div class="last-modified">
+          <span>🕒</span>
+          <span>Dernière modification : <strong>{{ conf.getDateModification()|date('d/m/Y à H:i:s') }}</strong></span>
+        </div>
+      {% else %}
+        <div class="last-modified">
+          <span>🕒</span>
+          <span>Paramètres de confidentialité : <strong>Jamais modifiés</strong></span>
+        </div>
+      {% endif %}
+
+      <div style="margin-top:22px;">
+        <button type="submit" class="btn btn-primary">💾 Enregistrer les préférences</button>
+      </div>
+    </form>
+  </div>
+
+  {# Zone dangereuse #}
+  <div class="card card-danger">
+    <div class="card-head" style="border-bottom-color:var(--danger-border);">
+      <div class="card-icon danger">⚠️</div>
+      <div>
+        <p class="card-head-title" style="color:var(--danger);">Zone dangereuse</p>
+        <p class="card-head-sub">Actions irréversibles concernant votre compte</p>
+      </div>
+    </div>
+    <div class="danger-row">
+      <div>
+        <p class="dr-title">Supprimer mon compte</p>
+        <p class="dr-desc">Cette action est définitive. Toutes vos données seront supprimées.</p>
+      </div>
+      <button type="button" class="btn btn-danger" onclick="openModal()">🗑️ Supprimer mon compte</button>
+    </div>
+  </div>
+
+</div>
+
+{# ── Modal suppression ── #}
+<div id="deleteModal" class="modal-bg" style="display:none;" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <h3>⚠️ Supprimer mon compte</h3>
+    <p>
+      Cette action est <strong>définitive et irréversible</strong>.<br>
+      Toutes vos données, journaux et historiques seront supprimés.<br><br>
+      Tapez <strong style="color:var(--danger);">SUPPRIMER</strong> pour confirmer.
+    </p>
+    <form method="POST" action="{{ path('app_security_supprimer') }}">
+      <input class="confirm-input" type="text" name="confirmation"
+             placeholder="Tapez SUPPRIMER ici" autocomplete="off">
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn btn-danger">🗑️ Supprimer définitivement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ── Tabs ──
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+  history.replaceState(null, '', '?tab=' + name);
+}
+
+// ── Password toggle ──
+function togglePw(id) {
+  const i = document.getElementById(id);
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
+// ── Strength meter ──
+function checkStrength(val) {
+  const colors = ['#ef4444','#f59e0b','#3b82f6','#22c55e'];
+  const labels = ['Très faible','Moyen','Fort','Très fort'];
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  [1,2,3,4].forEach(i => {
+    const b = document.getElementById('sb'+i);
+    b.style.background = i <= score ? colors[score-1] : 'var(--border)';
+  });
+  const lbl = document.getElementById('slabel');
+  lbl.textContent = val.length ? (labels[score-1]||'') : '';
+  lbl.style.color = val.length ? colors[score-1] : 'var(--text-light)';
+}
+
+// ── Match check ──
+function checkMatch() {
+  const n = document.getElementById('pw_nouveau').value;
+  const c = document.getElementById('pw_confirm').value;
+  const l = document.getElementById('matchlabel');
+  if (!c) { l.textContent = ''; return; }
+  l.textContent = n === c ? '✅ Les mots de passe correspondent' : '❌ Les mots de passe ne correspondent pas';
+  l.style.color = n === c ? 'var(--brand)' : 'var(--danger)';
+}
+
+// ── Modal ──
+function openModal()  { document.getElementById('deleteModal').style.display='flex'; document.body.style.overflow='hidden'; }
+function closeModal() { document.getElementById('deleteModal').style.display='none';  document.body.style.overflow=''; }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+</script>
+{% endblock %}

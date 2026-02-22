@@ -1,0 +1,577 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Liste des Activités{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header animate__animated animate__fadeInDown">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="header-icon-wrapper bg-gradient-primary">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h1 class="h3 mb-0 fw-bold">Activités de Bien-être</h1>
+                            <p class="text-muted mb-0">Gérer le catalogue d'activités</p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ path('admin_wellness_activites_new') }}" class="btn-add-new">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Nouvelle Activité
+                        </a>
+                        <a href="{{ path('admin_wellness') }}" class="btn-back">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Retour
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages Flash -->
+    {% for message in app.flashes('success') %}
+        <div class="alert-modern alert-success animate__animated animate__fadeInDown" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <!-- Filtres et recherche -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filter-card animate__animated animate__fadeInUp">
+                <div class="filter-content">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Rechercher une activité...">
+                    </div>
+                    <div class="filter-stats">
+                        <span class="stat-badge">
+                            <i class="fas fa-list-ul me-1"></i>
+                            <strong>{{ activites|length }}</strong> activités
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grille d'activités -->
+    <div class="row g-4" id="activitiesGrid">
+        {% for activite in activites %}
+            <div class="col-lg-4 col-md-6 activity-item animate__animated animate__fadeInUp" style="animation-delay: {{ loop.index * 0.1 }}s;">
+                <div class="activity-card {{ activite.estActive ? 'active' : 'inactive' }}">
+                    <div class="activity-header">
+                        {% if activite.imageUrl %}
+                            <div class="activity-image" style="background-image: url('{{ activite.imageUrl }}');"></div>
+                        {% else %}
+                            <div class="activity-image-placeholder">
+                                <i class="fas fa-dumbbell"></i>
+                            </div>
+                        {% endif %}
+                        <div class="activity-badges">
+                            {% if activite.estPredefinie %}
+                                <span class="badge-tag badge-primary">
+                                    <i class="fas fa-star me-1"></i>
+                                    Prédéfinie
+                                </span>
+                            {% endif %}
+                            <span class="badge-tag badge-{{ activite.estActive ? 'success' : 'secondary' }}">
+                                <i class="fas fa-{{ activite.estActive ? 'check' : 'times' }}-circle me-1"></i>
+                                {{ activite.estActive ? 'Active' : 'Inactive' }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-body">
+                        <h5 class="activity-title">{{ activite.nomActivite }}</h5>
+                        
+                        <div class="activity-meta">
+                            <span class="meta-item">
+                                <i class="fas fa-tag"></i>
+                                {{ activite.typeActivite }}
+                            </span>
+                            {% if activite.categorie %}
+                                <span class="meta-item">
+                                    <i class="fas fa-folder"></i>
+                                    {{ activite.categorie }}
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        {% if activite.description %}
+                            <p class="activity-description">
+                                {{ activite.description|length > 100 ? activite.description|slice(0, 100) ~ '...' : activite.description }}
+                            </p>
+                        {% endif %}
+
+                        <div class="activity-details">
+                            {% if activite.dureeSuggeree %}
+                                <div class="detail-item">
+                                    <i class="fas fa-clock text-primary"></i>
+                                    <span>{{ activite.dureeSuggeree }} min</span>
+                                </div>
+                            {% endif %}
+                            
+                            {% if activite.niveauDifficulte %}
+                                <div class="detail-item">
+                                    <i class="fas fa-{{ activite.niveauDifficulte.value == 'facile' ? 'smile' : (activite.niveauDifficulte.value == 'modere' ? 'meh' : 'frown') }} text-{{ activite.niveauDifficulte.value == 'facile' ? 'success' : (activite.niveauDifficulte.value == 'modere' ? 'warning' : 'danger') }}"></i>
+                                    <span>{{ activite.niveauDifficulte.value|capitalize }}</span>
+                                </div>
+                            {% endif %}
+                            
+                            {% if activite.objectifEmotionnel %}
+                                <div class="detail-item">
+                                    <i class="fas fa-bullseye text-info"></i>
+                                    <span>{{ activite.objectifEmotionnel }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="activity-footer">
+                        <div class="btn-group-modern">
+                            <a href="{{ path('admin_wellness_activites_show', {'id': activite.id}) }}" class="btn-icon-modern btn-info" title="Voir">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ path('admin_wellness_activites_edit', {'id': activite.id}) }}" class="btn-icon-modern btn-warning" title="Modifier">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" class="btn-icon-modern btn-danger" title="Supprimer" onclick="confirmDelete({{ activite.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <form method="post" id="deleteForm{{ activite.id }}" action="{{ path('admin_wellness_activites_delete', {'id': activite.id}) }}" style="display:none;"></form>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12">
+                <div class="empty-state-modern">
+                    <div class="empty-icon">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                    <h4>Aucune activité trouvée</h4>
+                    <p>Commencez par créer votre première activité de bien-être</p>
+                    <a href="{{ path('admin_wellness_activites_new') }}" class="btn-primary-modern">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Créer une activité
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+/* Page Header */
+.page-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.header-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.btn-add-new {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-add-new:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.btn-back {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-back:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #475569;
+}
+
+/* Alert Modern */
+.alert-modern {
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+/* Filter Card */
+.filter-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.filter-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.search-box {
+    flex: 1;
+    max-width: 400px;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.stat-badge {
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+/* Activity Card */
+.activity-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.activity-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.activity-card.inactive {
+    opacity: 0.7;
+}
+
+.activity-header {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.activity-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.3s ease;
+}
+
+.activity-card:hover .activity-image {
+    transform: scale(1.05);
+}
+
+.activity-image-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    color: white;
+}
+
+.activity-badges {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.badge-tag {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.badge-primary {
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+}
+
+.badge-success {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+}
+
+.badge-secondary {
+    background: rgba(100, 116, 139, 0.9);
+    color: white;
+}
+
+.activity-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.activity-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.activity-meta {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    background: #f1f5f9;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.meta-item i {
+    color: #94a3b8;
+}
+
+.activity-description {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.activity-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.activity-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+    background: #fafbfc;
+}
+
+.btn-group-modern {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.btn-icon-modern {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.btn-info:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    color: white;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.btn-warning:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.btn-danger:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+/* Empty State */
+.empty-state-modern {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    color: #cbd5e1;
+}
+
+.empty-state-modern h4 {
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-modern p {
+    color: #94a3b8;
+    margin-bottom: 1.5rem;
+}
+
+.btn-primary-modern {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+/* Animations */
+.animate__animated {
+    animation-duration: 0.6s;
+}
+
+@media (max-width: 768px) {
+    .filter-content {
+        flex-direction: column;
+    }
+    
+    .search-box {
+        max-width: 100%;
+    }
+}
+</style>
+
+<script>
+// Recherche en temps réel
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    const searchValue = this.value.toLowerCase();
+    const activityItems = document.querySelectorAll('.activity-item');
+    
+    activityItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchValue) ? '' : 'none';
+    });
+});
+
+// Confirmation de suppression
+function confirmDelete(id) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette activité ?')) {
+        document.getElementById('deleteForm' + id).submit();
+    }
+}
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+{% endblock %}

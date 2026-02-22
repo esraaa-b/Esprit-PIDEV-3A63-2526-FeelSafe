@@ -1,0 +1,334 @@
+<div class="modal-overlay" data-modal>
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Modifier le journal</h2>
+            <button type="button" data-close>×</button>
+        </div>
+
+        {{ form_start(form, {
+            action: path('admin_journal_edit', { id: journal.id }),
+            method: 'POST',
+            attr: { enctype: 'multipart/form-data' }
+        }) }}
+
+        <div class="modal-content-scroll">
+            {# ÉMOTION #}
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #2c3e50;">
+                    Émotion
+                </label>
+                
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    {% for child in form.emotion %}
+                        <div style="flex: 0 0 auto;">
+                            {{ form_widget(child, {'attr': {'style': 'display: none;'}}) }}
+                            
+                            <label for="{{ child.vars.id }}" 
+                                   class="emotion-label"
+                                   data-value="{{ child.vars.value }}"
+                                   style="display: flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 30px; cursor: pointer; transition: all 0.2s; border: 1.5px solid; font-size: 14px; font-weight: 500;
+                                   {% if child.vars.checked %}
+                                       {% if child.vars.value == 'tres_bien' %}background: #2b5e2b; color: white; border-color: #2b5e2b;
+                                       {% elseif child.vars.value == 'bien' %}background: #3b7a3b; color: white; border-color: #3b7a3b;
+                                       {% elseif child.vars.value == 'neutre' %}background: #b8a83b; color: white; border-color: #b8a83b;
+                                       {% elseif child.vars.value == 'pas_bien' %}background: #b85a5a; color: white; border-color: #b85a5a;
+                                       {% elseif child.vars.value == 'tres_mal' %}background: #b33a3a; color: white; border-color: #b33a3a;
+                                       {% endif %}
+                                   {% else %}
+                                       background: #f8fff8; color: #3a5a3a; border-color: #d8e8d8;
+                                   {% endif %}">
+                                <span style="font-size: 18px;">
+                                    {% if child.vars.value == 'tres_bien' %}😊
+                                    {% elseif child.vars.value == 'bien' %}🙂
+                                    {% elseif child.vars.value == 'neutre' %}😐
+                                    {% elseif child.vars.value == 'pas_bien' %}😕
+                                    {% elseif child.vars.value == 'tres_mal' %}😢
+                                    {% endif %}
+                                </span>
+                                <span>{{ child.vars.label }}</span>
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# CONTENU #}
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50;">
+                    Contenu
+                </label>
+                {{ form_widget(form.contenu, {
+                    'attr': {
+                        'style': 'width: 100%; padding: 12px; border: 1px solid #d4e6d4; border-radius: 12px; min-height: 120px; background: #fafffa; font-size: 14px;',
+                        'rows': 4,
+                        'placeholder': 'Écrivez votre contenu ici...'
+                    }
+                }) }}
+            </div>
+
+            {# IMAGE #}
+            <div style="margin-bottom: 25px; border-bottom: 1px solid #e0f0e0; padding-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #2c3e50;">
+                    Image
+                </label>
+                
+                {% if journal.image %}
+                    <div style="margin-bottom: 15px; padding: 12px; background: #f8fff8; border: 1px solid #d8e8d8; border-radius: 12px;">
+                        <p style="margin: 0 0 10px 0; font-weight: 500; color: #3a5a3a; font-size: 13px;">🖼️ Image actuelle :</p>
+                        <img src="{{ asset('uploads/journals/images/' ~ journal.image) }}" 
+                             style="max-width: 150px; max-height: 150px; border: 1px solid #c8dcc8; border-radius: 8px;">
+                    </div>
+                {% endif %}
+                
+                <div style="margin-bottom: 10px;">
+                    <label for="{{ form.imageFile.vars.id }}" 
+                           style="display: inline-block; padding: 8px 20px; background: #d4ecd4; color: #2a5a2a; border-radius: 30px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1px solid #b8d8b8; transition: all 0.2s;">
+                        🌿 Choisir une image
+                    </label>
+                    <span id="image-file-name" style="margin-left: 12px; color: #5a7a5a; font-size: 14px;">
+                        Aucun fichier choisi
+                    </span>
+                </div>
+                
+                {{ form_widget(form.imageFile, {
+                    'attr': {
+                        'style': 'display: none;',
+                        'onchange': 'document.getElementById("image-file-name").textContent = this.files[0] ? this.files[0].name : "Aucun fichier choisi";'
+                    }
+                }) }}
+                
+                {% if form.removeImage is defined %}
+                    <div style="margin-top: 12px;">
+                        <label style="display: flex; align-items: center; gap: 6px; color: #b35a5a; cursor: pointer; font-size: 14px;">
+                            {{ form_widget(form.removeImage, {'attr': {'style': 'width: 16px; height: 16px;'}}) }}
+                            <span>🗑️ Supprimer l'image actuelle</span>
+                        </label>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# AUDIO #}
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #2c3e50;">
+                    Audio
+                </label>
+                
+                {% if journal.audio %}
+                    <div style="margin-bottom: 15px; padding: 12px; background: #f8fff8; border: 1px solid #d8e8d8; border-radius: 12px;">
+                        <p style="margin: 0 0 10px 0; font-weight: 500; color: #3a5a3a; font-size: 13px;">🎵 Audio actuel :</p>
+                        <audio controls style="width: 100%; border-radius: 30px;">
+                            <source src="{{ asset('uploads/journals/audio/' ~ journal.audio) }}">
+                        </audio>
+                    </div>
+                {% endif %}
+                
+                <div style="margin-bottom: 10px;">
+                    <label for="{{ form.audioFile.vars.id }}" 
+                           style="display: inline-block; padding: 8px 20px; background: #d4ecd4; color: #2a5a2a; border-radius: 30px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1px solid #b8d8b8; transition: all 0.2s;">
+                        🎵 Choisir un audio
+                    </label>
+                    <span id="audio-file-name" style="margin-left: 12px; color: #5a7a5a; font-size: 14px;">
+                        Aucun fichier choisi
+                    </span>
+                </div>
+                
+                {{ form_widget(form.audioFile, {
+                    'attr': {
+                        'style': 'display: none;',
+                        'onchange': 'document.getElementById("audio-file-name").textContent = this.files[0] ? this.files[0].name : "Aucun fichier choisi";'
+                    }
+                }) }}
+                
+                {% if form.removeAudio is defined %}
+                    <div style="margin-top: 12px;">
+                        <label style="display: flex; align-items: center; gap: 6px; color: #b35a5a; cursor: pointer; font-size: 14px;">
+                            {{ form_widget(form.removeAudio, {'attr': {'style': 'width: 16px; height: 16px;'}}) }}
+                            <span>🗑️ Supprimer l'audio actuel</span>
+                        </label>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# BOUTONS - TOUJOURS VISIBLES #}
+        <div class="modal-footer">
+            <button type="button" data-close class="modal-btn modal-btn-cancel">
+                Annuler
+            </button>
+            <button type="submit" class="modal-btn modal-btn-save">
+                ✨ Enregistrer
+            </button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>
+
+<style>
+/* OVERLAY */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* MODAL CARD - UNE SEULE SCROLLBAR */
+.modal-card {
+    background: #ffffff;
+    width: 640px;
+    max-width: 95%;
+    border-radius: 20px;
+    padding: 28px 32px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+    animation: modalFade 0.25s ease-out;
+    
+    /* ✅ UNE SEULE HAUTEUR MAX */
+    max-height: 85vh;
+    
+    /* ✅ FLEX COLUMN POUR ÉVITER LE DOUBLE SCROLL */
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.modal-header button {
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #64748b;
+    line-height: 1;
+    padding: 0 8px;
+}
+
+.modal-header button:hover {
+    color: #ef4444;
+}
+
+/* ✅ FORMULAIRE - PREND TOUTE LA HAUTEUR */
+.modal-card form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* ✅ ZONE DE SCROLL UNIQUE */
+.modal-content-scroll {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding-right: 8px;
+    margin-bottom: 8px;
+}
+
+/* ✅ BOUTONS FIXES EN BAS */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+    margin-top: 8px;
+    border-top: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+/* BOUTONS STYLES */
+.modal-btn {
+    padding: 8px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+}
+
+.modal-btn-cancel {
+    background: white;
+    color: #5a7a5a;
+    border: 1.5px solid #c8e0c8;
+}
+
+.modal-btn-cancel:hover {
+    background: #f8fff8;
+    transform: translateY(-1px);
+}
+
+.modal-btn-save {
+    background: #c8e0c8;
+    color: #2a4a2a;
+    box-shadow: 0 2px 6px rgba(170, 210, 170, 0.3);
+}
+
+.modal-btn-save:hover {
+    background: #b8d8b8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(170, 210, 170, 0.4);
+}
+
+/* ÉMOTIONS */
+.emotion-label {
+    user-select: none;
+    transition: all 0.2s;
+}
+
+.emotion-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* ANIMATION */
+@keyframes modalFade {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* SCROLLBAR PERSONNALISÉE */
+.modal-content-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.modal-content-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.modal-content-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+</style>
+
