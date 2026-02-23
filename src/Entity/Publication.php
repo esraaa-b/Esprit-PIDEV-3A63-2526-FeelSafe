@@ -123,16 +123,17 @@ class Publication
     )]
     private ?string $titre = null;
 
-    #[ORM\Column(type: Types::TEXT)]
-    #[Asse\NotBlank(message: "Le contenu est obligatoire")]
-    #[Asse\Length(
-        min: 10,
-        minMessage: "Le contenu doit contenir au moins {{ limit }} caractères"
-    )]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $contenu = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $audioUrl = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $transcription = null;
 
     #[ORM\Column(nullable: true)]
     #[Asse\Type(
@@ -153,6 +154,20 @@ class Publication
     #[ORM\OneToMany(targetEntity: Commentaire::class, mappedBy: 'publication', cascade: ['remove'], orphanRemoval: true)]
     private Collection $pubCom;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $reportReason = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $reportDescription = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $reportedAt = null;
+
+    #[ORM\Column]
+    private ?bool $isReported = false;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $reportStatus = 'pending';
 
     public function __construct()
     {
@@ -196,6 +211,30 @@ class Publication
     public function setImage(?string $image): static
     {
         $this->image = $image;
+
+        return $this;
+    }
+
+    public function getAudioUrl(): ?string
+    {
+        return $this->audioUrl;
+    }
+
+    public function setAudioUrl(?string $audioUrl): static
+    {
+        $this->audioUrl = $audioUrl;
+
+        return $this;
+    }
+
+    public function getTranscription(): ?string
+    {
+        return $this->transcription;
+    }
+
+    public function setTranscription(?string $transcription): static
+    {
+        $this->transcription = $transcription;
 
         return $this;
     }
@@ -272,6 +311,61 @@ public function setDislikesCount(int $dislikesCount): self
             }
         }
 
+        return $this;
+    }
+
+    public function getReportReason(): ?string
+    {
+        return $this->reportReason;
+    }
+
+    public function setReportReason(?string $reportReason): static
+    {
+        $this->reportReason = $reportReason;
+        return $this;
+    }
+
+    public function getReportDescription(): ?string
+    {
+        return $this->reportDescription;
+    }
+
+    public function setReportDescription(?string $reportDescription): static
+    {
+        $this->reportDescription = $reportDescription;
+        return $this;
+    }
+
+    public function getReportedAt(): ?\DateTimeInterface
+    {
+        return $this->reportedAt;
+    }
+
+    public function setReportedAt(?\DateTimeInterface $reportedAt): static
+    {
+        $this->reportedAt = $reportedAt;
+        return $this;
+    }
+
+    public function isReported(): ?bool
+    {
+        return $this->isReported;
+    }
+
+    public function setIsReported(bool $isReported): static
+    {
+        $this->isReported = $isReported;
+        return $this;
+    }
+
+    public function getReportStatus(): ?string
+    {
+        return $this->reportStatus;
+    }
+
+    public function setReportStatus(?string $reportStatus): static
+    {
+        $this->reportStatus = $reportStatus;
         return $this;
     }
 }

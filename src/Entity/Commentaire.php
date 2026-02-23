@@ -223,4 +223,74 @@ class Commentaire
 
         return $this;
     }
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $reportReason = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $reportDescription = null;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $reportedAt = null;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $isReported = false;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $reportStatus = 'pending';
+
+    public function getReportReason(): ?string
+    {
+        return $this->reportReason;
+    }
+
+    public function setReportReason(?string $reportReason): static
+    {
+        $this->reportReason = $reportReason;
+        return $this;
+    }
+
+    public function getReportDescription(): ?string
+    {
+        return $this->reportDescription;
+    }
+
+    public function setReportDescription(?string $reportDescription): static
+    {
+        $this->reportDescription = $reportDescription;
+        return $this;
+    }
+
+    public function getReportedAt(): ?\DateTimeInterface
+    {
+        return $this->reportedAt;
+    }
+
+    public function setReportedAt(?\DateTimeInterface $reportedAt): static
+    {
+        $this->reportedAt = $reportedAt;
+        return $this;
+    }
+
+    public function isReported(): bool
+    {
+        return $this->isReported;
+    }
+
+    public function setIsReported(bool $isReported): static
+    {
+        $this->isReported = $isReported;
+        return $this;
+    }
+
+    public function getReportStatus(): ?string
+    {
+        return $this->reportStatus;
+    }
+
+    public function setReportStatus(?string $reportStatus): static
+    {
+        $this->reportStatus = $reportStatus;
+        return $this;
+    }
 }

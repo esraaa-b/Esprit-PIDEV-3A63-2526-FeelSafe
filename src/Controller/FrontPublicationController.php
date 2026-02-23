@@ -18,6 +18,7 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Entity\Utilisateur;
 use App\Entity\Commentaire;
 use App\Form\PublicationType;
+use App\Repository\TranslationCacheRepository;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class FrontPublicationController extends AbstractController
@@ -114,6 +115,13 @@ final class FrontPublicationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $contenu = $publication->getContenu();
+            $hasText = $contenu !== null && strlen(trim($contenu)) >= 10;
+            if (!$hasText) {
+                $form->get('contenu')->addError(new \Symfony\Component\Form\FormError('Le contenu doit contenir au moins 10 caractères.'));
+                return $this->render('front_publication/new.html.twig', ['form' => $form->createView()]);
+            }
+            
             $publication->setDatePublication(new \DateTime());
 
             // IMAGE Handling
@@ -182,53 +190,60 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
 }
     #[Route('/front/publication/{id}/edit', name: 'app_front_publication_edit', methods: ['GET', 'POST'])]
     public function edit(?Publication $publication, Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
-{
-    if (!$publication) {
-        $this->addFlash('error', 'Cette publication n\'existe pas.');
-        return $this->redirectToRoute('app_front_publication');
-    }
-
-    $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
-
-    if ($publication->getUser() !== $fakeUser) {
-        throw $this->createAccessDeniedException("Vous ne pouvez pas modifier cette publication !");
-    }
-
-    $form = $this->createForm(PublicationType::class, $publication);
-    $form->handleRequest($request);
-
-    if ($form->isSubmitted() && $form->isValid()) {
-        $imageFile = $form->get('image')->getData();
-        if ($imageFile) {
-            $newFilename = $slugger->slug(pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME)) 
-                           . '-' . uniqid() . '.' . $imageFile->guessExtension();
-            try {
-                $imageFile->move($this->getParameter('uploads_directory'), $newFilename);
-                $publication->setImage($newFilename);
-            } catch (FileException $e) {
-                $this->addFlash('error', 'Erreur upload image');
-            }
+    {
+        if (!$publication) {
+            $this->addFlash('error', 'Cette publication n\'existe pas.');
+            return $this->redirectToRoute('app_front_publication');
         }
 
-        // Gestion de l'épinglage
-        if ($form->get('isPinned')->getData()) {
-            if ($publication->getPinnedAt() === null) {
-                $publication->setPinnedAt(new \DateTime());
-            }
-        } else {
-            $publication->setPinnedAt(null);
+        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
+
+        if ($publication->getUser() !== $fakeUser) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas modifier cette publication !");
         }
 
-        $em->flush();
-        $this->addFlash('success', 'Publication modifiée !');
-        return $this->redirectToRoute('app_front_publication');
-    }
+        $form = $this->createForm(PublicationType::class, $publication);
+        $form->handleRequest($request);
 
-    return $this->render('front_publication/edit.html.twig', [
-        'publication' => $publication,
-        'form' => $form->createView(),
-    ]);
-}
+        if ($form->isSubmitted() && $form->isValid()) {
+            $contenu = $publication->getContenu();
+            $hasText = $contenu !== null && strlen(trim($contenu)) >= 10;
+            if (!$hasText) {
+                $this->addFlash('error', 'Le contenu doit contenir au moins 10 caractères.');
+                return $this->render('front_publication/edit.html.twig', ['publication' => $publication, 'form' => $form->createView()]);
+            }
+
+            $imageFile = $form->get('image')->getData();
+            if ($imageFile) {
+                $newFilename = $slugger->slug(pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME)) 
+                               . '-' . uniqid() . '.' . $imageFile->guessExtension();
+                try {
+                    $imageFile->move($this->getParameter('uploads_directory'), $newFilename);
+                    $publication->setImage($newFilename);
+                } catch (FileException $e) {
+                    $this->addFlash('error', 'Erreur upload image');
+                }
+            }
+
+            // Gestion de l'épinglage
+            if ($form->get('isPinned')->getData()) {
+                if ($publication->getPinnedAt() === null) {
+                    $publication->setPinnedAt(new \DateTime());
+                }
+            } else {
+                $publication->setPinnedAt(null);
+            }
+
+            $em->flush();
+            $this->addFlash('success', 'Publication modifiée !');
+            return $this->redirectToRoute('app_front_publication');
+        }
+
+        return $this->render('front_publication/edit.html.twig', [
+            'publication' => $publication,
+            'form' => $form->createView(),
+        ]);
+    }
 #[Route('/front/publication/{id}/like', name: 'app_front_publication_like', methods: ['POST'])]
     public function like(Publication $publication, Request $request, EntityManagerInterface $em): Response
 {
@@ -336,7 +351,7 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
     #[Route('/front/publication/{id}/summarize', name: 'app_front_publication_summarize', methods: ['POST'])]
     public function summarize(Publication $publication, HttpClientInterface $client): Response
     {
-        $apiKey = $_ENV['OPENROUTER_API_KEY'] ?? $_SERVER['OPENROUTER_API_KEY'] ?? '';
+        $apiKey = $_ENV['OPENROUTER_API_KEY_OVERRIDE'] ?? $_SERVER['OPENROUTER_API_KEY_OVERRIDE'] ?? ($_ENV['OPENROUTER_API_KEY'] ?? $_SERVER['OPENROUTER_API_KEY'] ?? '');
 
         if (!$apiKey) {
             return $this->json(['error' => 'API Key not configured'], 500);
@@ -386,7 +401,7 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
             return $this->json(['error' => 'Le texte est vide.'], 400);
         }
 
-        $apiKey = $_ENV['OPENROUTER_API_KEY'] ?? $_SERVER['OPENROUTER_API_KEY'] ?? '';
+        $apiKey = $_ENV['OPENROUTER_API_KEY_OVERRIDE'] ?? $_SERVER['OPENROUTER_API_KEY_OVERRIDE'] ?? ($_ENV['OPENROUTER_API_KEY'] ?? $_SERVER['OPENROUTER_API_KEY'] ?? '');
         if (!$apiKey) {
             return $this->json(['error' => 'Clé API non configurée.'], 500);
         }
@@ -427,5 +442,184 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
         } catch (\Exception $e) {
             return $this->json(['error' => 'Erreur IA: ' . $e->getMessage()], 500);
         }
+    }
+
+
+    #[Route('/front/publication/analyze-image', name: 'app_front_publication_analyze_image', methods: ['POST'])]
+    public function analyzeImage(Request $request, HttpClientInterface $client): Response
+    {
+        $imageFile = $request->files->get('image');
+        if (!$imageFile instanceof UploadedFile) {
+            return $this->json(['error' => 'Aucune image fournie. Sélectionnez une image puis cliquez sur le bouton.'], 400);
+        }
+
+        $apiKey = $_ENV['OPENROUTER_API_KEY_OVERRIDE'] ?? $_SERVER['OPENROUTER_API_KEY_OVERRIDE'] ?? ($_ENV['OPENROUTER_API_KEY'] ?? $_SERVER['OPENROUTER_API_KEY'] ?? '');
+        if (!$apiKey) {
+            return $this->json(['error' => 'Clé API non configurée. Ajoutez OPENROUTER_API_KEY dans .env'], 500);
+        }
+
+        try {
+            $content = base64_encode(file_get_contents($imageFile->getPathname()));
+            $mime = $imageFile->getMimeType() ?: 'image/jpeg';
+            $url = 'data:' . $mime . ';base64,' . $content;
+
+            $response = $client->request('POST', 'https://openrouter.ai/api/v1/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                    'HTTP-Referer' => $request->getSchemeAndHttpHost(),
+                    'X-Title' => 'FeelSafe Forum',
+                ],
+                'json' => [
+                    'model' => 'google/gemini-2.0-flash-001',
+                    'messages' => [
+                        [
+                            'role' => 'user',
+                            'content' => [
+                                [
+                                    'type' => 'text',
+                                    'text' => "Décris cette image en une phrase simple : ce qu'on voit (objets, scène, paysage) et l'émotion ou l'ambiance qu'elle dégage. Réponds UNIQUEMENT avec cette phrase en français, sans préambule.",
+                                ],
+                                [
+                                    'type' => 'image_url',
+                                    'image_url' => ['url' => $url],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+            $data = $response->toArray();
+            $description = $data['choices'][0]['message']['content'] ?? null;
+            if ($description === null || trim($description) === '') {
+                return $this->json(['error' => 'Impossible d\'analyser l\'image.'], 500);
+            }
+            return $this->json(['description' => trim(strip_tags($description))]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur analyse: ' . $e->getMessage()], 500);
+        }
+    }
+
+
+    #[Route('/front/publication/translate', name: 'app_front_publication_translate', methods: ['POST'])]
+    public function translate(Request $request, HttpClientInterface $client, TranslationCacheRepository $cacheRepo, EntityManagerInterface $em): Response
+    {
+        $data = json_decode($request->getContent(), true) ?: [];
+        $text = trim((string) ($data['text'] ?? ''));
+        $targetLang = trim((string) ($data['target_lang'] ?? 'fr'));
+
+        if ($text === '') {
+            return $this->json(['error' => 'Texte vide.'], 400);
+        }
+
+        $sourceHash = hash('sha256', $text);
+        try {
+            $cached = $cacheRepo->findCached($sourceHash, $targetLang);
+            if ($cached) {
+                return $this->json(['translated' => $cached->getTranslatedText()]);
+            }
+        } catch (\Throwable $e) {
+            // Table translation_cache peut ne pas exister
+        }
+
+        $apiKey = $_ENV['OPENROUTER_API_KEY_OVERRIDE'] ?? $_SERVER['OPENROUTER_API_KEY_OVERRIDE'] ?? ($_ENV['OPENROUTER_API_KEY'] ?? $_SERVER['OPENROUTER_API_KEY'] ?? '');
+        if (!$apiKey) {
+            return $this->json(['error' => 'Clé API non configurée. Ajoutez OPENROUTER_API_KEY dans .env'], 500);
+        }
+
+        $langNames = ['fr' => 'français', 'en' => 'anglais', 'es' => 'espagnol', 'de' => 'allemand', 'ar' => 'arabe'];
+        $targetName = $langNames[$targetLang] ?? $targetLang;
+
+        try {
+            $response = $client->request('POST', 'https://openrouter.ai/api/v1/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                    'HTTP-Referer' => $request->getSchemeAndHttpHost(),
+                    'X-Title' => 'FeelSafe Forum',
+                ],
+                'json' => [
+                    'model' => 'google/gemini-2.0-flash-001',
+                    'messages' => [
+                        [
+                            'role' => 'user',
+                            'content' => "Traduis le texte suivant en " . $targetName . ". Réponds UNIQUEMENT avec la traduction, sans guillemets ni commentaire.\n\n" . $text,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $result = $response->toArray();
+            $content = $result['choices'][0]['message']['content'] ?? null;
+            if ($content === null || $content === '') {
+                return $this->json(['error' => 'Traduction impossible.'], 500);
+            }
+            $translated = trim(strip_tags(preg_replace('/^["\']|["\']$/u', '', $content)));
+
+            try {
+                $cache = new \App\Entity\TranslationCache();
+                $cache->setSourceTextHash($sourceHash);
+                $cache->setTargetLang($targetLang);
+                $cache->setTranslatedText($translated);
+                $em->persist($cache);
+                $em->flush();
+            } catch (\Throwable $e) {
+                // Ignorer si table absente
+            }
+
+            return $this->json(['translated' => $translated]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur traduction: ' . $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/front/report', name: 'app_front_report', methods: ['POST'])]
+    public function report(Request $request, EntityManagerInterface $em): Response
+    {
+        $data = json_decode($request->getContent(), true) ?: [];
+        if (!$this->isCsrfTokenValid('report', $data['_token'] ?? '')) {
+            return $this->json(['error' => 'Token invalide.'], 403);
+        }
+        $type = $data['type'] ?? '';
+        $id = (int) ($data['id'] ?? 0);
+        $reason = $data['reason'] ?? '';
+        $description = isset($data['description']) ? trim((string) $data['description']) : null;
+
+        $validReasons = ['spam', 'contenu_offensant', 'harcelement', 'autre'];
+        if (!in_array($reason, $validReasons, true)) {
+            return $this->json(['error' => 'Raison invalide.'], 400);
+        }
+
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['error' => 'Vous devez être connecté pour signaler.'], 403);
+        }
+
+        if ($type === 'publication') {
+            $publication = $em->getRepository(Publication::class)->find($id);
+            if (!$publication) {
+                return $this->json(['error' => 'Publication introuvable.'], 404);
+            }
+            $publication->setIsReported(true);
+            $publication->setReportReason($reason);
+            $publication->setReportDescription($description);
+            $publication->setReportedAt(new \DateTime());
+        } elseif ($type === 'comment') {
+            $commentaire = $em->getRepository(Commentaire::class)->find($id);
+            if (!$commentaire) {
+                return $this->json(['error' => 'Commentaire introuvable.'], 404);
+            }
+            $commentaire->setIsReported(true);
+            $commentaire->setReportReason($reason);
+            $commentaire->setReportDescription($description);
+            $commentaire->setReportedAt(new \DateTime());
+        } else {
+            return $this->json(['error' => 'Type invalide (publication ou comment).'], 400);
+        }
+
+        $em->flush();
+
+        return $this->json(['success' => true, 'message' => 'Signalement enregistré.']);
     }
 }
