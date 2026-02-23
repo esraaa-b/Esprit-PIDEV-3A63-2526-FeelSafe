@@ -45,3 +45,20 @@ services:
     App\Service\RegistrationAIService:
         arguments:
             $openrouterApiKey: '%env(OPENROUTER_API_KEY)%'
+
+
+ # Weather Service
+    App\Service\WeatherService:
+        arguments:
+            $apiKey: '%env(OPENWEATHER_API_KEY)%'
+            $defaultCity: '%env(OPENWEATHER_DEFAULT_CITY)%'
+
+    # Activity Recommendation Service
+    App\Service\ActivityRecommendationService:
+        autowire: true
+        autoconfigure: true
+
+    App\Service\AIWellnessQuizService:
+        arguments:
+            $geminiApiKey: '%env(GEMINI_API_KEY)%'
+

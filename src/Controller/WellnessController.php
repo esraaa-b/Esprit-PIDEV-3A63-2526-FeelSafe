@@ -6,6 +6,10 @@ use App\Entity\ActiviteBienEtre;
 use App\Entity\SessionActivite;
 use App\Repository\ActiviteBienEtreRepository;
 use App\Repository\SessionActiviteRepository;
+use App\Service\WeatherService;
+use App\Service\ActivityRecommendationService;
+use App\Service\AIWellnessQuizService;
+use App\Service\WellnessInsightsService;  // ← AJOUTE CETTE LIGNE
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,7 +22,10 @@ class WellnessController extends AbstractController
     #[Route('', name: 'app_wellness')]
     public function index(
         ActiviteBienEtreRepository $activiteRepo,
-        SessionActiviteRepository $sessionRepo
+        SessionActiviteRepository $sessionRepo,
+        WeatherService $weatherService,
+        ActivityRecommendationService $recommendationService,
+        WellnessInsightsService $insightsService  // NOUVEAU
     ): Response {
         $user = $this->getUser();
         
@@ -36,6 +43,7 @@ class WellnessController extends AbstractController
         // Calculer les stats de la semaine
         $weeklyProgress = [];
         $daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        $insights = $insightsService->getInsights($user);
         
         for ($i = 0; $i < 7; $i++) {
             $date = new \DateTime("-$i days");
@@ -84,12 +92,34 @@ class WellnessController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        // NOUVEAU : Météo actuelle
+        $weather = $weatherService->getCurrentWeather();
+        $weatherEmoji = $weatherService->getWeatherEmoji();
+        $weatherRecommendation = $weatherService->getWeatherRecommendation();
+        $isGoodForOutdoor = $weatherService->isGoodForOutdoorActivity();
+
+        // NOUVEAU : Recommandations intelligentes
+        $smartRecommendations = $recommendationService->getSmartRecommendations($user, 4);
+        $activityOfTheMoment = $recommendationService->getActivityOfTheMoment($user);
+
         return $this->render('dashboard/wellness/index.html.twig', [
             'weeklyProgress' => $weeklyProgress,
             'totalMinutes' => $totalMinutes,
             'completedDays' => $completedDays,
             'recommendedActivities' => $recommendedActivities,
             'recentSessions' => $recentSessions,
+            
+            // Nouvelles variables météo
+            'weather' => $weather,
+            'weatherEmoji' => $weatherEmoji,
+            'weatherRecommendation' => $weatherRecommendation,
+            'isGoodForOutdoor' => $isGoodForOutdoor,
+            
+            // Nouvelles variables recommandations IA
+            'smartRecommendations' => $smartRecommendations,
+            'activityOfTheMoment' => $activityOfTheMoment,
+
+            'insights' => $insights,
         ]);
     }
 
@@ -338,6 +368,87 @@ class WellnessController extends AbstractController
             'totalMinutes' => $totalMinutes,
             'moodEvolution' => $moodEvolution,
             'streak' => $streak,
+        ]);
+    }
+
+    /**
+     * NOUVELLE ROUTE : Page de recommandations intelligentes
+     */
+    #[Route('/recommendations', name: 'app_wellness_recommendations')]
+    public function recommendations(
+        ActivityRecommendationService $recommendationService,
+        WeatherService $weatherService
+    ): Response {
+        $user = $this->getUser();
+        
+        $smartRecommendations = $recommendationService->getSmartRecommendations($user, 12);
+        $activityOfTheMoment = $recommendationService->getActivityOfTheMoment($user);
+        $weather = $weatherService->getCurrentWeather();
+        $weatherCategory = $weatherService->getWeatherCategory();
+
+        return $this->render('dashboard/wellness/recommendations.html.twig', [
+            'smartRecommendations' => $smartRecommendations,
+            'activityOfTheMoment' => $activityOfTheMoment,
+            'weather' => $weather,
+            'weatherCategory' => $weatherCategory,
+        ]);
+    }
+
+    /**
+ * NOUVELLE ROUTE : Page de démarrage du quiz
+ */
+#[Route('/quiz', name: 'app_wellness_quiz_start')]
+public function quizStart(): Response
+{
+    return $this->render('dashboard/wellness/quiz/start.html.twig');
+}
+
+/**
+ * NOUVELLE ROUTE : Questions du quiz
+ */
+#[Route('/quiz/questions', name: 'app_wellness_quiz_questions')]
+public function quizQuestions(AIWellnessQuizService $quizService): Response
+{
+    $questions = $quizService->getQuizQuestions();
+    
+    return $this->render('dashboard/wellness/quiz/questions.html.twig', [
+        'questions' => $questions,
+    ]);
+}
+
+/**
+ * NOUVELLE ROUTE : Analyse des réponses et résultats
+ */
+#[Route('/quiz/results', name: 'app_wellness_quiz_results', methods: ['POST'])]
+public function quizResults(
+    Request $request,
+    AIWellnessQuizService $quizService
+): Response {
+    $answers = $request->request->all();
+    
+    // Analyser avec l'IA
+    $results = $quizService->analyzeAndRecommend($answers);
+    
+    return $this->render('dashboard/wellness/quiz/results.html.twig', [
+        'results' => $results,
+        'answers' => $answers,
+    ]);
+}
+
+    /**
+     * NOUVELLE ROUTE : Actualiser la météo (AJAX)
+     */
+    #[Route('/weather/refresh', name: 'app_wellness_weather_refresh', methods: ['GET'])]
+    public function refreshWeather(
+        WeatherService $weatherService
+    ): Response {
+        $weather = $weatherService->getCurrentWeather();
+        
+        return $this->json([
+            'success' => true,
+            'weather' => $weather,
+            'emoji' => $weatherService->getWeatherEmoji(),
+            'recommendation' => $weatherService->getWeatherRecommendation(),
         ]);
     }
 

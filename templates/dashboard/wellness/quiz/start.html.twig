@@ -1,0 +1,82 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="space-y-8">
+        <!-- Hero Section -->
+        <div class="text-center py-12">
+            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary to-chart-2 flex items-center justify-center">
+                <svg class="w-12 h-12 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"></path>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-serif font-bold text-foreground mb-4">
+                Quiz Bien-être Personnalisé
+            </h1>
+            <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Répondez à quelques questions et laissez notre IA vous recommander les activités parfaites pour votre état actuel
+            </p>
+        </div>
+
+        <!-- Features -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-card rounded-lg border border-border p-6 text-center">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-foreground mb-2">2 minutes</h3>
+                <p class="text-sm text-muted-foreground">Seulement 5 questions rapides</p>
+            </div>
+
+            <div class="bg-card rounded-lg border border-border p-6 text-center">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-chart-2/10 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-chart-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-foreground mb-2">IA Intelligente</h3>
+                <p class="text-sm text-muted-foreground">Analyse personnalisée par Google Gemini</p>
+            </div>
+
+            <div class="bg-card rounded-lg border border-border p-6 text-center">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-chart-4/10 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-chart-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-foreground mb-2">100% Personnalisé</h3>
+                <p class="text-sm text-muted-foreground">Activités adaptées à VOS besoins</p>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="bg-gradient-to-br from-primary/10 to-chart-2/10 rounded-2xl border border-border p-8 text-center">
+            <h2 class="text-2xl font-semibold text-foreground mb-4">Prêt à découvrir vos activités idéales ?</h2>
+            <p class="text-muted-foreground mb-6">
+                Notre IA analysera vos réponses pour vous proposer les meilleures activités
+            </p>
+            <a href="{{ path('app_wellness_quiz_questions') }}" class="inline-flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Commencer le quiz
+            </a>
+        </div>
+
+        <!-- Back -->
+        <div class="text-center">
+            <a href="{{ path('app_wellness') }}" class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Retour au bien-être
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
