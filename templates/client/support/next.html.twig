@@ -1,0 +1,70 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block title %}Prochain RDV{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">Propositions de prochains rendez-vous</h1>
+        <a href="{{ path('app_support') }}" class="btn btn-outline">Prendre un RDV</a>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4">Suggestions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for s in suggestions %}
+                <div class="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <div class="text-sm text-gray-500">Date</div>
+                        <div class="text-base font-medium text-gray-900">{{ s.date|date('d/m/Y') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Heure</div>
+                        <div class="text-base font-medium text-gray-900">{{ s.time }}</div>
+                    </div>
+                    <a href="{{ path('app_support') }}" class="btn btn-sm">Choisir</a>
+                </div>
+            {% else %}
+                <div class="text-sm text-gray-500">Aucune suggestion disponible pour le moment.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4">Mes rendez-vous</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Heure</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for r in rdvs %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ r.dateRdv|date('d/m/Y') }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ r.heureRdv|date('H:i') }}</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="text-xs px-2 py-1 rounded-full 
+                                    {% if r.statut.value == 'planifie' %}bg-blue-100 text-blue-700{% elseif r.statut.value == 'honore' %}bg-green-100 text-green-700{% elseif r.statut.value == 'annule' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ r.statut.value }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <a href="{{ path('support_rdv_ics', { id: r.id }) }}" class="btn btn-sm btn-outline">Télécharger .ics</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">Aucun rendez-vous</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

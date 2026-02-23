@@ -34,6 +34,10 @@ class Urgence
     #[ORM\Column(nullable: true)]
     private ?\DateTime $createdAt = null;
 
+    #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
+    private ?Utilisateur $user = null;
+
     /**
      * @var Collection<int, Intervention>
      */
@@ -119,6 +123,17 @@ class Urgence
     {
         $this->createdAt = $createdAt;
 
+        return $this;
+    }
+
+    public function getUser(): ?Utilisateur
+    {
+        return $this->user;
+    }
+
+    public function setUser(?Utilisateur $user): static
+    {
+        $this->user = $user;
         return $this;
     }
 

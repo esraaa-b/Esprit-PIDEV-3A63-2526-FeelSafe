@@ -1,0 +1,50 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block title %}Calendrier RDV{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">Calendrier des rendez-vous</h1>
+        <a href="{{ path('app_support') }}" class="btn btn-outline">Vue liste</a>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        {% set grouped = {} %}
+        {% for r in rdvs %}
+            {% set day = r.dateRdv|date('Y-m-d') %}
+            {% set grouped = grouped|merge({ (day): (grouped[day]|default([]))|merge([r]) }) %}
+        {% endfor %}
+
+        {% for day, items in grouped %}
+            <div class="mb-6">
+                <div class="text-lg font-semibold text-gray-900 mb-3">{{ day|date('d/m/Y') }}</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for r in items %}
+                        <div class="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <div class="text-sm text-gray-500">Heure</div>
+                                <div class="text-base font-medium text-gray-900">{{ r.heureRdv|date('H:i') }}</div>
+                            </div>
+                            <div class="flex-1 px-4">
+                                <div class="text-sm text-gray-500">Patient</div>
+                                <div class="text-base font-medium text-gray-900">
+                                    {{ r.utilisateur ? r.utilisateur.getFullName() : '—' }}
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-xs px-2 py-1 rounded-full 
+                                    {% if r.statut.value == 'planifie' %}bg-blue-100 text-blue-700{% elseif r.statut.value == 'honore' %}bg-green-100 text-green-700{% elseif r.statut.value == 'annule' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ r.statut.value }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="text-sm text-gray-500">Aucun rendez-vous planifié.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

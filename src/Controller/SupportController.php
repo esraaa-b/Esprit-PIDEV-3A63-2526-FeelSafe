@@ -462,5 +462,34 @@ class SupportController extends AbstractController
         $this->addFlash('success', 'Document ajouté');
         return $this->redirectToRoute('app_support_accomp');
     }
-}
 
+    #[Route('/dashboard/support/next', name: 'app_support_next', methods: ['GET'])]
+    #[IsGranted('ROLE_CLIENT')]
+    public function next(EntityManagerInterface $em, \App\Service\ForecastService $forecast): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            return $this->redirectToRoute('app_login');
+        }
+        $rdvsClient = $em->getRepository(RendezVous::class)->findBy(['utilisateur' => $user], ['dateRdv' => 'DESC']);
+        $suggestions = $forecast->getNextRecommendations($user, 6);
+        return $this->render('client/support/next.html.twig', [
+            'rdvs' => $rdvsClient,
+            'suggestions' => $suggestions,
+        ]);
+    }
+
+    #[Route('/dashboard/support/calendar', name: 'app_support_calendar', methods: ['GET'])]
+    #[IsGranted('ROLE_PROFESSIONNEL')]
+    public function calendar(EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            return $this->redirectToRoute('app_login');
+        }
+        $rdvs = $em->getRepository(RendezVous::class)->findBy(['professionnel' => $user], ['dateRdv' => 'ASC', 'heureRdv' => 'ASC']);
+        return $this->render('professionnel/support/calendar.html.twig', [
+            'rdvs' => $rdvs,
+        ]);
+    }
+}
