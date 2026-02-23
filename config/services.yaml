@@ -30,6 +30,9 @@ services:
     App\Controller\:
         resource: '../src/Controller/'
         tags: ['controller.service_arguments']
+    App\Controller\AiJournalController:
+        arguments:
+            $anthropicApiKey: '%env(ANTHROPIC_API_KEY)%'
 
     # Repositories
     App\Repository\:
@@ -37,3 +40,8 @@ services:
 
     # CSRF Token Manager
     Symfony\Component\Security\Csrf\CsrfTokenManagerInterface: '@security.csrf.token_manager'
+
+      # ✅ Service IA pour l'inscription
+    App\Service\RegistrationAIService:
+        arguments:
+            $openrouterApiKey: '%env(OPENROUTER_API_KEY)%'

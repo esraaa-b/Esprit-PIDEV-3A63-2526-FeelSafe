@@ -346,29 +346,6 @@
                     </div>
                 </div>
 
-                <!-- Administration -->
-                <div class="mb-6">
-                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">Administration</h3>
-                    <div class="space-y-1">
-                        <a href="{{ path('admin_support') }}"
-                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_support' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
-                            <i data-feather="life-buoy" class="w-4 h-4"></i>
-                            <span>Support</span>
-                        </a>
-                        <a href="{{ path('admin_profile') }}"
-                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_profile' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
-                            <i data-feather="user" class="w-4 h-4"></i>
-                            <span>Profil détaillé</span>
-                        </a>
-                        <a href="{{ path('admin_settings') }}"
-                           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if app.request.get('_route') == 'admin_settings' %}bg-blue-50 text-blue-600 border border-blue-100{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
-                            <i data-feather="settings" class="w-4 h-4"></i>
-                            <span>Paramètres</span>
-                        </a>
-                    </div>
-                </div>
-            </nav>
-
             <!-- User Profile -->
             <div class="sidebar-user">
                 <div class="user-profile">
@@ -447,15 +424,14 @@
             }, 100);
         });
        
-        document.addEventListener('alpine:initialized', () => {
-            Alpine.$watch('sidebarOpen', () => {
-                setTimeout(() => {
-                    if (typeof feather !== 'undefined') {
-                        feather.replace();
-                    }
-                }, 150);
-            });
-        });
+       document.addEventListener('alpine:initialized', () => {
+    // Feather s'initialise une seule fois au démarrage
+    setTimeout(() => {
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }, 150);
+});
     </script>
    
     {% block javascripts %}{% endblock %}

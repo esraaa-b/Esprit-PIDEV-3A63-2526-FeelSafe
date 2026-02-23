@@ -1,124 +1,273 @@
 {% extends "professionnel/base.html.twig" %}
 
-{% block title %}Sécurité - FeelSafe{% endblock %}
+{% block title %}Sécurité & Profil - FeelSafe{% endblock %}
 
-{% block page_title %}Sécurité & Confidentialité{% endblock %}
-{% block page_subtitle %}Gérez la sécurité de votre compte{% endblock %}
+{% block page_title %}Sécurité & Profil{% endblock %}
+{% block page_subtitle %}Gérez vos informations personnelles et vos paramètres de sécurité{% endblock %}
 
-{% block header_actions %}
-<a href="{{ path('app_pro_profile') }}" class="px-4 py-2 border border-[#0f3b3e] text-[#0f3b3e] rounded-lg hover:bg-[#eef8f9] transition-colors inline-flex items-center gap-2">
-    <i class="fas fa-arrow-left"></i>
-    Retour au profil
-</a>
-{% endblock %}
+{% block header_actions %}{% endblock %}
 
 {% block body %}
-<div class="max-w-7xl mx-auto">
-    <div class="space-y-8">
-        <!-- Messages flash -->
-        {% for label, messages in app.flashes %}
-            {% for message in messages %}
-                <div class="p-4 rounded-lg {% if label == 'success' %}bg-green-50 text-green-700 border border-green-200{% elseif label == 'error' %}bg-red-50 text-red-700 border border-red-200{% endif %}">
-                    <i class="fas {% if label == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endfor %}
-
-        <!-- Changer le mot de passe -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 class="text-lg font-semibold text-gray-800">Changer mon mot de passe</h3>
+<div class="max-w-4xl mx-auto">
+    <!-- Messages flash -->
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="mb-4 p-4 rounded-lg {% if label == 'success' %}bg-green-50 text-green-700 border border-green-200{% elseif label == 'error' %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                <i class="fas {% if label == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
+                {{ message }}
             </div>
-            
-            <div class="p-6">
-                <form method="post" action="{{ path('app_pro_security_password') }}" class="space-y-6">
-                    <!-- Mot de passe actuel (avec placeholder qui montre des étoiles) -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Mot de passe actuel</label>
-                        <input type="password" name="current_password" 
-                               placeholder="••••••••" 
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
-                        <p class="text-xs text-gray-500 mt-1">Entrez votre mot de passe actuel pour confirmer</p>
+        {% endfor %}
+    {% endfor %}
+
+    <!-- Tabs -->
+    <div class="flex gap-0 border-b border-gray-200 mb-8">
+        <button onclick="showTab('profil')" id="tab-profil"
+            class="tab-btn px-6 py-3 text-sm font-medium text-gray-500 hover:text-[#0f3b3e] border-b-2 border-transparent transition-colors flex items-center gap-2">
+            <i class="fas fa-user"></i> Profil
+        </button>
+        <button onclick="showTab('securite')" id="tab-securite"
+            class="tab-btn px-6 py-3 text-sm font-medium text-gray-500 hover:text-[#0f3b3e] border-b-2 border-transparent transition-colors flex items-center gap-2">
+            <i class="fas fa-lock"></i> Sécurité
+        </button>
+        <button onclick="showTab('confidentialite')" id="tab-confidentialite"
+            class="tab-btn px-6 py-3 text-sm font-medium text-gray-500 hover:text-[#0f3b3e] border-b-2 border-transparent transition-colors flex items-center gap-2">
+            <i class="fas fa-shield-alt"></i> Confidentialité
+        </button>
+    </div>
+
+    <!-- Tab: Profil -->
+    <div id="pane-profil" class="tab-pane">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <!-- Header -->
+            <div class="h-28 bg-gradient-to-r from-[#0f3b3e] to-[#2d6a6f]"></div>
+            <div class="px-6 pb-6">
+                <div class="flex flex-col md:flex-row md:items-end gap-4 -mt-10">
+                    <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-[#0f3b3e] to-[#2d6a6f] flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg">
+                        {{ app.user.prenom|first|upper }}{{ app.user.nom|first|upper }}
                     </div>
-                    
-                    <!-- Nouveau mot de passe -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Nouveau mot de passe</label>
-                        <input type="password" name="new_password" required
-                               placeholder="Nouveau mot de passe"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
-                        <p class="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
+                    <div class="flex-1 pb-2">
+                        <h2 class="text-xl font-bold text-gray-800">Dr. {{ app.user.prenom }} {{ app.user.nom }}</h2>
+                        <p class="text-sm text-gray-500">{{ app.user.email }}</p>
                     </div>
-                    
-                    <!-- Confirmation -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Confirmer le nouveau mot de passe</label>
-                        <input type="password" name="confirm_password" required
-                               placeholder="Confirmer le mot de passe"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 p-6">
+                <form method="post" action="{{ path('app_pro_profile_edit') }}" class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                            <input type="text" name="prenom" value="{{ app.user.prenom }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                            <input type="text" name="nom" value="{{ app.user.nom }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" name="email" value="{{ app.user.email }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                            <input type="tel" name="telephone" value="{{ app.user.telephone }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
+                        </div>
                     </div>
-                    
-                    <input type="hidden" name="_token" value="{{ csrf_token('change-password') }}">
-                    
+                    <input type="hidden" name="_token" value="{{ csrf_token('profile-edit') }}">
                     <div class="flex justify-end">
                         <button type="submit" class="px-6 py-2 bg-[#0f3b3e] text-white rounded-lg hover:bg-[#1e5a5f] transition-colors">
-                            <i class="fas fa-key mr-2"></i>
-                            Changer le mot de passe
+                            <i class="fas fa-save mr-2"></i>Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Sécurité -->
+    <div id="pane-securite" class="tab-pane hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 flex items-start gap-4 border-b border-gray-100">
+                <div class="w-12 h-12 rounded-xl bg-[#eef8f9] flex items-center justify-center text-[#0f3b3e] text-xl">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-gray-800">Changer mon mot de passe</h3>
+                    <p class="text-sm text-gray-500">Mettez à jour votre mot de passe régulièrement pour sécuriser votre compte</p>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <form method="post" action="{{ path('app_pro_security_password') }}" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe actuel</label>
+                        <input type="password" name="current_password" placeholder="••••••••"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
+                        <p class="text-xs text-gray-400 mt-1">Entrez votre mot de passe actuel pour confirmer</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+                        <input type="password" name="new_password" required placeholder="Nouveau mot de passe"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
+                        <p class="text-xs text-gray-400 mt-1">Minimum 6 caractères</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Confirmer le nouveau mot de passe</label>
+                        <input type="password" name="confirm_password" required placeholder="Confirmer le mot de passe"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent">
+                    </div>
+                    <input type="hidden" name="_token" value="{{ csrf_token('change-password') }}">
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-2 bg-[#0f3b3e] text-white rounded-lg hover:bg-[#1e5a5f] transition-colors">
+                            <i class="fas fa-key mr-2"></i>Changer le mot de passe
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Confidentialité -->
+    <div id="pane-confidentialite" class="tab-pane hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 flex items-start gap-4 border-b border-gray-100">
+                <div class="w-12 h-12 rounded-xl bg-[#eef8f9] flex items-center justify-center text-[#0f3b3e] text-xl">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-gray-800">Paramètres de confidentialité</h3>
+                    <p class="text-sm text-gray-500">Contrôlez qui peut voir vos informations</p>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <form method="post" action="{{ path('app_pro_security_privacy') }}" class="space-y-6">
+                    <!-- Partage de données -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-sm font-medium text-gray-800">Partage de données</span>
+                            <span class="ml-2 text-sm text-gray-400">Permettre le partage anonyme pour améliorer FeelSafe</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="partage_donnees" class="sr-only peer"
+                                {% if app.user.confidentialite and app.user.confidentialite.partageDonnees %}checked{% endif %}>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0f3b3e]"></div>
+                        </label>
+                    </div>
+
+                    <!-- Notifications email -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-sm font-medium text-gray-800">Notifications email</span>
+                            <span class="ml-2 text-sm text-gray-400">Recevoir des rappels et mises à jour par email</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="notifications_email" class="sr-only peer"
+                                {% if app.user.confidentialite and app.user.confidentialite.notificationsEmail %}checked{% endif %}>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0f3b3e]"></div>
+                        </label>
+                    </div>
+
+                    <!-- Visibilité du profil -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-800 mb-1">Visibilité du profil</label>
+                        <p class="text-sm text-gray-400 mb-3">Qui peut voir votre profil sur FeelSafe</p>
+                        <select name="visibilite_profil" class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0f3b3e] focus:border-transparent text-sm">
+                            <option value="prive" {% if app.user.confidentialite and app.user.confidentialite.visibiliteProfil == 'prive' %}selected{% endif %}>🔒 Privé</option>
+                            <option value="public" {% if app.user.confidentialite and app.user.confidentialite.visibiliteProfil == 'public' %}selected{% endif %}>🌍 Public</option>
+                        </select>
+                    </div>
+
+                    {% if app.user.confidentialite and app.user.confidentialite.updatedAt is defined %}
+                    <p class="text-xs text-gray-400">
+                        <i class="far fa-clock mr-1"></i>
+                        Dernière modification : {{ app.user.confidentialite.updatedAt|date('d/m/Y à H:i:s') }}
+                    </p>
+                    {% endif %}
+
+                    <input type="hidden" name="_token" value="{{ csrf_token('update-privacy') }}">
+                    <div>
+                        <button type="submit" class="px-6 py-2 bg-[#0f3b3e] text-white rounded-lg hover:bg-[#1e5a5f] transition-colors">
+                            <i class="fas fa-save mr-2"></i>Enregistrer les préférences
                         </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Sessions actives -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 class="text-lg font-semibold text-gray-800">Sessions actives</h3>
+        <!-- Zone dangereuse -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+            <div class="p-6 flex items-start gap-4 border-b border-gray-100">
+                <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-lg">
+                    ⚠️
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-red-600">Zone dangereuse</h3>
+                    <p class="text-sm text-gray-500">Actions irréversibles concernant votre compte</p>
+                </div>
             </div>
-            
-            <div class="p-6">
-                <div class="space-y-4">
-                    {% for session in sessions %}
-                    <div class="flex items-center justify-between p-4 {% if session.current %}bg-[#eef8f9] border border-[#0f3b3e]/20{% else %}bg-gray-50{% endif %} rounded-lg">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 {% if session.current %}bg-[#0f3b3e]{% else %}bg-gray-300{% endif %} rounded-lg flex items-center justify-center text-white">
-                                <i class="fas 
-                                    {% if 'Chrome' in session.device %}fa-chrome
-                                    {% elseif 'Safari' in session.device %}fa-safari
-                                    {% elseif 'Firefox' in session.device %}fa-firefox
-                                    {% else %}fa-globe
-                                    {% endif %}">
-                                </i>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <p class="font-medium text-gray-800">{{ session.device }}</p>
-                                    {% if session.current %}
-                                        <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Actuelle</span>
-                                    {% endif %}
-                                </div>
-                                <p class="text-sm text-gray-500">{{ session.location }} • {{ session.lastActive }}</p>
-                            </div>
-                        </div>
-                        {% if not session.current %}
-                            <button class="text-sm text-red-600 hover:text-red-700">
-                                <i class="fas fa-times mr-1"></i>
-                                Déconnecter
-                            </button>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
+
+            <div class="p-6 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Supprimer mon compte</p>
+                    <p class="text-sm text-gray-400">Cette action est définitive. Toutes vos données seront supprimées.</p>
                 </div>
-                
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                    <button class="text-sm text-red-600 hover:text-red-700">
-                        <i class="fas fa-sign-out-alt mr-2"></i>
-                        Déconnecter toutes les autres sessions
-                    </button>
-                </div>
+                <button onclick="document.getElementById('modal-delete').classList.remove('hidden')"
+                        class="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm flex items-center gap-2">
+                    <i class="fas fa-trash-alt"></i>Supprimer mon compte
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- Modal confirmation suppression -->
+    <div id="modal-delete" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Confirmer la suppression</h3>
+            </div>
+            <p class="text-sm text-gray-500 mb-6">Cette action est <strong>irréversible</strong>. Toutes vos données seront définitivement supprimées. Veuillez entrer votre mot de passe pour confirmer.</p>
+
+            <form method="post" action="{{ path('app_pro_profile_delete') }}" class="space-y-4">
+                <input type="password" name="password" required placeholder="Votre mot de passe"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete-account') }}">
+                <div class="flex gap-3 justify-end">
+                    <button type="button" onclick="document.getElementById('modal-delete').classList.add('hidden')"
+                            class="px-5 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                        Annuler
+                    </button>
+                    <button type="submit"
+                            class="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">
+                        <i class="fas fa-trash-alt mr-1"></i>Supprimer définitivement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script>
+function showTab(name) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-[#0f3b3e]', 'text-[#0f3b3e]');
+        b.classList.add('border-transparent', 'text-gray-500');
+    });
+    document.getElementById('pane-' + name).classList.remove('hidden');
+    const btn = document.getElementById('tab-' + name);
+    btn.classList.remove('border-transparent', 'text-gray-500');
+    btn.classList.add('border-[#0f3b3e]', 'text-[#0f3b3e]');
+}
+
+// Activate first tab by default (or securite if flash message from password change)
+const flashExists = document.querySelector('.bg-green-50, .bg-red-50');
+showTab('profil');
+</script>
 {% endblock %}

@@ -45,7 +45,9 @@ public function generate(
     #[Route('/{id}', name: 'app_tendance_emotionnelle_delete', methods: ['POST'])]
     public function delete(Request $request, TendanceEmotionnelle $tendanceEmotionnelle, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$tendanceEmotionnelle->getId(), $request->getPayload()->getString('_token'))) {
+        // Use the standard request->request->get() to read form POST values (CSRF token)
+        $token = $request->request->get('_token');
+        if ($this->isCsrfTokenValid('delete'.$tendanceEmotionnelle->getId(), $token)) {
             $entityManager->remove($tendanceEmotionnelle);
             $entityManager->flush();
         }

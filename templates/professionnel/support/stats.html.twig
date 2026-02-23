@@ -1,11 +1,13 @@
 {% extends 'professionnel/base.html.twig' %}
 
 {% block title %}Statistiques{% endblock %}
+{% block page_title %}Statistiques du mois {{ month }}{% endblock %}
+{% block page_subtitle %}Analysez les performances de vos rendez-vous pour le mois sélectionné{% endblock %}
 
 {% block body %}
 <div class="space-y-6">
     <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Statistiques du mois {{ month }}</h1>
+        <h1 class="text-2xl font-bold text-gray-900"></h1>
         <a href="{{ path('app_support') }}" class="btn btn-outline">← Rendez-vous</a>
     </div>
 

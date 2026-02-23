@@ -16,13 +16,20 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+            
+            # OAuth Authenticators (Google + GitHub)
+            custom_authenticators:
+                - App\Security\GoogleAuthenticator
+                - App\Security\GitHubAuthenticator
+            
             form_login:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
-                default_target_path: app_dashboard  # Route principale qui redirige
-                always_use_default_target_path: false
-                use_referer: true
+                # Use a custom success handler to redirect users based on role
+                success_handler: App\Security\LoginSuccessHandler
+                # keep referer disabled
+                use_referer: false
             
             logout:
                 path: app_logout
@@ -31,10 +38,12 @@ security:
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/connect, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/pro, roles: ROLE_PROFESSIONNEL }
         - { path: ^/client, roles: ROLE_CLIENT }
         - { path: ^/dashboard, roles: ROLE_USER }
+        - { path: ^/, roles: ROLE_USER }
 
     role_hierarchy:
         ROLE_ADMIN: [ROLE_USER]

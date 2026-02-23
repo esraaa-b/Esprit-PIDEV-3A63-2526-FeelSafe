@@ -183,6 +183,75 @@ foreach (EmotionEnum::cases() as $emotion) {
             }
         }
 
+$emotionColors = [
+    'tres_bien' => '#16a34a',  // bg-green-600
+    'bien'      => '#86efac',  // bg-green-300
+    'neutre'    => '#fde047',  // bg-yellow-300
+    'pas_bien'  => '#fecaca',  // bg-red-200
+    'tres_mal'  => '#dc2626',  // bg-red-600
+];
+
+$emotionLabels = [
+    'tres_bien' => 'Très bien',
+    'bien'      => 'Bien',
+    'neutre'    => 'Neutre',
+    'pas_bien'  => 'Pas bien',
+    'tres_mal'  => 'Très mal',
+];
+
+// Fetch journals from last 365 days
+$oneYearAgo = new \DateTime('-365 days');
+$journals365 = $em->getRepository(\App\Entity\JournalEmotionnel::class)
+    ->createQueryBuilder('j')
+    ->where('j.utilisateur = :user')
+    ->andWhere('j.dateCreation >= :start')
+    ->setParameter('user', $user)
+    ->setParameter('start', $oneYearAgo)
+    ->getQuery()->getResult();
+
+// Group by date: count + emotion tally
+$dayData = [];
+foreach ($journals365 as $j) {
+    $d = $j->getDateCreation()->format('Y-m-d');
+    if (!isset($dayData[$d])) {
+        $dayData[$d] = ['count' => 0, 'emotions' => []];
+    }
+    $dayData[$d]['count']++;
+    $emotion = $j->getEmotion()->value;
+    $dayData[$d]['emotions'][$emotion] = ($dayData[$d]['emotions'][$emotion] ?? 0) + 1;
+}
+
+// Build calendar array: one entry per day for 365 days
+$calendarData = [];
+$cur = clone $oneYearAgo;
+$today = new \DateTime();
+while ($cur <= $today) {
+    $ds = $cur->format('Y-m-d');
+    $count = $dayData[$ds]['count'] ?? 0;
+    
+    // Find dominant emotion (most frequent that day)
+    $dominantEmotion = null;
+    $dominantColor   = '#e2e8f0'; // default: no entries = light grey
+    $dominantLabel   = '';
+    
+    if ($count > 0 && !empty($dayData[$ds]['emotions'])) {
+        arsort($dayData[$ds]['emotions']);
+        $dominantEmotion = array_key_first($dayData[$ds]['emotions']);
+        $dominantColor   = $emotionColors[$dominantEmotion] ?? '#94a3b8';
+        $dominantLabel   = $emotionLabels[$dominantEmotion] ?? $dominantEmotion;
+    }
+    
+    $calendarData[] = [
+        'date'            => $ds,
+        'count'           => $count,
+        'dominantEmotion' => $dominantEmotion,
+        'dominantColor'   => $dominantColor,
+        'dominantLabel'   => $dominantLabel,
+    ];
+    $cur->modify('+1 day');
+}
+
+$calendarDataJson = json_encode($calendarData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         return $this->render('client/journal/index.html.twig', [
             'journals' => $journals,
             'moodOptions' => EmotionEnum::cases(),
@@ -194,7 +263,8 @@ foreach (EmotionEnum::cases() as $emotion) {
             ],
             'moodStats' => $moodStats,
             'chartLabels' => $chartLabels,
-            'chartData' => $chartData
+            'chartData' => $chartData,
+            'calendarData'=> $calendarData,
         ]);
     }
 

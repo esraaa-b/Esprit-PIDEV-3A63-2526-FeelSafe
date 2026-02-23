@@ -25,6 +25,6 @@ class DashboardController extends AbstractController
         }
         
         // Par défaut, rediriger vers le dashboard client
-        return $this->redirectToRoute('client_dashboard');
+        return $this->redirectToRoute('app_client');
     }
 }

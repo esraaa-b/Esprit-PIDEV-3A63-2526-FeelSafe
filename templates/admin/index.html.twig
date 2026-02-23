@@ -1,50 +1,95 @@
 {% extends 'admin/base.html.twig' %}
 
-{% block title %}Admin Dashboard{% endblock %}
-    {% block stylesheets %}
-    <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
-    {% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-        <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
-<div class="admin-main">
+<div class="space-y-6">
+    <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 dashboard-grid">
-
-        <div class="dashboard-card">
-            <div class="dashboard-icon">📢</div>
-            <div>
-                <div class="dashboard-number">{{ nbPublications }}</div>
-                <div class="dashboard-label">Publications</div>
-            </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-lg shadow-lg transform transition hover:scale-105">
+            <div class="text-sm text-gray-500">Publications</div>
+            <div class="text-3xl font-extrabold">{{ nbPublications|default(0) }}</div>
         </div>
 
-        <div class="dashboard-card">
-            <div class="dashboard-icon icon-green">📓</div>
-            <div>
-                <div class="dashboard-number">{{ nbJournals }}</div>
-                <div class="dashboard-label">Journaux émotionnels</div>
-            </div>
+        <div class="bg-white p-6 rounded-lg shadow-lg transform transition duration-500 hover:-translate-y-1">
+            <div class="text-sm text-gray-500">Journaux émotionnels</div>
+            <div class="text-3xl font-extrabold">{{ nbJournals|default(0) }}</div>
         </div>
 
-        <div class="dashboard-card">
-            <div class="dashboard-icon icon-yellow">👤</div>
-            <div>
-                <div class="dashboard-number">{{ nbClients }}</div>
-                <div class="dashboard-label">Clients</div>
-            </div>
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <div class="text-sm text-gray-500">Total utilisateurs</div>
+            <div class="text-3xl font-extrabold">{{ nbUsers|default(nbClients + nbProfessionnels) }}</div>
+            <div class="text-xs text-gray-400 mt-2">Clients: {{ nbClients|default(0) }} — Pros: {{ nbProfessionnels|default(0) }}</div>
         </div>
 
-        <div class="dashboard-card">
-            <div class="dashboard-icon icon-purple">🧑‍⚕️</div>
-            <div>
-                <div class="dashboard-number">{{ nbProfessionnels }}</div>
-                <div class="dashboard-label">Professionnels</div>
-            </div>
+        <div class="bg-white p-6 rounded-lg shadow-lg transform transition duration-700 hover:rotate-1">
+            <div class="text-sm text-gray-500">Administrateurs</div>
+            <div class="text-3xl font-extrabold">—</div>
         </div>
-
     </div>
 
+    <div class="bg-white p-6 rounded-lg shadow">
+        <p class="text-gray-600 mb-4">User statistics</p>
+        <div class="rounded-lg bg-white">
+            <canvas id="userChart" class="w-full h-56"></canvas>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="font-semibold mb-2">Recent activity</h3>
+                <ul class="text-sm text-gray-600 space-y-2">
+                    {% if recentActivities is defined and recentActivities|length > 0 %}
+                        {% for act in recentActivities %}
+                            <li>
+                                {{ act.message }} — <span class="text-gray-400">{{ act.date }}</span>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="text-gray-400">Aucune activité récente</li>
+                    {% endif %}
+                </ul>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="font-semibold mb-2">System</h3>
+            <p class="text-sm text-gray-600">All systems operational</p>
+        </div>
+    </div>
 </div>
 
+{% endblock %}
+
+{% block javascripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function(){
+            const ctx = document.getElementById('userChart');
+            if (!ctx) return;
+
+            const nbClients = parseInt('{{ nbClients|default(0) }}', 10) || 0;
+            const nbPros = parseInt('{{ nbProfessionnels|default(0) }}', 10) || 0;
+            const nbAdmins = parseInt('{{ nbAdmins|default(0) }}', 10) || 0;
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Clients', 'Professionnels', 'Administrateurs'],
+                    datasets: [{
+                        data: [nbClients, nbPros, nbAdmins],
+                        backgroundColor: ['#34D399', '#60A5FA', '#A78BFA'],
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        })();
+    </script>
 {% endblock %}

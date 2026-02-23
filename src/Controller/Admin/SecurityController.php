@@ -3,17 +3,19 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Utilisateur;
-use App\Entity\ConfidentialiteUtilisateur;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\Mime\Address;
+use Psr\Log\LoggerInterface;
 
 #[Route('/admin/security')]
 class SecurityController extends AbstractController
@@ -22,17 +24,23 @@ class SecurityController extends AbstractController
     private UserPasswordHasherInterface $passwordHasher;
     private ValidatorInterface $validator;
     private CsrfTokenManagerInterface $csrfTokenManager;
+    private MailerInterface $mailer;
+    private LoggerInterface $logger;
 
     public function __construct(
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher,
         ValidatorInterface $validator,
-        CsrfTokenManagerInterface $csrfTokenManager
+        CsrfTokenManagerInterface $csrfTokenManager,
+        MailerInterface $mailer,
+        LoggerInterface $logger
     ) {
         $this->entityManager = $entityManager;
         $this->passwordHasher = $passwordHasher;
         $this->validator = $validator;
         $this->csrfTokenManager = $csrfTokenManager;
+        $this->mailer = $mailer;
+        $this->logger = $logger;
     }
 
     #[Route('/user/create', name: 'admin_security_user_create', methods: ['POST'])]
@@ -127,6 +135,14 @@ class SecurityController extends AbstractController
                 throw new \Exception('Utilisateur non trouvé');
             }
 
+            // 📝 Sauvegarder les anciennes valeurs pour comparer
+            $oldEmail = $user->getEmail();
+            $oldNom = $user->getNom();
+            $oldPrenom = $user->getPrenom();
+            $oldTelephone = $user->getTelephone();
+            $oldStatut = $user->getStatut();
+            $oldRoles = $user->getRoles();
+
             $nom    = trim($request->request->get('nom', ''));
             $prenom = trim($request->request->get('prenom', ''));
             $email  = trim($request->request->get('email', ''));
@@ -155,18 +171,74 @@ class SecurityController extends AbstractController
                 $user->setRoles($roles);
             }
 
+            $passwordChanged = false;
+            $newPlainPassword = null; // Pour stocker le mot de passe en clair
             $plainPassword = $request->request->get('mot_de_passe', '');
             if (!empty($plainPassword)) {
                 if (strlen($plainPassword) < 6) {
                     throw new \Exception('Le mot de passe doit contenir au moins 6 caractères');
                 }
                 $hashedPassword = $this->passwordHasher->hashPassword($user, $plainPassword);
-                $user->setMotDePasse($hashedPassword); // Correction: setMotDePasse() au lieu de setPassword()
+                $user->setMotDePasse($hashedPassword);
+                $passwordChanged = true;
+                $newPlainPassword = $plainPassword; // Sauvegarder le mot de passe en clair
             }
 
             $this->entityManager->flush();
 
-            $this->addFlash('success', 'Utilisateur modifié avec succès');
+            // ✅ Déterminer quels changements ont été effectués (SANS LE MOT DE PASSE)
+            $changes = [];
+            if ($oldNom !== $nom || $oldPrenom !== $prenom) {
+                $changes[] = "Nom/Prénom modifié en: {$prenom} {$nom}";
+            }
+            if ($oldEmail !== $email) {
+                $changes[] = "Email modifié en: {$email}";
+            }
+            if ($oldTelephone !== $user->getTelephone()) {
+                $changes[] = "Téléphone modifié en: " . ($user->getTelephone() ?: 'Non renseigné');
+            }
+            if ($oldStatut !== $user->getStatut()) {
+                $changes[] = "Statut modifié en: " . $user->getStatut();
+            }
+            if ($oldRoles !== $user->getRoles()) {
+                $changes[] = "Rôle modifié";
+            }
+            // ⚠️ NE PAS AJOUTER LE MOT DE PASSE DANS LA LISTE DES CHANGEMENTS
+            // On informe juste qu'il a été changé sans montrer la valeur
+
+            // ✅ Envoyer l'email de notification uniquement si des modifications ont été faites
+            if (!empty($changes) || $passwordChanged) {
+                try {
+                    $emailMessage = (new TemplatedEmail())
+                        ->from(new Address('noreply@feelsafe.com', 'FeelSafe'))
+                        ->to(new Address($user->getEmail(), $user->getFullName()))
+                        ->subject('Modification de votre compte - FeelSafe')
+                        ->htmlTemplate('emails/account_modified.html.twig')
+                        ->context([
+                            'user' => $user,
+                            'changes' => $changes,
+                            'passwordChanged' => $passwordChanged,
+                            'newPassword' => $newPlainPassword, // Envoyer le mot de passe en clair
+                        ]);
+
+                    $this->mailer->send($emailMessage);
+
+                    $this->logger->info('✅ Email de modification envoyé', [
+                        'user' => $user->getEmail(),
+                        'changes' => count($changes),
+                        'passwordChanged' => $passwordChanged
+                    ]);
+
+                } catch (\Exception $e) {
+                    $this->logger->error('❌ Erreur envoi email de modification', [
+                        'user' => $user->getEmail(),
+                        'error' => $e->getMessage()
+                    ]);
+                    // Ne pas bloquer la modification même si l'email échoue
+                }
+            }
+
+            $this->addFlash('success', 'Utilisateur modifié avec succès.' . (!empty($changes) || $passwordChanged ? ' Un email de notification a été envoyé.' : ''));
 
         } catch (\Exception $e) {
             $this->addFlash('error', $e->getMessage());

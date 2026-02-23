@@ -2,91 +2,389 @@
 
 namespace App\Controller;
 
+use App\Entity\ActiviteBienEtre;
+use App\Entity\SessionActivite;
+use App\Repository\ActiviteBienEtreRepository;
+use App\Repository\SessionActiviteRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
+#[Route('/dashboard/wellness')]
 class WellnessController extends AbstractController
 {
-    #[Route('/dashboard/wellness', name: 'app_wellness')]
-    public function index(): Response
-    {
-        // Breathing exercises
-        $breathingExercises = [
-            [
-                'id' => 1,
-                'name' => 'Respiration 4-7-8',
-                'description' => 'Technique de relaxation profonde',
-                'duration' => '5 min',
-                'level' => 'Débutant',
-                'color' => 'bg-primary',
-            ],
-            [
-                'id' => 2,
-                'name' => 'Cohérence cardiaque',
-                'description' => 'Équilibrez votre système nerveux',
-                'duration' => '5 min',
-                'level' => 'Intermédiaire',
-                'color' => 'bg-chart-4',
-            ],
-            [
-                'id' => 3,
-                'name' => 'Respiration abdominale',
-                'description' => 'Réduisez le stress instantanément',
-                'duration' => '3 min',
-                'level' => 'Débutant',
-                'color' => 'bg-chart-2',
-            ],
-        ];
+    #[Route('', name: 'app_wellness')]
+    public function index(
+        ActiviteBienEtreRepository $activiteRepo,
+        SessionActiviteRepository $sessionRepo
+    ): Response {
+        $user = $this->getUser();
+        
+        // Récupérer les sessions de l'utilisateur (7 derniers jours)
+        $dateDebut = new \DateTime('-7 days');
+        $sessions = $sessionRepo->createQueryBuilder('s')
+            ->where('s.utilisateur = :user')
+            ->andWhere('s.dateDebut >= :dateDebut')
+            ->setParameter('user', $user)
+            ->setParameter('dateDebut', $dateDebut)
+            ->orderBy('s.dateDebut', 'DESC')
+            ->getQuery()
+            ->getResult();
 
-        // Activities
-        $activities = [
-            [
-                'id' => 1,
-                'name' => 'Méditation guidée',
-                'duration' => '10 min',
-                'category' => 'Méditation',
-            ],
-            [
-                'id' => 2,
-                'name' => 'Yoga du soir',
-                'duration' => '20 min',
-                'category' => 'Yoga',
-            ],
-            [
-                'id' => 3,
-                'name' => 'Musique relaxante',
-                'duration' => '30 min',
-                'category' => 'Audio',
-            ],
-            [
-                'id' => 4,
-                'name' => 'Routine du matin',
-                'duration' => '15 min',
-                'category' => 'Routine',
-            ],
-        ];
-
-        // Weekly progress
-        $weeklyProgress = [
-            ['day' => 'Lun', 'completed' => true, 'minutes' => 25],
-            ['day' => 'Mar', 'completed' => true, 'minutes' => 30],
-            ['day' => 'Mer', 'completed' => true, 'minutes' => 20],
-            ['day' => 'Jeu', 'completed' => false, 'minutes' => 0],
-            ['day' => 'Ven', 'completed' => true, 'minutes' => 35],
-            ['day' => 'Sam', 'completed' => true, 'minutes' => 15],
-            ['day' => 'Dim', 'completed' => false, 'minutes' => 0],
-        ];
-
+        // Calculer les stats de la semaine
+        $weeklyProgress = [];
+        $daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        
+        for ($i = 0; $i < 7; $i++) {
+            $date = new \DateTime("-$i days");
+            $dayName = $daysOfWeek[(int)$date->format('N') - 1];
+            
+            $dayMinutes = 0;
+            $dayCompleted = false;
+            
+            foreach ($sessions as $session) {
+                if ($session->getDateDebut()->format('Y-m-d') === $date->format('Y-m-d')) {
+                    if ($session->getDureeReelle()) {
+                        $dayMinutes += $session->getDureeReelle();
+                    }
+                    if ($session->getStatutSession()->value === 'completee') {
+                        $dayCompleted = true;
+                    }
+                }
+            }
+            
+            $weeklyProgress[] = [
+                'day' => $dayName,
+                'completed' => $dayCompleted,
+                'minutes' => $dayMinutes
+            ];
+        }
+        
+        $weeklyProgress = array_reverse($weeklyProgress);
+        
         $totalMinutes = array_sum(array_column($weeklyProgress, 'minutes'));
         $completedDays = count(array_filter($weeklyProgress, fn($day) => $day['completed']));
 
+        // Activités recommandées (actives uniquement)
+        $recommendedActivities = $activiteRepo->createQueryBuilder('a')
+            ->where('a.estActive = :active')
+            ->setParameter('active', true)
+            ->setMaxResults(4)
+            ->getQuery()
+            ->getResult();
+
+        // Dernières sessions
+        $recentSessions = $sessionRepo->createQueryBuilder('s')
+            ->where('s.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->orderBy('s.dateDebut', 'DESC')
+            ->setMaxResults(3)
+            ->getQuery()
+            ->getResult();
+
         return $this->render('dashboard/wellness/index.html.twig', [
-            'breathingExercises' => $breathingExercises,
-            'activities' => $activities,
             'weeklyProgress' => $weeklyProgress,
             'totalMinutes' => $totalMinutes,
             'completedDays' => $completedDays,
+            'recommendedActivities' => $recommendedActivities,
+            'recentSessions' => $recentSessions,
         ]);
+    }
+
+    #[Route('/activites', name: 'app_wellness_activites')]
+    public function activites(
+        Request $request,
+        ActiviteBienEtreRepository $activiteRepo
+    ): Response {
+        // Récupérer les filtres
+        $type = $request->query->get('type');
+        $niveau = $request->query->get('niveau');
+        $categorie = $request->query->get('categorie');
+
+        $qb = $activiteRepo->createQueryBuilder('a')
+            ->where('a.estActive = :active')
+            ->setParameter('active', true);
+
+        if ($type) {
+            $qb->andWhere('a.typeActivite = :type')
+               ->setParameter('type', $type);
+        }
+
+        if ($niveau) {
+            $qb->andWhere('a.niveauDifficulte = :niveau')
+               ->setParameter('niveau', $niveau);
+        }
+
+        if ($categorie) {
+            $qb->andWhere('a.categorie = :categorie')
+               ->setParameter('categorie', $categorie);
+        }
+
+        $activites = $qb->orderBy('a.dateCreation', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        // Récupérer toutes les valeurs uniques pour les filtres
+        $types = $activiteRepo->createQueryBuilder('a')
+            ->select('DISTINCT a.typeActivite')
+            ->where('a.estActive = :active')
+            ->setParameter('active', true)
+            ->getQuery()
+            ->getResult();
+
+        $categories = $activiteRepo->createQueryBuilder('a')
+            ->select('DISTINCT a.categorie')
+            ->where('a.estActive = :active')
+            ->andWhere('a.categorie IS NOT NULL')
+            ->setParameter('active', true)
+            ->getQuery()
+            ->getResult();
+
+        return $this->render('dashboard/wellness/activites/index.html.twig', [
+            'activites' => $activites,
+            'types' => array_column($types, 'typeActivite'),
+            'categories' => array_column($categories, 'categorie'),
+            'currentType' => $type,
+            'currentNiveau' => $niveau,
+            'currentCategorie' => $categorie,
+        ]);
+    }
+
+    #[Route('/activites/{id}', name: 'app_wellness_activite_show')]
+    public function show(
+        ActiviteBienEtre $activite,
+        SessionActiviteRepository $sessionRepo
+    ): Response {
+        $user = $this->getUser();
+        
+        // Statistiques de l'activité pour cet utilisateur
+        $userSessions = $sessionRepo->createQueryBuilder('s')
+            ->where('s.utilisateur = :user')
+            ->andWhere('s.activite = :activite')
+            ->setParameter('user', $user)
+            ->setParameter('activite', $activite)
+            ->getQuery()
+            ->getResult();
+
+        $totalSessions = count($userSessions);
+        $completedSessions = count(array_filter($userSessions, fn($s) => $s->getStatutSession()->value === 'completee'));
+        
+        $totalMinutes = 0;
+        foreach ($userSessions as $session) {
+            if ($session->getDureeReelle()) {
+                $totalMinutes += $session->getDureeReelle();
+            }
+        }
+
+        return $this->render('dashboard/wellness/activites/show.html.twig', [
+            'activite' => $activite,
+            'totalSessions' => $totalSessions,
+            'completedSessions' => $completedSessions,
+            'totalMinutes' => $totalMinutes,
+        ]);
+    }
+
+    #[Route('/activites/{id}/start', name: 'app_wellness_session_start', methods: ['POST'])]
+    public function startSession(
+        ActiviteBienEtre $activite,
+        EntityManagerInterface $em
+    ): Response {
+        $user = $this->getUser();
+        
+        // Créer une nouvelle session
+        $session = new SessionActivite();
+        $session->setUtilisateur($user);
+        $session->setActivite($activite);
+        $session->setDateDebut(new \DateTime());
+        $session->setStatutSession(\App\Enum\StatutSession::EN_COURS);
+
+        $em->persist($session);
+        $em->flush();
+
+        return $this->redirectToRoute('app_wellness_session_active', ['id' => $session->getId()]);
+    }
+
+    #[Route('/sessions/{id}/active', name: 'app_wellness_session_active')]
+    public function activeSession(SessionActivite $session): Response
+    {
+        // Vérifier que la session appartient à l'utilisateur
+        if ($session->getUtilisateur() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $this->render('dashboard/wellness/sessions/active.html.twig', [
+            'session' => $session,
+        ]);
+    }
+
+    #[Route('/sessions/{id}/complete', name: 'app_wellness_session_complete', methods: ['GET', 'POST'])]
+    public function completeSession(
+        Request $request,
+        SessionActivite $session,
+        EntityManagerInterface $em
+    ): Response {
+        // Vérifier que la session appartient à l'utilisateur
+        if ($session->getUtilisateur() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if ($request->isMethod('POST')) {
+            // Récupérer les données du formulaire
+            $session->setDateFin(new \DateTime());
+            $session->setStatutSession(\App\Enum\StatutSession::COMPLETEE);
+            
+            // Durée réelle (en minutes)
+            $debut = $session->getDateDebut();
+            $fin = $session->getDateFin();
+            $duree = ($fin->getTimestamp() - $debut->getTimestamp()) / 60;
+            $session->setDureeReelle((int)$duree);
+
+            // Humeur après
+            if ($request->request->get('humeur_apres')) {
+                $session->setHumeurApres(\App\Enum\HumeurEnum::from($request->request->get('humeur_apres')));
+            }
+            if ($request->request->get('score_humeur_apres')) {
+                $session->setScoreHumeurApres((int)$request->request->get('score_humeur_apres'));
+            }
+            if ($request->request->get('emotion_apres')) {
+                $session->setEmotionApres($request->request->get('emotion_apres'));
+            }
+
+            // Évaluation
+            if ($request->request->get('note_satisfaction')) {
+                $session->setNoteSatisfaction((int)$request->request->get('note_satisfaction'));
+            }
+            if ($request->request->get('impact_percu')) {
+                $session->setImpactPercu(\App\Enum\ImpactPercu::from($request->request->get('impact_percu')));
+            }
+            if ($request->request->get('commentaire')) {
+                $session->setCommentaire($request->request->get('commentaire'));
+            }
+            
+            $session->setEstObjectifAtteint($request->request->get('est_objectif_atteint') === '1');
+
+            $em->flush();
+
+            $this->addFlash('success', 'Session terminée avec succès ! 🎉');
+            return $this->redirectToRoute('app_wellness');
+        }
+
+        return $this->render('dashboard/wellness/sessions/complete.html.twig', [
+            'session' => $session,
+        ]);
+    }
+
+    #[Route('/sessions/history', name: 'app_wellness_sessions_history')]
+    public function history(SessionActiviteRepository $sessionRepo): Response
+    {
+        $user = $this->getUser();
+        
+        $sessions = $sessionRepo->createQueryBuilder('s')
+            ->where('s.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->orderBy('s.dateDebut', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->render('dashboard/wellness/sessions/history.html.twig', [
+            'sessions' => $sessions,
+        ]);
+    }
+
+    #[Route('/stats', name: 'app_wellness_stats')]
+    public function stats(SessionActiviteRepository $sessionRepo): Response
+    {
+        $user = $this->getUser();
+        
+        // Toutes les sessions de l'utilisateur
+        $sessions = $sessionRepo->createQueryBuilder('s')
+            ->where('s.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->orderBy('s.dateDebut', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        // Calculer les statistiques
+        $totalSessions = count($sessions);
+        $completedSessions = count(array_filter($sessions, fn($s) => $s->getStatutSession()->value === 'completee'));
+        
+        $totalMinutes = 0;
+        $moodEvolution = [];
+        
+        foreach ($sessions as $session) {
+            if ($session->getDureeReelle()) {
+                $totalMinutes += $session->getDureeReelle();
+            }
+            
+            // Évolution humeur
+            if ($session->getScoreHumeurAvant() && $session->getScoreHumeurApres()) {
+                $moodEvolution[] = [
+                    'date' => $session->getDateDebut()->format('Y-m-d'),
+                    'avant' => $session->getScoreHumeurAvant(),
+                    'apres' => $session->getScoreHumeurApres(),
+                    'evolution' => $session->getScoreHumeurApres() - $session->getScoreHumeurAvant(),
+                ];
+            }
+        }
+
+        // Streak (jours consécutifs)
+        $streak = $this->calculateStreak($sessions);
+
+        return $this->render('dashboard/wellness/stats.html.twig', [
+            'totalSessions' => $totalSessions,
+            'completedSessions' => $completedSessions,
+            'totalMinutes' => $totalMinutes,
+            'moodEvolution' => $moodEvolution,
+            'streak' => $streak,
+        ]);
+    }
+
+    private function calculateStreak(array $sessions): int
+    {
+        if (empty($sessions)) {
+            return 0;
+        }
+
+        $streak = 0;
+        $currentDate = new \DateTime('today');
+        
+        // Grouper les sessions par date
+        $sessionsByDate = [];
+        foreach ($sessions as $session) {
+            $date = $session->getDateDebut()->format('Y-m-d');
+            if (!isset($sessionsByDate[$date])) {
+                $sessionsByDate[$date] = [];
+            }
+            $sessionsByDate[$date][] = $session;
+        }
+
+        // Calculer le streak
+        while (true) {
+            $dateKey = $currentDate->format('Y-m-d');
+            
+            if (!isset($sessionsByDate[$dateKey])) {
+                break;
+            }
+            
+            // Vérifier s'il y a au moins une session complétée ce jour
+            $hasCompleted = false;
+            foreach ($sessionsByDate[$dateKey] as $session) {
+                if ($session->getStatutSession()->value === 'completee') {
+                    $hasCompleted = true;
+                    break;
+                }
+            }
+            
+            if (!$hasCompleted) {
+                break;
+            }
+            
+            $streak++;
+            $currentDate->modify('-1 day');
+        }
+
+        return $streak;
     }
 }
