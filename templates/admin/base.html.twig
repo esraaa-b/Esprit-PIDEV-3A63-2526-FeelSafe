@@ -350,17 +350,37 @@
             <div class="sidebar-user">
                 <div class="user-profile">
                     <div class="user-avatar">
-                        {{ app.user.prenom|slice(0, 1)|upper }}{{ app.user.nom|slice(0, 1)|upper }}
+                        {% if app.user %}
+                            {{ app.user.prenom|slice(0, 1)|upper }}{{ app.user.nom|slice(0, 1)|upper }}
+                        {% else %}
+                            U
+                        {% endif %}
                     </div>
                     <div class="user-info">
-                        <div class="user-name">{{ app.user.prenom }} {{ app.user.nom }}</div>
-                        <div class="user-email">{{ app.user.email }}</div>
+                        <div class="user-name">
+                            {% if app.user %}
+                                {{ app.user.prenom }} {{ app.user.nom }}
+                            {% else %}
+                                Utilisateur
+                            {% endif %}
+                        </div>
+                        <div class="user-email">
+                            {% if app.user %}
+                                {{ app.user.email }}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-                <a href="{{ path('app_logout') }}" class="logout-btn">
-                    <span>🚪</span>
-                    Déconnexion
-                </a>
+                {% if app.user %}
+                    <a href="{{ path('app_logout') }}" class="logout-btn">
+                        <span>🚪</span>
+                        Déconnexion
+                    </a>
+                {% else %}
+                    <a href="{{ path('app_login') }}" class="logout-btn">
+                        Connexion
+                    </a>
+                {% endif %}
             </div>
         </aside>
 

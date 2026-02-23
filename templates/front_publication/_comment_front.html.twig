@@ -6,10 +6,23 @@
 {% set replyGifInputId = 'reply-gif-url-' ~ commentaire.id %}
 
 <div class="border border-border rounded-lg p-3 bg-background space-y-2 {% if depth > 0 %}ml-6 border-l-2 border-l-primary/30{% endif %}"
-     style="padding-left: 1.5rem !important;">
-
+     style="padding-left: 1.5rem !important;"
+     x-data="{ contenu: {{ commentaire.contenu|json_encode }}, translated: null, showTranslated: false, translateLang: 'en' }">
     {# Comment content #}
-    <p class="text-foreground">{{ commentaire.contenu }}</p>
+    <p class="text-foreground">
+        <span x-show="!showTranslated" x-text="contenu"></span>
+        <span x-show="showTranslated" x-text="translated || '...'"></span>
+        <select x-model="translateLang" @change="translated = null; showTranslated = false"
+                class="ml-1 text-xs border border-border rounded px-1 py-0.5 bg-background text-foreground align-baseline">
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+            <option value="de">DE</option>
+            <option value="ar">AR</option>
+        </select>
+        <button @click="if (!translated) fetch('{{ path('app_front_publication_translate') }}', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ text: contenu, target_lang: translateLang }) }).then(r=>r.json()).then(d=> translated = d.translated || d.error); showTranslated = !showTranslated"
+                class="ml-1 text-xs text-primary hover:underline" title="Traduire">🌐</button>
+    </p>
 
     {# GIF attachment (if any) #}
     {% if commentaire.gifUrl %}
@@ -136,6 +149,75 @@
                     </button>
                 </form>
             {% endif %}
+
+            {# Signaler commentaire #}
+            <div x-data="{ open: false, reason: 'spam', description: '', sending: false, done: false }">
+                <button type="button" @click="open = true" class="p-1 rounded hover:bg-amber-50 text-amber-600 hover:text-amber-700 transition" title="Signaler">⚠️</button>
+                <div x-show="open" x-cloak class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="open = false">
+                    <div class="bg-card rounded-xl shadow-xl border border-border p-6 max-w-md w-full mx-4" @click.stop>
+                        <h3 class="text-lg font-bold mb-3">Signaler ce commentaire</h3>
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium">Raison</label>
+                            <select x-model="reason" class="w-full border border-border rounded-lg px-3 py-2 bg-background">
+                                <option value="spam">Spam</option>
+                                <option value="contenu_offensant">Contenu offensant</option>
+                                <option value="harcelement">Harcèlement</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                            <label class="block text-sm font-medium">Description (facultatif)</label>
+                            <textarea x-model="description" class="w-full border border-border rounded-lg px-3 py-2 bg-background" rows="2"></textarea>
+                        </div>
+                        <div class="flex gap-2 mt-4 items-center justify-end">
+                            <button type="button" @click="open = false; done = false; sending = false; description = ''; reason = 'spam'" 
+                                    class="px-4 py-2 border border-border rounded-lg hover:bg-secondary bg-background text-foreground">
+                                Annuler
+                            </button>
+                            <button type="button"
+                                    @click="
+                                        if (done || sending) return;
+                                        sending = true;
+                                        fetch('{{ path('app_front_report') }}', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                type: 'comment',
+                                                id: {{ commentaire.id }},
+                                                reason: reason,
+                                                description: description,
+                                                _token: '{{ csrf_token('report') }}'
+                                            })
+                                        })
+                                        .then(response => {
+                                            if (!response.ok) throw new Error('Erreur serveur');
+                                            return response.json();
+                                        })
+                                        .then(data => {
+                                            sending = false;
+                                            if (data.success) {
+                                                done = true;
+                                                setTimeout(() => {
+                                                    open = false;
+                                                    done = false;
+                                                    description = '';
+                                                    reason = 'spam';
+                                                }, 2000);
+                                            } else {
+                                                alert(data.error || 'Erreur lors du signalement');
+                                            }
+                                        })
+                                        .catch(error => {
+                                            sending = false;
+                                            alert('Erreur réseau : ' + error.message);
+                                        });
+                                    "
+                                    :disabled="sending || done"
+                                    class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 font-medium">
+                                <span x-text="sending ? 'Envoi...' : (done ? '✓ Envoyé' : 'Valider')"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>

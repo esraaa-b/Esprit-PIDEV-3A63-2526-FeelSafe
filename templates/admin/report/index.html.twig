@@ -1,0 +1,133 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Signalements | FeelSafe Admin{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Signalements</h1>
+            <p class="text-sm text-gray-600 mt-1">
+                Gérez les signalements de publications et commentaires
+            </p>
+        </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ path('admin_report_index') }}"
+           class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ current_status == '' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+            Tous ({{ total_count }})
+        </a>
+        <a href="{{ path('admin_report_index', { status: 'pending' }) }}"
+           class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ current_status == 'pending' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+            ⚠️ En attente ({{ pending_count }})
+        </a>
+        <a href="{{ path('admin_report_index', { status: 'resolved' }) }}"
+           class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ current_status == 'resolved' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+            Résolus
+        </a>
+        <a href="{{ path('admin_report_index', { status: 'ignored' }) }}"
+           class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ current_status == 'ignored' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+            Ignorés
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Raison</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contenu signalé</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for item in reports %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm">
+                                {% if item.type == 'publication' %}
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Publication</span>
+                                    <a href="{{ path('admin_forum_show', { id: item.entity.id }) }}" class="text-blue-600 hover:underline ml-1">#{{ item.entity.id }}</a>
+                                {% else %}
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">Commentaire</span>
+                                    <a href="{{ path('admin_forum_show', { id: item.entity.publication.id }) }}" class="text-blue-600 hover:underline ml-1">pub #{{ item.entity.publication.id }}</a>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ item.reason|replace({'_': ' '})|capitalize }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
+                                {% if item.type == 'publication' %}
+                                    {{ item.entity.titre|default('') }} — {{ item.entity.contenu|slice(0, 80) }}{% if item.entity.contenu|length > 80 %}...{% endif %}
+                                {% else %}
+                                    {{ item.entity.contenu|slice(0, 80) }}{% if item.entity.contenu|length > 80 %}...{% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500">
+                                {{ item.reportedAt ? item.reportedAt|date('d/m/Y H:i') : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                {% if item.status == 'pending' %}
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">En attente</span>
+                                {% elseif item.status == 'resolved' %}
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Résolu</span>
+                                {% else %}
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">Ignoré</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm space-x-2">
+                                {% if item.type == 'publication' %}
+                                    {% if item.status == 'pending' %}
+                                        {# Supprimer = supprimer le signalement uniquement #}
+                                        <form method="post" action="{{ path('admin_report_publication_delete', { id: item.entity.id }) }}" class="inline" onsubmit="return confirm('Supprimer le signalement ? La publication sera conservée.');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_pub' ~ item.entity.id) }}">
+                                            <button type="submit" class="text-blue-600 hover:text-blue-800 font-medium" title="Supprimer le signalement">🗑️ Supprimer</button>
+                                        </form>
+                                        {# Résoudre = supprimer la publication signalée #}
+                                        <form method="post" action="{{ path('admin_report_publication_resolve', { id: item.entity.id }) }}" class="inline" onsubmit="return confirm('Résoudre en supprimant la publication ? Cette action est irréversible.');">
+                                            <button type="submit" class="text-green-600 hover:text-green-800 font-medium" title="Supprimer la publication signalée">✓ Résoudre</button>
+                                        </form>
+                                        {# Ignorer = garder la publication mais ignorer le signalement #}
+                                        <form method="post" action="{{ path('admin_report_publication_ignore', { id: item.entity.id }) }}" class="inline">
+                                            <button type="submit" class="text-gray-600 hover:text-gray-800 font-medium" title="Ignorer le signalement">⊘ Ignorer</button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    {% if item.status == 'pending' %}
+                                        {# Supprimer = supprimer le signalement uniquement #}
+                                        <form method="post" action="{{ path('admin_report_comment_delete', { id: item.entity.id }) }}" class="inline" onsubmit="return confirm('Supprimer le signalement ? Le commentaire sera conservé.');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_comm' ~ item.entity.id) }}">
+                                            <button type="submit" class="text-blue-600 hover:text-blue-800 font-medium" title="Supprimer le signalement">🗑️ Supprimer</button>
+                                        </form>
+                                        {# Résoudre = supprimer le commentaire signalé #}
+                                        <form method="post" action="{{ path('admin_report_comment_resolve', { id: item.entity.id }) }}" class="inline" onsubmit="return confirm('Résoudre en supprimant le commentaire ? Cette action est irréversible.');">
+                                            <button type="submit" class="text-green-600 hover:text-green-800 font-medium" title="Supprimer le commentaire signalé">✓ Résoudre</button>
+                                        </form>
+                                        {# Ignorer = garder le commentaire mais ignorer le signalement #}
+                                        <form method="post" action="{{ path('admin_report_comment_ignore', { id: item.entity.id }) }}" class="inline">
+                                            <button type="submit" class="text-gray-600 hover:text-gray-800 font-medium" title="Ignorer le signalement">⊘ Ignorer</button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if item.description %}
+                            <tr class="bg-gray-50/50">
+                                <td colspan="6" class="px-4 py-2 text-sm text-gray-500 border-l-4 border-amber-200 pl-6">
+                                    <strong>Description :</strong> {{ item.description }}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">Aucun signalement.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
