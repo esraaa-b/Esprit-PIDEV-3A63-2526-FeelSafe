@@ -32,7 +32,7 @@
                         <span>Message de votre assistant IA</span>
                         <span class="px-2 py-0.5 text-xs rounded-full bg-primary/20 text-primary font-medium">Gemini</span>
                     </h3>
-                    <p class="text-foreground leading-relaxed">{{ results.global_message }}</p>
+                    <p class="text-foreground leading-relaxed">{{ results.explanation ?? results.global_message ?? 'Analyse complète de vos réponses.' }}</p>
                 </div>
             </div>
         </div>

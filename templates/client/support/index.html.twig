@@ -1,19 +1,21 @@
 {% extends "dashboard/base.html.twig" %}
 
 {% block title %}Prendre RDV{% endblock %}
+{% set localisationPattern = '\\d+\\s+[A-Za-zÀ-ÖØ-öø-ÿ].+' %}
 
 {% block content %}
 <div class="max-w-3xl mx-auto space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900">Prendre un rendez-vous</h1>
         <div class="flex items-center gap-2">
-            <a href="{{ path('app_support_next') }}" class="btn btn-outline">Prochain RDV</a>
+            <a href="{{ path('app_support_next') }}" class="btn btn-primary">Prochain RDV</a>
             <a href="{{ path('app_support_accomp') }}" class="btn btn-outline">Accompagnement</a>
         </div>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <p class="text-sm text-gray-600">Choisissez un professionnel, une date, une heure et le mode</p>
-        <form action="{{ path('support_create') }}" method="post" class="mt-6 space-y-4">
+        <form action="{{ path('support_create') }}" method="post" class="mt-6 space-y-4" novalidate>
+            <div id="form-alert" role="alert" aria-live="assertive" class="hidden fixed top-5 right-5 z-50 max-w-sm shadow-lg mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-800 border border-red-200"></div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Professionnel</label>
                 <select name="professionnel_id" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
@@ -30,7 +32,10 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Heure</label>
-                    <input type="time" id="rdv-time" name="time" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                    <div class="flex items-center gap-3">
+                        <input type="time" id="rdv-time" name="time" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                        <span id="recommend-badge" class="hidden inline-flex items-center px-2 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">Recommandé</span>
+                    </div>
                 </div>
             </div>
             <div>
@@ -43,23 +48,24 @@
             </div>
             <div id="localisation-field" class="hidden">
                 <label class="block text-sm font-medium text-gray-700">Localisation</label>
-                <input type="text" id="localisation-input" name="localisation" placeholder="Ex: 9 rue Mohamed Lakkani" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" pattern="^\d+\s+[A-Za-zÀ-ÖØ-öø-ÿ].+" title="Format requis: numéro au début puis nom de voie (ex: 9 rue Mohamed Lakkani)">
+                <input type="text" id="localisation-input" name="localisation" placeholder="Ex: 9 rue Mohamed Lakkani" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" pattern="{{ localisationPattern }}" title="Format requis: numéro au début puis nom de voie (ex: 9 rue Mohamed Lakkani)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Commentaire</label>
                 <textarea name="commentaire" rows="3" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Message pour le professionnel (optionnel)"></textarea>
             </div>
             <div class="flex justify-end">
-                <button type="submit" class="btn btn-lg w-full md:w-auto">
-                    Valider
-                </button>
+                <button type="submit" class="btn btn-lg w-full md:w-auto">Valider</button>
             </div>
         </form>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold">Mes demandes de rendez-vous</h2>
-            <a href="{{ path('app_support_accomp') }}" class="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">Voir accompagnement</a>
+            <div class="flex gap-2">
+                <a href="{{ path('app_support_next') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Prochain RDV</a>
+                <a href="{{ path('app_support_accomp') }}" class="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">Voir accompagnement</a>
+            </div>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -71,6 +77,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mode</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commentaire</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -81,34 +88,50 @@
                         <td class="px-6 py-4 text-sm text-gray-700">{{ r.heureRdv|date('H:i') }}</td>
                         <td class="px-6 py-4 text-sm text-gray-700">{{ r.mode.value == 'en_ligne' ? 'En ligne' : 'Présentiel' }}</td>
                         <td class="px-6 py-4 text-sm">
-                            <span class="text-xs px-2 py-1 rounded-full 
-                                {% if r.statut.value == 'planifie' %}bg-blue-100 text-blue-700{% elseif r.statut.value == 'honore' %}bg-green-100 text-green-700{% elseif r.statut.value == 'annule' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                            <span class="text-xs px-2 py-1 rounded-full
+                                {% if r.statut.value == 'planifie' %}bg-blue-100 text-blue-700
+                                {% elseif r.statut.value == 'honore' %}bg-green-100 text-green-700
+                                {% elseif r.statut.value == 'annule' %}bg-red-100 text-red-700
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
                                 {{ r.statut.value }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-700">
-                            <div class="space-y-2">
-                                <div>{{ r.commentaire ?: '—' }}</div>
-                                <div class="flex items-center gap-2">
-                                    <a href="{{ path('support_rdv_ics', { id: r.id }) }}" class="btn btn-sm btn-outline">Télécharger .ics</a>
-                                    {% set start = (r.dateRdv|date('Ymd')) ~ 'T' ~ (r.heureRdv|date('His')) %}
-                                    {% set end = (r.dateRdv|date('Ymd')) ~ 'T' ~ (r.heureRdv|date_modify('+1 hour')|date('His')) %}
-                                    {% set text = 'Rendez-vous FeelSafe' %}
-                                    {% set details = r.commentaire ?: '' %}
-                                    {% set location = r.localisation ?: '' %}
-                                    <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ text|url_encode }}&details={{ details|url_encode }}&location={{ location|url_encode }}&dates={{ start }}/{{ end }}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary">Ajouter à Google</a>
-                                </div>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ r.commentaire ?: '—' }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <a href="{{ path('support_rdv_ics', { id: r.id }) }}" class="btn btn-sm btn-outline">Télécharger .ics</a>
+                                {% set start = (r.dateRdv|date('Ymd')) ~ 'T' ~ (r.heureRdv|date('His')) %}
+                                {% set end = (r.dateRdv|date('Ymd')) ~ 'T' ~ (r.heureRdv|date_modify('+1 hour')|date('His')) %}
+                                {% set calText = 'Rendez-vous FeelSafe' %}
+                                {% set calDetails = r.commentaire ?: '' %}
+                                {% set calLocation = r.localisation ?: '' %}
+                                {% set calUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' ~ calText|url_encode ~ '&details=' ~ calDetails|url_encode ~ '&location=' ~ calLocation|url_encode ~ '&dates=' ~ start ~ '/' ~ end %}
+                                <a href="{{ calUrl }}" target="_blank" rel="noopener" class="btn btn-sm btn-secondary">Ajouter à Google</a>
+                                {% if r.mode.value == 'en_ligne' %}
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="openJitsi('{{ r.id }}','{{ app.user.getFullName()|e('js') }}','RDV FeelSafe {{ r.dateRdv|date('d/m/Y') }} {{ r.heureRdv|date('H:i') }}')">Rejoindre</button>
+                                {% endif %}
+                                {% if r.statut.value == 'planifie' %}
+                                    <form action="{{ path('support_rdv_cancel', { id: r.id }) }}" method="post">
+                                        <button type="submit" class="btn btn-sm btn-outline">Annuler</button>
+                                    </form>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Aucune demande</td>
+                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">Aucune demande</td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
+    </div>
+    <div id="jitsi-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50">
+        <div class="absolute top-4 right-4">
+            <button id="jitsi-close" class="px-3 py-1 rounded bg-white text-gray-800 border">Fermer</button>
+        </div>
+        <div id="jitsi-container" class="w-full h-full"></div>
     </div>
 </div>
 {% endblock %}
@@ -121,7 +144,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const locInput = document.getElementById('localisation-input');
     const dateInput = document.getElementById('rdv-date');
     const timeInput = document.getElementById('rdv-time');
-    const form = document.querySelector('form[action="{{ path('support_create') }}"]');
+    const proSelect = document.querySelector('select[name="professionnel_id"]');
+    const recBadge = document.getElementById('recommend-badge');
+    const alertBox = document.getElementById('form-alert');
+    const form = document.querySelector('form');
+    let recommendedSlots = [];
+    let alertTimer = null;
+
     function toggleLoc() {
         if (modeSelect.value === 'en_presentiel') {
             locField.classList.remove('hidden');
@@ -136,10 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleLoc();
 
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    dateInput.min = `${yyyy}-${mm}-${dd}`;
+    dateInput.min = today.toISOString().split('T')[0];
 
     function updateTimeMin() {
         if (!dateInput.value) return;
@@ -147,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selected.toDateString() === today.toDateString()) {
             const h = String(today.getHours()).padStart(2, '0');
             const m = String(today.getMinutes()).padStart(2, '0');
-            timeInput.min = `${h}:${m}`;
+            timeInput.min = h + ':' + m;
         } else {
             timeInput.removeAttribute('min');
         }
@@ -155,24 +181,104 @@ document.addEventListener('DOMContentLoaded', function() {
     dateInput.addEventListener('change', updateTimeMin);
     updateTimeMin();
 
+    function updateRecommendBadge() {
+        const d = dateInput.value, t = timeInput.value;
+        if (!d || !t || !recommendedSlots.length) { recBadge.classList.add('hidden'); return; }
+        recommendedSlots.some(s => s.date === d && s.time === t)
+            ? recBadge.classList.remove('hidden')
+            : recBadge.classList.add('hidden');
+    }
+
+    function fetchRecommendations() {
+        const proId = proSelect ? proSelect.value : '';
+        const url = '{{ path('support_recommend_slots') }}' + (proId ? '?professionnel_id=' + encodeURIComponent(proId) : '');
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(d => { recommendedSlots = d && d.success ? d.suggestions || [] : []; updateRecommendBadge(); })
+            .catch(() => { recommendedSlots = []; updateRecommendBadge(); });
+    }
+
+    if (proSelect) {
+        proSelect.addEventListener('change', fetchRecommendations);
+        if (proSelect.value) fetchRecommendations();
+    }
+    dateInput.addEventListener('change', updateRecommendBadge);
+    timeInput.addEventListener('change', updateRecommendBadge);
+
+    function showAlert(msg) {
+        alertBox.textContent = msg;
+        alertBox.classList.remove('hidden');
+        clearTimeout(alertTimer);
+        alertTimer = setTimeout(() => { alertBox.classList.add('hidden'); alertBox.textContent = ''; }, 4000);
+    }
+
     form.addEventListener('submit', function(e) {
-        const d = dateInput.value;
-        const t = timeInput.value;
+        alertBox.classList.add('hidden');
+        if (!proSelect.value) { e.preventDefault(); showAlert('Veuillez sélectionner un professionnel.'); return; }
         if (modeSelect.value === 'en_presentiel') {
-            const re = /^\d+\s+[A-Za-zÀ-ÖØ-öø-ÿ].+/;
-            if (!re.test(locInput.value.trim())) {
-                e.preventDefault();
-                alert('Localisation invalide. Format attendu: numéro au début puis la voie (ex: 9 rue Mohamed Lakkani).');
-                return;
+            if (!/^\d+\s+[A-Za-zÀ-ÖØ-öø-ÿ].+/.test(locInput.value.trim())) {
+                e.preventDefault(); showAlert('Localisation invalide. Format: numéro puis nom de voie (ex: 9 rue Mohamed Lakkani).'); return;
             }
         }
-        if (!d || !t) return;
-        const selected = new Date(d + 'T' + t);
-        if (selected.getTime() <= Date.now()) {
-            e.preventDefault();
-            alert('La date et l\'heure doivent être futures');
+        if (!dateInput.value || !timeInput.value) return;
+        if (new Date(dateInput.value + 'T' + timeInput.value).getTime() <= Date.now()) {
+            e.preventDefault(); showAlert('La date et l\'heure doivent être futures.');
         }
     });
 });
+</script>
+<style>
+#ia-bubble{position:fixed;right:16px;bottom:16px;z-index:60}
+.ia-btn{width:48px;height:48px;border-radius:9999px;background:#1f2937;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 20px rgba(0,0,0,0.2)}
+.ia-panel{position:fixed;right:16px;bottom:80px;width:320px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,0.15);padding:12px;display:none;z-index:60}
+.ia-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:8px}
+.ia-apply{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer}
+.ia-close{position:absolute;top:8px;right:8px;background:#f3f4f6;border:none;border-radius:6px;padding:4px 8px;cursor:pointer}
+</style>
+<div id="ia-bubble">
+  <button id="ia-open" class="ia-btn" title="Conseiller un créneau"><span>🤖</span></button>
+  <div id="ia-panel" class="ia-panel">
+    <button id="ia-close" class="ia-close">Fermer</button>
+    <div id="ia-list"></div>
+  </div>
+</div>
+<script>
+(function(){
+  const open=document.getElementById('ia-open'),panel=document.getElementById('ia-panel'),
+        close=document.getElementById('ia-close'),list=document.getElementById('ia-list'),
+        dateInput=document.getElementById('rdv-date'),timeInput=document.getElementById('rdv-time'),
+        proSelect=document.querySelector('select[name="professionnel_id"]');
+  function hide(){panel.style.display='none';}
+  function apply(date,time){dateInput.value=date;timeInput.value=time;hide();}
+  function load(){
+    list.innerHTML='<div class="text-sm text-gray-600">Chargement…</div>';
+    const proId=proSelect?proSelect.value:'';
+    const url='{{ path('support_recommend_slots') }}'+(proId?'?professionnel_id='+encodeURIComponent(proId):'');
+    fetch(url,{headers:{'X-Requested-With':'XMLHttpRequest'}})
+      .then(r=>r.json())
+      .then(d=>{
+        if(!d.success){list.innerHTML='<div class="text-sm text-red-600">Erreur</div>';return;}
+        const items=d.suggestions.map(s=>'<div class="ia-item"><div><div class="text-sm font-medium">'+new Date(s.date).toLocaleDateString()+' · '+s.time+'</div><div class="text-xs text-gray-500">Score: '+s.score+'</div></div><button class="ia-apply" data-date="'+s.date+'" data-time="'+s.time+'">Appliquer</button></div>').join('');
+        list.innerHTML=items||'<div class="text-sm text-gray-600">Pas de suggestion</div>';
+        list.querySelectorAll('.ia-apply').forEach(btn=>btn.addEventListener('click',()=>apply(btn.dataset.date,btn.dataset.time)));
+      })
+      .catch(()=>{list.innerHTML='<div class="text-sm text-red-600">Erreur</div>';});
+  }
+  open.addEventListener('click',()=>{panel.style.display='block';load();});
+  close.addEventListener('click',hide);
+})();
+</script>
+<script src="https://meet.jit.si/external_api.js"></script>
+<script>
+let jitsiApi=null;
+function computeRoomAndPass(rdvId){const seed=btoa('feelsafe-v1:'+rdvId).replace(/[^A-Za-z0-9]/g,'');return{room:'feelsafe-'+rdvId+'-'+seed.slice(0,10),pass:seed.slice(-8)};}
+function openJitsi(rdvId,displayName,subject){
+    const modal=document.getElementById('jitsi-modal'),container=document.getElementById('jitsi-container'),c=computeRoomAndPass(rdvId);
+    if(jitsiApi){try{jitsiApi.dispose();}catch(e){}jitsiApi=null;}
+    modal.classList.remove('hidden');
+    jitsiApi=new JitsiMeetExternalAPI('meet.jit.si',{roomName:c.room,parentNode:container,width:'100%',height:'100%',interfaceConfigOverwrite:{HIDE_DEEP_LINKING_LOGO:true,TOOLBAR_BUTTONS:['microphone','camera','closedcaptions','desktop','chat','raisehand','tileview','hangup']},configOverwrite:{prejoinPageEnabled:false,startWithAudioMuted:true,startWithVideoMuted:true},userInfo:{displayName:displayName}});
+    jitsiApi.addListener('videoConferenceJoined',function(){try{jitsiApi.executeCommand('subject',subject||'Rendez-vous');}catch(e){}try{jitsiApi.executeCommand('password',c.pass);}catch(e){}});
+    document.getElementById('jitsi-close').onclick=function(){try{jitsiApi.executeCommand('hangup');}catch(e){}setTimeout(function(){if(jitsiApi){try{jitsiApi.dispose();}catch(e){}jitsiApi=null;}modal.classList.add('hidden');container.innerHTML='';},300);};
+}
 </script>
 {% endblock %}

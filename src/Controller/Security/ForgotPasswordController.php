@@ -15,7 +15,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mime\Address;
 use Psr\Log\LoggerInterface;
-
 class ForgotPasswordController extends AbstractController
 {
     public function __construct(

@@ -492,4 +492,44 @@ class SupportController extends AbstractController
             'rdvs' => $rdvs,
         ]);
     }
+    #[Route('/dashboard/support/recommend-slots', name: 'support_recommend_slots', methods: ['GET'])]
+#[IsGranted('ROLE_CLIENT')]
+public function recommendSlots(Request $request, EntityManagerInterface $em, \App\Service\ForecastService $forecast): \Symfony\Component\HttpFoundation\JsonResponse
+{
+    $user = $this->getUser();
+    if (!$user instanceof Utilisateur) {
+        return $this->json(['success' => false], 401);
+    }
+
+    $professionnelId = $request->query->get('professionnel_id');
+    $professionnel = $professionnelId ? $em->getRepository(Utilisateur::class)->find((int)$professionnelId) : null;
+
+    $suggestions = $forecast->getNextRecommendations($user, 5);
+
+    return $this->json([
+        'success' => true,
+        'suggestions' => $suggestions,
+    ]);
+}
+#[Route('/dashboard/support/rdv/{id}/cancel', name: 'support_rdv_cancel', methods: ['POST'])]
+#[IsGranted('ROLE_CLIENT')]
+public function cancel(int $id, EntityManagerInterface $em): Response
+{
+    $user = $this->getUser();
+    if (!$user instanceof Utilisateur) {
+        return $this->redirectToRoute('app_login');
+    }
+
+    $rdv = $em->getRepository(RendezVous::class)->find($id);
+    if (!$rdv || $rdv->getUtilisateur()?->getId() !== $user->getId()) {
+        $this->addFlash('error', 'Rendez-vous introuvable');
+        return $this->redirectToRoute('app_support');
+    }
+
+    $rdv->setStatut(\App\Enum\StatutRendezVous::ANNULE);
+    $em->flush();
+
+    $this->addFlash('success', 'Rendez-vous annulé');
+    return $this->redirectToRoute('app_support');
+}
 }
