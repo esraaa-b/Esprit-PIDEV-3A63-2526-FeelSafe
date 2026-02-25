@@ -54,7 +54,7 @@
 <div x-show="dialogOpen" x-transition class="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4" @click.self="dialogOpen = false">
     <div class="bg-card rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
-            <form method="POST" action="{{ path('app_emergency') }}" @submit.prevent="validateAndSubmit" novalidate>
+            <form method="POST" action="{{ path('app_emergency') }}" @submit="validateAndSubmit">
                 <div class="mb-4">
                     <div class="flex items-center gap-2 mb-2">
                         <svg class="w-5 h-5 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -554,53 +554,24 @@ document.addEventListener('alpine:init', () => {
             }
         },
         
-        // Existing validateAndSubmit function
 validateAndSubmit(e) {
-    console.log('🔍 FORM SUBMISSION STARTED');
-    console.log('Form element:', e.target);
-    console.log('Form data:', {
-        urgencyLevel: this.form.urgencyLevel,
-        location: this.form.location,
-        description: this.form.description
-    });
-    
     this.errors = [];
-    
-    // Check each field
+
     if (!this.form.urgencyLevel) {
         this.errors.push('Veuillez sélectionner un niveau d\'urgence');
-        console.log('❌ Missing: urgency level');
-    } else {
-        console.log('✅ Urgency level:', this.form.urgencyLevel);
     }
-    
     if (!this.form.location) {
         this.errors.push('Veuillez sélectionner votre localisation');
-        console.log('❌ Missing: location');
-    } else {
-        console.log('✅ Location:', this.form.location);
     }
-    
     if (!this.form.description || this.form.description.trim().length < 10) {
         this.errors.push('La description doit contenir au moins 10 caractères');
-        console.log('❌ Description too short:', this.form.description?.length || 0);
-    } else {
-        console.log('✅ Description length:', this.form.description.length);
     }
-    
+
     if (this.errors.length > 0) {
-        console.log('❌ Validation failed with errors:', this.errors);
-        e.preventDefault();
-        return false;
+        e.preventDefault(); // only prevent if invalid
+        return;
     }
-    
-    console.log('✅ Validation passed! Submitting form...');
-    
-    // Manually submit the form
-    e.target.submit();
-    
-    // Prevent the default Alpine handler
-    return false;
+    // if valid, let the form submit normally (no e.preventDefault)
 },
                 
         // Existing resetForm function

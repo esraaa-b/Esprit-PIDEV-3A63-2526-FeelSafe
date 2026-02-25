@@ -57,5 +57,5 @@ services:
 
     App\Service\EmergencyMailService:
         arguments:
-            $adminEmail: 'aoueslatii95@gmail.com'
+            $adminEmail: 'ilef.zayed0201@gmail.com'
 
