@@ -11,21 +11,29 @@ module.exports = {
     'bg-yellow-300', 'text-yellow-900', 'border-yellow-300',
     'bg-red-200', 'text-red-900', 'border-red-200',
     'bg-red-600', 'border-red-600',
+    // ADD THESE:
+    'bg-gray-900',
+    'text-gray-400',
+    'text-gray-500',
+    'border-gray-800',
+    'hover:text-white',
   ],
   theme: {
-    extend: { colors: {
+    extend: { 
+      colors: {
         primary: {
-          DEFAULT: '#16a34a',        // green-600
+          DEFAULT: '#16a34a',
           foreground: '#ffffff',
         },
-        secondary: '#dcfce7',        // green-100
+        secondary: '#dcfce7',
         card: '#ffffff',
-        border: '#bbf7d0',           // green-200
+        border: '#bbf7d0',
         muted: {
-          foreground: '#4b5563',     // gray-600
+          foreground: '#4b5563',
         },
-        destructive: '#dc2626',      // red-600
-      },},
+        destructive: '#dc2626',
+      },
+    },
   },
   plugins: [],
 }

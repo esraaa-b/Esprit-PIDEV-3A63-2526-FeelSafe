@@ -16,21 +16,26 @@
 </head>
 <body class="bg-background {% block body_padding %}pt-20 lg:pt-32{% endblock %}">
     <div class="flex flex-col min-h-screen">
-        {% block dashboard_navbar %}{% include "components/dashboard_navbar.html.twig" %}{% endblock %}
+        {% block dashboard_navbar %}
+            {% include "components/dashboard_navbar.html.twig" %}
+        {% endblock %}
 
         <main class="flex-1 w-full px-6 py-8">
             {% block content %}{% endblock %}
         </main>
+
+        {% block footer %}
+            {% include "components/footer.html.twig" %}
+        {% endblock %}
     </div>
 
-<style>
-    :root {
-  --navbar-height: 72px;
-}
-[x-cloak] { display: none !important; }
-</style>
+    <style>
+        :root {
+            --navbar-height: 72px;
+        }
+        [x-cloak] { display: none !important; }
+    </style>
 
-    
     <script>
     document.addEventListener('alpine:init', () => {
         console.log('✅ Alpine.js initialized!');
