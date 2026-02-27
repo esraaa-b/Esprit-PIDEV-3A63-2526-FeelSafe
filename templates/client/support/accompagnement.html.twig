@@ -1,0 +1,47 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block title %}Mon accompagnement{% endblock %}
+
+{% block content %}
+<div class="container mx-auto max-w-5xl">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-bold">Mon accompagnement</h1>
+        <a href="{{ path('app_support') }}" class="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">← Rendez-vous</a>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Professionnel</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">RDV</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prochain RDV</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date prochain RDV</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Objectifs</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes de suivi</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priorité</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                {% for a in accompagnements %}
+                    <tr>
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ a.rendezvous.professionnel ? a.rendezvous.professionnel.getFullName() : '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ a.rendezvous.dateRdv|date('d/m/Y') }} {{ a.rendezvous.heureRdv|date('H:i') }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ a.prochainRdv.value|capitalize }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ a.dateProchainRdv ? a.dateProchainRdv|date('d/m/Y H:i') : '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ a.objectifs ?: '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ a.notesSuivi ?: '—' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ a.niveauPriorite ?: '—' }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">Aucune donnée d’accompagnement</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

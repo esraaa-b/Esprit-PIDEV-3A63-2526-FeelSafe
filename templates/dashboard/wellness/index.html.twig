@@ -1,0 +1,511 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="space-y-8">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-serif font-bold text-foreground">Bien-être</h1>
+                <p class="text-muted-foreground mt-1">
+                    Prenez soin de vous avec nos activités de relaxation
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{{ path('app_wellness_activites') }}" class="px-4 py-2 bg-card border border-border rounded-lg font-medium text-foreground hover:bg-secondary transition-colors inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    Explorer
+                </a>
+                <!-- BOUTON QUIZ CORRIGÉ -->
+                <!-- BOUTON QUIZ - VERSION CORRIGÉE -->
+                <a href="{{ path('app_wellness_quiz_start') }}" class="px-4 py-2 rounded-lg font-medium transition-all inline-flex items-center gap-2 shadow-lg" style="background: linear-gradient(to right, rgb(251, 191, 36), rgb(34, 197, 94)); color: #ffffff;">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                    </svg>
+                    Quiz IA
+                </a>
+                <a href="{{ path('app_wellness_stats') }}" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    Mes stats
+                </a>
+            </div>
+            
+        </div>
+
+        <!-- NOUVEAU : Widget Météo + Activité du moment -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Météo Widget -->
+            <div class="bg-gradient-to-br from-primary/10 via-chart-2/5 to-chart-4/10 rounded-lg border border-border p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-medium text-muted-foreground mb-1">Météo actuelle</h3>
+                        <p class="text-lg font-semibold text-foreground">{{ weather.city }}, {{ weather.country }}</p>
+                    </div>
+                    <button onclick="refreshWeather()" class="p-2 rounded-lg hover:bg-card/50 transition-colors">
+                        <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <polyline points="23 20 23 14 17 14"></polyline>
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="text-5xl">{{ weatherEmoji }}</div>
+                    <div>
+                        <p class="text-4xl font-bold text-foreground">{{ weather.temperature }}°C</p>
+                        <p class="text-sm text-muted-foreground">{{ weather.description }}</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="bg-card/50 rounded-lg p-2 text-center">
+                        <p class="text-xs text-muted-foreground mb-1">Ressenti</p>
+                        <p class="text-sm font-semibold text-foreground">{{ weather.feels_like }}°C</p>
+                    </div>
+                    <div class="bg-card/50 rounded-lg p-2 text-center">
+                        <p class="text-xs text-muted-foreground mb-1">Humidité</p>
+                        <p class="text-sm font-semibold text-foreground">{{ weather.humidity }}%</p>
+                    </div>
+                    <div class="bg-card/50 rounded-lg p-2 text-center">
+                        <p class="text-xs text-muted-foreground mb-1">Vent</p>
+                        <p class="text-sm font-semibold text-foreground">{{ weather.wind_speed }} km/h</p>
+                    </div>
+                </div>
+                
+                <div class="bg-card/80 rounded-lg p-3 backdrop-blur-sm">
+                    <p class="text-sm text-foreground">
+                        <span class="font-semibold">Conseil météo :</span> {{ weatherRecommendation }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Activité du moment -->
+            {% if activityOfTheMoment %}
+                <div class="bg-gradient-to-br from-chart-4/10 to-chart-2/10 rounded-lg border border-border p-6">
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-chart-4/20 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-chart-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-medium text-muted-foreground mb-1">Activité du moment</h3>
+                            <p class="text-lg font-semibold text-foreground">{{ activityOfTheMoment.activity.nomActivite }}</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-sm text-muted-foreground mb-4">{{ activityOfTheMoment.reason }}</p>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                            {{ activityOfTheMoment.activity.typeActivite }}
+                        </span>
+                        {% if activityOfTheMoment.activity.dureeSuggeree %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-secondary text-secondary-foreground">
+                                {{ activityOfTheMoment.activity.dureeSuggeree }} min
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="{{ path('app_wellness_activite_show', {'id': activityOfTheMoment.activity.id}) }}" class="block w-full px-4 py-2 bg-chart-4 text-card rounded-lg font-semibold hover:bg-chart-4/90 transition-colors text-center">
+                        Commencer maintenant
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        <!-- NOUVEAU : Insights IA -->
+        {% if insights is not empty %}
+            <div class="bg-gradient-to-br from-chart-1/10 via-primary/5 to-chart-2/10 rounded-xl border border-border p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-chart-1 to-primary flex items-center justify-center">
+                            <svg class="w-6 h-6 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 16v-4"></path>
+                                <path d="M12 8h.01"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-foreground">💡 Insights de la semaine</h3>
+                            <p class="text-xs text-muted-foreground">Analyse intelligente de vos habitudes</p>
+                        </div>
+                    </div>
+                    <div class="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                        IA
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    {% for insight in insights %}
+                        <div class="flex items-start gap-4 p-4 rounded-lg transition-all hover:bg-card/50
+                            {% if insight.type == 'success' %}
+                                bg-chart-2/5 border border-chart-2/20
+                            {% elseif insight.type == 'warning' %}
+                                bg-chart-4/5 border border-chart-4/20
+                            {% elseif insight.type == 'info' %}
+                                bg-primary/5 border border-primary/20
+                            {% else %}
+                                bg-secondary/50 border border-border
+                            {% endif %}">
+                            
+                            <!-- Icon -->
+                            <div class="text-3xl flex-shrink-0">{{ insight.icon }}</div>
+                            
+                            <!-- Message -->
+                            <div class="flex-1">
+                                <p class="text-foreground leading-relaxed">{{ insight.message }}</p>
+                            </div>
+
+                            <!-- Indicator -->
+                            <div class="flex-shrink-0">
+                                {% if insight.type == 'success' %}
+                                    <div class="w-2 h-2 rounded-full bg-chart-2 animate-pulse"></div>
+                                {% elseif insight.type == 'warning' %}
+                                    <div class="w-2 h-2 rounded-full bg-chart-4 animate-pulse"></div>
+                                {% elseif insight.type == 'info' %}
+                                    <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Footer info -->
+                <div class="mt-6 pt-4 border-t border-border/50">
+                    <p class="text-xs text-muted-foreground text-center">
+                        Ces insights sont générés automatiquement en analysant vos 30 derniers jours d'activité
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">{{ completedDays }}</p>
+                        <p class="text-xs text-muted-foreground">Jours cette semaine</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-2/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">{{ totalMinutes }}</p>
+                        <p class="text-xs text-muted-foreground">Minutes pratiquées</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-4/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">{{ recommendedActivities|length }}</p>
+                        <p class="text-xs text-muted-foreground">Activités disponibles</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-chart-1/10 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-chart-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-foreground">{{ recentSessions|length }}</p>
+                        <p class="text-xs text-muted-foreground">Sessions récentes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Progress -->
+        <div class="bg-card rounded-lg border border-border p-6">
+            <h2 class="text-xl font-semibold text-foreground mb-4">Progrès de la semaine</h2>
+            <div class="flex justify-between">
+                {% for day in weeklyProgress %}
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center {{ day.completed ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground' }}">
+                            {% if day.completed %}
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            {% else %}
+                                {{ day.day|first }}
+                            {% endif %}
+                        </div>
+                        <span class="text-xs text-muted-foreground">{{ day.day }}</span>
+                        {% if day.minutes > 0 %}
+                            <span class="text-xs font-medium text-foreground">{{ day.minutes }}m</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- NOUVEAU : Recommandations intelligentes -->
+        {% if smartRecommendations is not empty %}
+            <div>
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-foreground flex items-center gap-2">
+                            <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
+                            Recommandations pour vous
+                        </h2>
+                        <p class="text-sm text-muted-foreground mt-1">Basées sur la météo et vos préférences</p>
+                    </div>
+                    <a href="{{ path('app_wellness_recommendations') }}" class="text-sm text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-2">
+                        <span class="font-medium">Voir toutes les suggestions</span>
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {% for item in smartRecommendations %}
+                        {% set activite = item.activity %}
+                        {% set score = item.score %}
+                        {% set reason = item.reason %}
+                        
+                        <a href="{{ path('app_wellness_activite_show', {'id': activite.id}) }}" class="block group">
+                            <div class="bg-card rounded-xl border border-border overflow-hidden h-full hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                                <!-- Badge Score -->
+                                <div class="relative h-40 overflow-hidden">
+                                    {% if activite.imageUrl %}
+                                        <img src="{{ activite.imageUrl }}" alt="{{ activite.nomActivite }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    {% else %}
+                                        <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-chart-2/20"></div>
+                                    {% endif %}
+                                    <div class="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent"></div>
+                                    
+                                    <!-- Score Badge -->
+                                    <div class="absolute top-3 left-3">
+                                        <div class="px-3 py-1 rounded-full backdrop-blur-sm bg-chart-2/90 text-card text-sm font-bold flex items-center gap-1">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                                            </svg>
+                                            {{ score }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="p-4">
+                                    <span class="text-xs text-primary font-medium">{{ activite.typeActivite }}</span>
+                                    <h3 class="font-semibold text-foreground group-hover:text-primary transition-colors mt-1 mb-2">
+                                        {{ activite.nomActivite }}
+                                    </h3>
+                                    
+                                    <div class="flex items-start gap-2 mb-3">
+                                        <svg class="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 2v20M2 12h20"></path>
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                        </svg>
+                                        <p class="text-xs text-muted-foreground">{{ reason }}</p>
+                                    </div>
+                                    
+                                    {% if activite.dureeSuggeree %}
+                                        <div class="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                            </svg>
+                                            <span>{{ activite.dureeSuggeree }} min</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Activités recommandées -->
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-foreground">Activités recommandées</h2>
+                <a href="{{ path('app_wellness_activites') }}" class="text-sm text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1">
+                    Voir tout
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {% for activite in recommendedActivities %}
+                    <a href="{{ path('app_wellness_activite_show', {'id': activite.id}) }}" class="block group">
+                        <div class="bg-card rounded-lg border border-border overflow-hidden h-full hover:shadow-lg transition-all duration-300">
+                            <!-- Image -->
+                            <div class="relative h-32 overflow-hidden">
+                                {% if activite.imageUrl %}
+                                    <img src="{{ activite.imageUrl }}" alt="{{ activite.nomActivite }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                {% else %}
+                                    <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-chart-2/20 flex items-center justify-center">
+                                        <svg class="w-12 h-12 text-muted-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                    </div>
+                                {% endif %}
+                                <div class="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent"></div>
+                                {% if activite.niveauDifficulte %}
+                                    <div class="absolute top-3 right-3">
+                                        <span class="px-2 py-1 text-xs rounded-full backdrop-blur-sm bg-card/80 text-foreground border border-border">
+                                            {{ activite.niveauDifficulte.value|capitalize }}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Content -->
+                            <div class="p-4">
+                                <span class="text-xs text-primary font-medium">{{ activite.typeActivite }}</span>
+                                <h3 class="font-semibold text-foreground group-hover:text-primary transition-colors mt-1">
+                                    {{ activite.nomActivite }}
+                                </h3>
+                                <p class="text-sm text-muted-foreground mt-1 line-clamp-2">{{ activite.description|slice(0, 80) }}...</p>
+                                {% if activite.dureeSuggeree %}
+                                    <div class="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
+                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        <span>{{ activite.dureeSuggeree }} min</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                {% else %}
+                    <div class="col-span-4 text-center py-12">
+                        <svg class="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <p class="text-muted-foreground">Aucune activité disponible pour le moment</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Sessions -->
+        {% if recentSessions is not empty %}
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-foreground">Sessions récentes</h2>
+                    <a href="{{ path('app_wellness_sessions_history') }}" class="text-sm text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1">
+                        Voir l'historique
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+                
+                <div class="space-y-3">
+                    {% for session in recentSessions %}
+                        <div class="bg-card rounded-lg border border-border p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-foreground">{{ session.activite.nomActivite }}</h3>
+                                    <p class="text-sm text-muted-foreground mt-1">
+                                        {{ session.dateDebut|date('d/m/Y à H:i') }}
+                                        {% if session.dureeReelle %}
+                                            · {{ session.dureeReelle }} min
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    {% if session.scoreHumeurAvant and session.scoreHumeurApres %}
+                                        <div class="flex items-center gap-2 text-sm">
+                                            <span class="text-muted-foreground">{{ session.scoreHumeurAvant }}/10</span>
+                                            <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                            <span class="font-medium {{ (session.scoreHumeurApres - session.scoreHumeurAvant) > 0 ? 'text-chart-2' : 'text-muted-foreground' }}">
+                                                {{ session.scoreHumeurApres }}/10
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                    <span class="px-2 py-1 text-xs rounded-full 
+                                        {% if session.statutSession.value == 'completee' %}
+                                            bg-chart-2/10 text-chart-2
+                                        {% elseif session.statutSession.value == 'en_cours' %}
+                                            bg-chart-4/10 text-chart-4
+                                        {% else %}
+                                            bg-secondary text-secondary-foreground
+                                        {% endif %}">
+                                        {{ session.statutSession.value|replace({'_': ' '})|capitalize }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Quick Action -->
+        <div class="bg-primary text-primary-foreground rounded-lg border border-primary p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold">Commencez une activité maintenant</h3>
+                    <p class="text-primary-foreground/80 text-sm mt-1">
+                        Prenez quelques minutes pour vous détendre et vous ressourcer
+                    </p>
+                </div>
+                <a href="{{ path('app_wellness_activites') }}" class="px-6 py-3 bg-primary-foreground text-primary rounded-lg font-medium hover:bg-primary-foreground/90 transition-colors inline-flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Démarrer
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script pour refresh météo -->
+<script>
+function refreshWeather() {
+    fetch('{{ path('app_wellness_weather_refresh') }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload la page pour mettre à jour la météo
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Erreur:', error));
+}
+</script>
+{% endblock %}

@@ -1,0 +1,700 @@
+{% extends "admin/base.html.twig" %}
+
+{% block title %}Emergency Management{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        [x-cloak] { display: none !important; }
+        .error-message {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .input-error {
+            border-color: #dc2626 !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data="emergencyForms()" x-cloak>
+    {# Header #}
+    <div>
+        <h1 class="text-3xl font-serif font-bold text-gray-900">
+            Emergency Management
+        </h1>
+        <p class="text-gray-600 mt-1">
+            Monitor and respond to user emergencies
+        </p>
+    </div>
+
+    {# Real-time User Health Tracker Section #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200" x-data="userHealthTracker()" x-init="initConnection()">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    👤 Live User Health Monitoring
+                </h2>
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                    <span class="text-sm text-gray-600">Live</span>
+                </div>
+            </div>
+            <p class="text-gray-600 mt-1">
+                Real-time health statistics from {{ users|length }} connected user(s)
+            </p>
+        </div>
+        
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Heart Rate</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stress</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mood</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">BP</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Level</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Update</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr x-show="loading && users.length === 0">
+                            <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                                Loading health data from API...
+                            </td>
+                        </tr>
+                        <template x-for="user in users" :key="user.id">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap" x-text="user.name"></td>
+                                <td class="px-6 py-4 whitespace-nowrap" x-text="user.email"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span x-text="user.heartRate" class="font-mono"></span> BPM
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span x-text="user.stressLevel" :class="getStressColor(user.stressLevel)"></span>/10
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap" x-text="user.mood"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="user.bloodPressure"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="getRiskBadgeColor(user.riskLevel)" x-text="user.riskLevel"></span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="user.lastUpdate"></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <button @click="showUserDetails(user)" class="text-blue-600 hover:text-blue-900">
+                                        View Details
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# User Details Modal #}
+        <div x-show="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" x-cloak>
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.away="closeModal()">
+                <div class="mt-3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900" x-text="selectedUser?.name"></h3>
+                        <button @click="closeModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+                    </div>
+                    
+                    <div class="space-y-4" x-show="selectedUser">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600">Email</p>
+                            <p class="font-medium" x-text="selectedUser.email"></p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Heart Rate</p>
+                                <p class="text-2xl font-bold" x-text="selectedUser.heartRate + ' BPM'"></p>
+                            </div>
+                            
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Stress Level</p>
+                                <p class="text-2xl font-bold" :class="getStressColor(selectedUser.stressLevel)" x-text="selectedUser.stressLevel + '/10'"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600">Current Mood</p>
+                            <p class="text-2xl font-bold" x-text="selectedUser.mood"></p>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-600">Last Update</p>
+                            <p class="font-medium" x-text="selectedUser.lastUpdate"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-end">
+                        <button @click="closeModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Flash Messages #}
+    {% for message in app.flashes('success') %}
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ message }}</span>
+        </div>
+    {% endfor %}
+    
+    {% for message in app.flashes('error') %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ message }}</span>
+        </div>
+    {% endfor %}
+
+    {# NEW: Admin Emergency Creation Form - Like User's but with User Selector #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center gap-2">
+                <svg class="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <h2 class="text-xl font-semibold text-gray-900">
+                    Create Emergency for User
+                </h2>
+            </div>
+            <p class="text-gray-600 mt-1">
+                Create an emergency on behalf of a user
+            </p>
+        </div>
+        <div class="p-6">
+            <form method="POST" action="{{ path('admin_emergency') }}" @submit.prevent="validateEmergencyForm" x-ref="emergencyForm" novalidate>
+                
+                <input type="hidden" name="admin_create_emergency" value="1">
+                
+                {# Validation Errors #}
+                <div x-show="emergencyErrors.length > 0" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p class="text-red-800 font-medium mb-1">Please correct the following errors:</p>
+                    <ul class="list-disc list-inside text-sm text-red-600">
+                        <template x-for="error in emergencyErrors" :key="error">
+                            <li x-text="error"></li>
+                        </template>
+                    </ul>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {# User Selection - Using the users array from monitoring #}
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Select User <span class="text-red-600">*</span>
+                        </label>
+                        <select name="user_id" 
+                                x-model="form.userId"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                :class="emergencyErrors.includes('Please select a user') ? 'input-error' : ''">
+                            <option value="">-- Choose a user --</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}">
+                                    {{ user.prenom }} {{ user.nom }} ({{ user.email }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# Hidden field - always high #}
+                    <input type="hidden" name="urgency_level" value="high">
+                    
+                    {# Description - Like user's form #}
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Notes <span class="text-red-600">*</span>
+                        </label>
+                        <textarea name="description" 
+                                  x-model="form.description"
+                                  placeholder="Notes for the emergency..."
+                                  class="w-full min-h-32 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  :class="emergencyErrors.includes('Description must be at least 10 characters') ? 'input-error' : ''"></textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button type="submit" 
+                            class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center gap-2">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        Create Emergency
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Emergencies Table #}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">User Emergencies</h2>
+        </div>
+        <div class="p-6">
+            {% if emergencies|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for emergency in emergencies %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ emergency.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if emergency.user %}
+                                        {{ emergency.user.prenom }} {{ emergency.user.nom }}
+                                    {% else %}
+                                        <span class="text-gray-400">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emergency.typeUrgence }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">{{ emergency.description|slice(0, 30) }}{% if emergency.description|length > 30 %}...{% endif %}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if emergency.severityLevel >= 4 %}bg-red-100 text-red-800
+                                        {% elseif emergency.severityLevel >= 3 %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-green-100 text-green-800{% endif %}">
+                                        Level {{ emergency.severityLevel }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if emergency.status == 'Resolved' %}bg-green-100 text-green-800
+                                        {% elseif emergency.status == 'In Progress' %}bg-blue-100 text-blue-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ emergency.status }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emergency.location }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emergency.createdAt|date('Y-m-d H:i') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <!-- Manage Button -->
+                                    <button @click="openManageModal(
+                                        {{ emergency.id }}, 
+                                        '{{ emergency.status }}', 
+                                        '{{ emergency.user ? emergency.user.prenom ~ ' ' ~ emergency.user.nom : 'Unknown User' }}', 
+                                        '{{ emergency.user ? emergency.user.email : 'No email' }}', 
+                                        '{{ emergency.user ? emergency.user.telephone : 'No phone' }}'
+                                    )" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded-md">
+                                        ⚙️ Manage
+                                    </button>    
+                                <!-- Delete Form -->
+                                <form method="post" action="{{ path('admin_emergency_delete', {'id': emergency.id}) }}" 
+                                    class="inline ml-2" 
+                                    onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette urgence?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ emergency.id) }}">
+                                    <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md">
+                                        🗑️ Delete
+                                    </button>
+                                </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <p class="text-gray-500">No emergencies found from users.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+{# Emergency Manage Modal #}
+<div x-show="manageModalOpen" 
+     x-cloak 
+     x-transition
+     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     @click.self="closeModal()">
+    
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <!-- Header -->
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-blue-600 text-white rounded-t-lg">
+            <h3 class="text-lg font-semibold" x-text="'Manage Emergency #' + selectedEmergency.id"></h3>
+            <button @click="closeModal()" class="hover:bg-blue-700 rounded-full p-1">✕</button>
+        </div>
+        
+        <!-- User Info -->
+        <div class="p-4 bg-gray-50 border-b border-gray-200">
+            <p class="text-sm text-gray-600">User: <span class="font-medium text-gray-900" x-text="selectedEmergency.userName"></span></p>
+            <p class="text-sm text-gray-600">Email: <span class="font-medium text-gray-900" x-text="selectedEmergency.userEmail"></span></p>
+            <p class="text-sm text-gray-600">Phone: <span class="font-medium text-gray-900" x-text="selectedEmergency.userPhone || 'Not provided'"></span></p>
+            <p class="text-sm text-gray-600 mt-1">Current Status: 
+                <span class="px-2 py-1 text-xs rounded-full" 
+                      :class="{
+                          'bg-gray-100 text-gray-800': selectedEmergency.status === 'Pending',
+                          'bg-blue-100 text-blue-600': selectedEmergency.status === 'In Progress',
+                          'bg-green-100 text-green-600': selectedEmergency.status === 'Resolved'
+                      }" 
+                      x-text="selectedEmergency.status"></span>
+            </p>
+        </div>
+        
+        <!-- Status Update Section -->
+        <div class="p-4 border-b border-gray-200">
+            <h4 class="font-medium text-gray-900 mb-3">Update Status</h4>
+            <div class="grid grid-cols-3 gap-2">
+                <button @click="updateEmergencyStatus(selectedEmergency.id, 'Pending')" 
+                        class="px-3 py-2 text-sm rounded-lg border transition-all"
+                        :class="selectedEmergency.status === 'Pending' ? 'bg-gray-200 border-gray-400 text-gray-800' : 'border-gray-300 hover:bg-gray-50 text-gray-600 hover:text-gray-900'">
+                    ⏳ Pending
+                </button>
+                <button @click="updateEmergencyStatus(selectedEmergency.id, 'In Progress')" 
+                        class="px-3 py-2 text-sm rounded-lg border transition-all"
+                        :class="selectedEmergency.status === 'In Progress' ? 'bg-blue-100 border-blue-400 text-blue-600' : 'border-gray-300 hover:bg-gray-50 text-gray-600 hover:text-gray-900'">
+                    ⚡ In Progress
+                </button>
+                <button @click="updateEmergencyStatus(selectedEmergency.id, 'Resolved')" 
+                        class="px-3 py-2 text-sm rounded-lg border transition-all"
+                        :class="selectedEmergency.status === 'Resolved' ? 'bg-green-100 border-green-400 text-green-600' : 'border-gray-300 hover:bg-gray-50 text-gray-600 hover:text-gray-900'">
+                    ✅ Resolved
+                </button>
+            </div>
+        </div>
+        
+        <!-- Contact Actions -->
+        <div class="p-4 border-b border-gray-200">
+            <h4 class="font-medium text-gray-900 mb-3">Contact User</h4>
+            <div class="grid grid-cols-2 gap-3">
+                <a :href="'tel:' + selectedEmergency.userPhone" 
+                   class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                    📞 Call
+                </a>
+                <a :href="'mailto:' + selectedEmergency.userEmail + '?subject=Re: Your emergency report&body=Regarding your emergency report...'" 
+                   class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                    ✉️ Email
+                </a>
+            </div>
+        </div>
+        
+        <!-- Send Help Button -->
+        <div class="p-4">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-red-600 text-lg">🚨</span>
+                <h4 class="font-medium text-gray-900">Dispatch Help</h4>
+            </div>
+            <button @click="showHelpConfirmation(selectedEmergency.id)" 
+                    class="w-full flex items-center justify-between px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                <div class="flex items-center gap-2">
+                    <span class="font-medium">Send Help</span>
+                </div>
+                <span>→</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+    {# Send Help Confirmation Modal #}
+    <div x-show="showHelpConfirm" 
+         x-cloak 
+         x-transition
+         class="fixed inset-0 overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4"
+         @click.self="showHelpConfirm = false">
+        
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">Confirm Dispatch</h3>
+                </div>
+                
+                <p class="text-gray-600 mb-6">
+                    Are you sure you want to dispatch emergency services to <span class="font-medium" x-text="selectedEmergency.userName"></span>?
+                </p>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <p class="text-sm text-yellow-800">
+                        <span class="font-medium">⚠️ Important:</span> This will update the status to "In Progress" and notify emergency services.
+                    </p>
+                </div>
+                
+                <div class="flex justify-end gap-3">
+                    <button @click="showHelpConfirm = false" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button @click="confirmSendHelp()" 
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        Yes, Dispatch Help
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    // Emergency Forms Component
+    Alpine.data('emergencyForms', () => ({
+        // Form data
+        form: {
+            userId: '',
+            description: ''
+        },
+        emergencyErrors: [],
+        
+        // Manage Modal Properties
+        manageModalOpen: false,
+        showHelpConfirm: false,  // Add this line
+        selectedEmergency: {
+            id: null,
+            status: '',
+            userName: '',
+            userEmail: '',
+            userPhone: ''
+        },
+        
+        validateEmergencyForm() {
+            this.emergencyErrors = [];
+            
+            // Validate user selection
+            if (!this.form.userId) {
+                this.emergencyErrors.push('Please select a user');
+            }
+            
+            if (this.emergencyErrors.length === 0) {
+                this.$refs.emergencyForm.submit();
+            }
+        },
+        
+        openManageModal(id, status, userName, userEmail, userPhone) {
+            console.log('Opening modal for emergency:', id);
+            this.selectedEmergency = {
+                id: id,
+                status: status,
+                userName: userName,
+                userEmail: userEmail,
+                userPhone: userPhone
+            };
+            this.manageModalOpen = true;
+        },
+        
+        closeModal() {
+            console.log('Closing modal');
+            this.manageModalOpen = false;
+            this.showHelpConfirm = false;  // Add this line
+            this.selectedEmergency = {
+                id: null,
+                status: '',
+                userName: '',
+                userEmail: '',
+                userPhone: ''
+            };
+        },
+        
+        updateEmergencyStatus(id, newStatus) {
+            console.log('Updating status:', id, newStatus);
+            
+            const encodedStatus = encodeURIComponent(newStatus);
+            const url = `/admin/emergency/${id}/status/${encodedStatus}`;
+            console.log('Fetching URL:', url);
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP error! status: ${response.status} - ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    this.selectedEmergency.status = newStatus;
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating status:', error);
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+            });
+        },
+        
+        // Show confirmation modal instead of browser confirm
+        showHelpConfirmation(id) {
+            this.showHelpConfirm = true;
+        },
+        
+        // Actual send help function called after confirmation
+        confirmSendHelp() {
+            this.showHelpConfirm = false;
+            const id = this.selectedEmergency.id;
+            console.log('Sending help for emergency:', id);
+            
+            const newStatus = 'In Progress';
+            
+            fetch(`/admin/emergency/${id}/status/${encodeURIComponent(newStatus)}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.selectedEmergency.status = newStatus;
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                }
+            })
+            .catch(error => {
+                console.error('Error dispatching help:', error);
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            });
+        }
+    }));
+
+    // User Health Tracker Component (unchanged)
+    Alpine.data('userHealthTracker', () => ({
+        users: [],
+        selectedUser: null,
+        showModal: false,
+        loading: true,
+        lastUpdate: null,
+        
+        initConnection() {
+            console.log('Initializing API connection to /admin/api/health/data...');
+            this.fetchHealthData();
+            setInterval(() => {
+                this.fetchHealthData();
+            }, 120000);
+        },
+        
+        fetchHealthData() {
+            this.loading = true;
+            
+            fetch('/admin/api/health/data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.users = data.data.map(user => ({
+                            id: user.user_id,
+                            name: user.name,
+                            email: user.email,
+                            heartRate: user.health.heart_rate,
+                            stressLevel: user.health.stress_level,
+                            mood: this.getMoodEmoji(user.health.mood),
+                            bloodPressure: user.health.blood_pressure.reading,
+                            oxygenLevel: user.health.oxygen_level.value,
+                            riskLevel: user.health.risk_level,
+                            lastUpdate: new Date().toLocaleTimeString()
+                        }));
+                        
+                        this.lastUpdate = new Date().toLocaleTimeString();
+                    }
+                    this.loading = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching health data:', error);
+                    this.loading = false;
+                });
+        },
+        
+        getMoodEmoji(mood) {
+            const moodEmojis = {
+                'Calm': '😊 Calm',
+                'Relaxed': '😌 Relaxed',
+                'Happy': '🙂 Happy',
+                'Content': '😐 Content',
+                'Anxious': '😟 Anxious',
+                'Stressed': '😫 Stressed',
+                'Very Stressed': '😰 Very Stressed',
+                'Panicked': '😱 Panicked',
+                'Tired': '😴 Tired',
+                'Energetic': '⚡ Energetic'
+            };
+            return moodEmojis[mood] || mood;
+        },
+        
+        getStressColor(level) {
+            if (level < 4) return 'text-green-600';
+            if (level < 7) return 'text-yellow-600';
+            return 'text-red-600';
+        },
+        
+        getRiskBadgeColor(riskLevel) {
+            const colors = {
+                'Low': 'bg-green-100 text-green-800',
+                'Moderate': 'bg-yellow-100 text-yellow-800',
+                'High': 'bg-orange-100 text-orange-800',
+                'Critical': 'bg-red-100 text-red-800'
+            };
+            return colors[riskLevel] || 'bg-gray-100 text-gray-800';
+        },
+        
+        showUserDetails(user) {
+            this.selectedUser = user;
+            this.showModal = true;
+        },
+        
+        closeModal() {
+            this.showModal = false;
+            this.selectedUser = null;
+        }
+    }));
+});
+</script>
+{% endblock %}

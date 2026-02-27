@@ -1,0 +1,254 @@
+{% extends 'professionnel/base.html.twig' %}
+
+{% block title %}Journaux de {{ patient.prenom }} {{ patient.nom }}{% endblock %}
+
+{% block page_title %}Journal émotionnel - {{ patient.prenom }} {{ patient.nom }}{% endblock %}
+{% block page_subtitle %}Historique et analyse des entrées{% endblock %}
+
+{% block header_actions %}
+<div class="flex gap-2">
+    <a href="{{ path('app_pro_journal_patients') }}" class="btn btn-outline">
+        <i class="fas fa-arrow-left"></i>
+        Retour à la liste
+    </a>
+</div>
+{% endblock %}
+
+{% block body %}
+<div class="space-y-6">
+    <!-- Statistiques du patient -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Total journaux</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ stats.total }}</p>
+                </div>
+                <div class="w-12 h-12 bg-[#eef8f9] rounded-lg flex items-center justify-center">
+                    <i class="fas fa-book-open text-[#0f3b3e] text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Moyenne hebdo</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ stats.moyenneHebdo }}</p>
+                </div>
+                <div class="w-12 h-12 bg-[#eef8f9] rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chart-line text-[#0f3b3e] text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Humeur moyenne</p>
+                    <p class="text-3xl font-bold text-gray-900">
+                        {% if stats.moyenneHumeur %}
+                            {% if stats.moyenneHumeur >= 4 %}
+                                <span class="text-green-600">{{ stats.moyenneHumeur }}/5</span>
+                            {% elseif stats.moyenneHumeur >= 3 %}
+                                <span class="text-yellow-600">{{ stats.moyenneHumeur }}/5</span>
+                            {% else %}
+                                <span class="text-red-600">{{ stats.moyenneHumeur }}/5</span>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-[#eef8f9] rounded-lg flex items-center justify-center">
+                    <i class="fas fa-smile text-[#0f3b3e] text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 mb-1">Émotion dominante</p>
+                    {% if stats.dominantEmotion %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+                            {% if stats.dominantEmotion.emotion.value == 'tres_bien' %}bg-green-100 text-green-800
+                            {% elseif stats.dominantEmotion.emotion.value == 'bien' %}bg-green-50 text-green-700
+                            {% elseif stats.dominantEmotion.emotion.value == 'neutre' %}bg-yellow-100 text-yellow-800
+                            {% elseif stats.dominantEmotion.emotion.value == 'pas_bien' %}bg-orange-100 text-orange-800
+                            {% elseif stats.dominantEmotion.emotion.value == 'tres_mal' %}bg-red-100 text-red-800
+                            {% endif %}">
+                            {{ stats.dominantEmotion.emotion.icon() }}
+                            {{ stats.dominantEmotion.emotion.label() }}
+                        </span>
+                    {% else %}
+                        <span class="text-gray-400">-</span>
+                    {% endif %}
+                </div>
+                <div class="w-12 h-12 bg-[#eef8f9] rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chart-pie text-[#0f3b3e] text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribution des émotions -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold mb-4">Distribution des émotions</h3>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {% for emotion in moodOptions %}
+                {% set count = stats.emotionDistribution[emotion.value] ?? 0 %}
+                {% set percentage = stats.total > 0 ? (count / stats.total * 100)|round : 0 %}
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <div class="text-2xl mb-1">{{ emotion.icon() }}</div>
+                    <div class="text-xs font-medium text-gray-700">{{ emotion.label() }}</div>
+                    <div class="text-sm font-bold text-gray-900 mt-1">{{ count }}</div>
+                    <div class="text-xs text-gray-500">{{ percentage }}%</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Liste chronologique -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-lg font-semibold">Historique des entrées</h3>
+        </div>
+        
+        {% if journals is empty %}
+        <div class="p-12 text-center">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-book-open text-gray-400 text-3xl"></i>
+            </div>
+            <h4 class="text-lg font-medium text-gray-700 mb-2">Aucune entrée</h4>
+            <p class="text-gray-500">Ce patient n'a pas encore de journal émotionnel.</p>
+        </div>
+        {% else %}
+        <div class="divide-y divide-gray-200">
+            {% for journal in journals %}
+            <div class="p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start gap-4">
+                        <!-- Émotion -->
+                        <span class="inline-flex items-center justify-center w-12 h-12 rounded-full text-xl 
+                            {% if journal.emotion.value == 'tres_bien' %}bg-green-100 text-green-800
+                            {% elseif journal.emotion.value == 'bien' %}bg-green-50 text-green-700
+                            {% elseif journal.emotion.value == 'neutre' %}bg-yellow-100 text-yellow-800
+                            {% elseif journal.emotion.value == 'pas_bien' %}bg-orange-100 text-orange-800
+                            {% elseif journal.emotion.value == 'tres_mal' %}bg-red-100 text-red-800
+                            {% endif %}">
+                            {{ journal.emotion.icon() }}
+                        </span>
+                        
+                        <!-- Contenu -->
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="text-sm font-medium text-gray-900">
+                                    {{ journal.dateCreation|date('d/m/Y') }}
+                                </span>
+                                <span class="text-xs text-gray-500">
+                                    {{ journal.dateCreation|date('H:i') }}
+                                </span>
+                                {% if journal.image %}
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                        <i class="fas fa-image mr-1"></i>Photo
+                                    </span>
+                                {% endif %}
+                                {% if journal.audio %}
+                                    <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                                        <i class="fas fa-microphone mr-1"></i>Audio
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if journal.contenu %}
+                                <p class="text-gray-700">{{ journal.contenu|slice(0, 200) }}{% if journal.contenu|length > 200 %}...{% endif %}</p>
+                            {% else %}
+                                <p class="text-gray-400 italic">Pas de description</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <button onclick="openModal({{ journal.id }})" 
+                            class="inline-flex items-center px-3 py-2 border border-[#0f3b3e] text-sm leading-4 font-medium rounded-md text-[#0f3b3e] bg-white hover:bg-[#eef8f9] transition-colors">
+                        <i class="fas fa-eye mr-2"></i>
+                        Voir
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal pour voir le journal -->
+<div id="journalModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <div id="modalContent" class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="flex justify-center items-center h-32">
+                    <i class="fas fa-spinner fa-spin text-[#0f3b3e] text-2xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+function openModal(journalId) {
+    const modal = document.getElementById('journalModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    fetch(`/professionnel/journal/${journalId}/view`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('modalContent').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('modalContent').innerHTML = `
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-exclamation-circle text-red-500 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Erreur</h3>
+                    <p class="text-gray-500">Impossible de charger le journal</p>
+                    <button onclick="closeModal()" class="mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                        Fermer
+                    </button>
+                </div>
+            `;
+        });
+}
+
+function closeModal() {
+    document.getElementById('journalModal').classList.add('hidden');
+    document.body.style.overflow = '';
+    document.getElementById('modalContent').innerHTML = `
+        <div class="flex justify-center items-center h-32">
+            <i class="fas fa-spinner fa-spin text-[#0f3b3e] text-2xl"></i>
+        </div>
+    `;
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('journalModal');
+    if (e.target === modal || e.target.classList.contains('bg-opacity-75')) {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}

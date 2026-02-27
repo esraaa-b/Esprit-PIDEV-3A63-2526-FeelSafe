@@ -1,0 +1,72 @@
+{# Recursive partial for rendering a comment and its replies in backoffice (admin) #}
+{# Variables: comment, publication, depth (default 0) #}
+
+{% set depth = depth|default(0) %}
+
+<div class="p-4 rounded-lg bg-gray-50 border border-gray-100 {% if depth > 0 %}ml-6 border-l-2 border-l-blue-300{% endif %}">
+    <div class="flex justify-between items-start mb-2">
+        <div>
+            <span class="font-semibold text-sm text-blue-600">{{ comment.user ? comment.user.nom : 'Anonyme' }}</span>
+            {% if comment.parent %}
+                <span class="text-xs text-gray-400 ml-1">↩ réponse à {{ comment.parent.user ? comment.parent.user.nom : 'Anonyme' }}</span>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-400">{{ comment.dateCommentaire|date('d/m/Y H:i') }}</span>
+
+            {# Like/Dislike counters (read-only) #}
+            <span class="flex items-center gap-1 text-green-600 text-xs">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                </svg>
+                {{ comment.likesCount }}
+            </span>
+            <span class="flex items-center gap-1 text-red-600 text-xs">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                </svg>
+                {{ comment.dislikesCount }}
+            </span>
+
+            {# Admin delete button #}
+            <form method="POST"
+                  action="{{ path('app_publication_commentaire_delete', {id: comment.id}) }}"
+                  onsubmit="return confirm('Supprimer ce commentaire et toutes ses réponses ?');"
+                  class="inline">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_comment' ~ comment.id) }}">
+                <button type="submit"
+                        class="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
+                        title="Supprimer ce commentaire">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 7h12M9 7v10m6-10v10M10 4h4a1 1 0 011 1v2H9V5a1 1 0 011-1z"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+    <p class="text-gray-700 text-sm italic">"{{ comment.contenu }}"</p>
+
+    {# GIF attachment (if any) #}
+    {% if comment.gifUrl %}
+        <div class="mt-1">
+            <img src="{{ comment.gifUrl }}"
+                 alt="GIF"
+                 class="max-h-40 rounded-lg border border-gray-200"
+                 loading="lazy">
+        </div>
+    {% endif %}
+
+    {# Nested replies (recursive) #}
+    {% if comment.replies|length > 0 %}
+        <div class="mt-3 space-y-3">
+            {% for reply in comment.replies %}
+                {% include 'publication/_comment_admin.html.twig' with {
+                    comment: reply,
+                    publication: publication,
+                    depth: depth + 1
+                } only %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

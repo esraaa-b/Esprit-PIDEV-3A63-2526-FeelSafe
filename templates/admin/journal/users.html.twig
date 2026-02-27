@@ -1,0 +1,426 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Admin – Utilisateurs{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .user-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #22c55e20; display: flex;
+            align-items: center; justify-content: center;
+            color: #22c55e; font-weight: 600;
+        }
+        .btn-journaux {
+            background: #22c55e; color: white;
+            padding: 6px 12px; border-radius: 6px;
+            text-decoration: none; font-size: 0.875rem;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .btn-tendances {
+            background: #8b5cf6; color: white;
+            padding: 6px 12px; border-radius: 6px;
+            border: none; font-size: 0.875rem;
+            cursor: pointer; display: inline-flex;
+            align-items: center; gap: 4px;
+        }
+        [x-cloak] { display: none !important; }
+        .stat-card {
+            background: #f8fafc; border-radius: 12px;
+            padding: 12px; text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Modal tendances */
+        #tendancesModal {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        #tendancesModal.open { display: flex; }
+        .modal-content {
+            background: white; border-radius: 16px;
+            max-width: 800px; width: 90%;
+            max-height: 90vh; overflow-y: auto; padding: 24px;
+        }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr);
+            gap: 12px; margin-bottom: 24px;
+        }
+
+        /* Search styles */
+        #searchInput {
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #searchInput:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+        }
+        #clearSearch {
+            transition: background 0.2s;
+        }
+        #clearSearch:hover {
+            background: #e5e7eb;
+        }
+        .spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid #d1d5db;
+            border-top-color: #22c55e;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        tbody tr {
+            transition: background 0.15s;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold">Utilisateurs</h1>
+            <p class="text-muted-foreground mt-2" id="userCount">{{ users|length }} utilisateur(s)</p>
+        </div>
+    </div>
+
+    <!-- Flash messages -->
+    {% for message in app.flashes('success') %}
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <!-- Search Ajax -->
+    <div class="bg-white p-4 rounded-lg border">
+        <div class="flex gap-2">
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Rechercher par email ou nom..."
+                class="flex-1 border rounded px-3 py-2"
+                autocomplete="off"
+            >
+            <button id="clearSearch" class="bg-gray-200 text-gray-600 px-4 py-2 rounded hidden">
+                ✕ Effacer
+            </button>
+        </div>
+        <p id="searchStatus" class="text-sm text-gray-400 mt-2 min-h-[20px]"></p>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-white rounded-lg border overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left">Utilisateur</th>
+                    <th class="px-4 py-3 text-left">Email</th>
+                    <th class="px-4 py-3 text-center">Journaux</th>
+                    <th class="px-4 py-3 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                {% for user in users %}
+                    <tr class="border-t hover:bg-gray-50"
+                        data-id="{{ user.id }}"
+                        data-prenom="{{ user.prenom }}"
+                        data-nom="{{ user.nom }}"
+                        data-email="{{ user.email }}"
+                        data-nb="{{ user.journaux|length }}"
+                        data-journals-url="{{ path('admin_user_journals', {id: user.id}) }}"
+                        data-export-url="{{ path('app_admin_journal_export_pdf', {userId: user.id}) }}">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="user-avatar">
+                                    {{ user.prenom|first|default('') }}{{ user.nom|first|default('') }}
+                                </div>
+                                <div>
+                                    <div class="font-medium">{{ user.prenom }} {{ user.nom }}</div>
+                                    <div class="text-xs text-gray-500">ID: {{ user.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">{{ user.email }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
+                                {{ user.journaux|length }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-2">
+                                <a href="{{ path('admin_user_journals', {id: user.id}) }}" class="btn-journaux">
+                                    <i class="fas fa-book-open"></i> Journaux
+                                </a>
+                                <button
+                                    onclick="openTendances({{ user.id }}, '{{ user.email }}')"
+                                    class="btn-tendances">
+                                    <i class="fas fa-chart-line"></i> Tendances
+                                </button>
+                                <a href="{{ path('app_admin_journal_export_pdf', { userId: user.id }) }}"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-colors">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                    </svg>
+                                    Exporter PDF
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-8 text-gray-500">Aucun utilisateur trouvé</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL TENDANCES (vanilla JS, zéro Alpine) -->
+<div id="tendancesModal" onclick="if(event.target===this) closeTendances()">
+    <div class="modal-content">
+
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <div>
+                <h2 style="font-size:1.25rem; font-weight:700;">
+                    Tendances de <span id="modalUserEmail" style="color:#7c3aed;"></span>
+                </h2>
+                <p style="font-size:0.875rem; color:#6b7280; margin-top:4px;">Analyse des 30 derniers jours</p>
+            </div>
+            <button onclick="closeTendances()" style="font-size:1.5rem; background:none; border:none; cursor:pointer; color:#6b7280;">×</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="tendancesLoading" style="text-align:center; padding:48px 0;">
+            <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:#7c3aed;"></i>
+            <p style="margin-top:8px; color:#6b7280;">Calcul des tendances...</p>
+        </div>
+
+        <!-- Contenu -->
+        <div id="tendancesContent" style="display:none;">
+
+            <!-- Stats cards -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Message vide -->
+            <div id="emptyMessage" style="display:none; text-align:center; padding:32px; background:#f8fafc; border-radius:12px;">
+                <div style="font-size:2.5rem; margin-bottom:12px;">📊</div>
+                <p style="color:#6b7280;">Aucune donnée pour les 30 derniers jours</p>
+                <p style="font-size:0.875rem; color:#9ca3af; margin-top:4px;">L'utilisateur n'a pas encore de journal émotionnel</p>
+            </div>
+
+            <!-- Chart -->
+            <div id="chartContainer" style="height:256px; margin-top:24px; display:none;">
+                <canvas id="tendancesChart"></canvas>
+            </div>
+
+            <!-- Légende -->
+            <div id="chartLegend" style="display:none; flex-wrap:wrap; gap:16px; justify-content:center; margin-top:16px; font-size:0.75rem;">
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;"></span> Très bien</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#86efac;display:inline-block;"></span> Bien</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#eab308;display:inline-block;"></span> Neutre</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#fecaca;display:inline-block;"></span> Pas bien</div>
+                <div style="display:flex; align-items:center; gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#dc2626;display:inline-block;"></span> Très mal</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// ──────────────────────────────────────────────
+//  AJAX SEARCH
+// ──────────────────────────────────────────────
+(function () {
+    const searchUrl  = '{{ path('admin_users_index') }}';
+    const input      = document.getElementById('searchInput');
+    const tbody      = document.getElementById('usersTableBody');
+    const status     = document.getElementById('searchStatus');
+    const clearBtn   = document.getElementById('clearSearch');
+    const countLabel = document.getElementById('userCount');
+    let debounceTimer = null;
+
+    // Build a table row from a JSON user object returned by the controller
+    function buildRow(u) {
+        const initials = (u.prenom.charAt(0) + u.nom.charAt(0)).toUpperCase();
+        return `
+        <tr class="border-t hover:bg-gray-50">
+            <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                    <div class="user-avatar">${initials}</div>
+                    <div>
+                        <div class="font-medium">${u.prenom} ${u.nom}</div>
+                        <div class="text-xs text-gray-500">ID: ${u.id}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-4 py-3">${u.email}</td>
+            <td class="px-4 py-3 text-center">
+                <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">${u.nbJournaux}</span>
+            </td>
+            <td class="px-4 py-3 text-center">
+                <div class="flex justify-center gap-2">
+                    <a href="${u.journalsUrl}" class="btn-journaux">
+                        <i class="fas fa-book-open"></i> Journaux
+                    </a>
+                    <button onclick="openTendances(${u.id}, '${u.email}')" class="btn-tendances">
+                        <i class="fas fa-chart-line"></i> Tendances
+                    </button>
+                    <a href="${u.exportUrl}"
+                       class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        </svg>
+                        Exporter PDF
+                    </a>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    function doSearch(term) {
+        status.innerHTML = '<span class="spinner"></span> Recherche en cours...';
+
+        fetch(`${searchUrl}?search=${encodeURIComponent(term)}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => {
+            if (!r.ok) throw new Error('Erreur réseau');
+            return r.json();
+        })
+        .then(users => {
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500">Aucun utilisateur trouvé</td></tr>`;
+                status.textContent = '0 résultat';
+                countLabel.textContent = '0 utilisateur(s)';
+            } else {
+                tbody.innerHTML = users.map(buildRow).join('');
+                status.textContent = `${users.length} utilisateur(s) trouvé(s)`;
+                countLabel.textContent = `${users.length} utilisateur(s)`;
+            }
+        })
+        .catch(() => {
+            status.textContent = '❌ Erreur lors de la recherche';
+        });
+    }
+
+    input.addEventListener('input', function () {
+        const term = this.value.trim();
+        clearBtn.classList.toggle('hidden', term === '');
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => doSearch(term), 300);
+    });
+
+    clearBtn.addEventListener('click', function () {
+        input.value = '';
+        clearBtn.classList.add('hidden');
+        status.textContent = '';
+        doSearch('');
+    });
+})();
+</script>
+
+<script>
+// ──────────────────────────────────────────────
+//  MODAL TENDANCES
+// ──────────────────────────────────────────────
+function closeTendances() {
+    const m = document.getElementById('tendancesModal');
+    if (m) m.classList.remove('open');
+}
+
+function openTendances(userId, email) {
+    const modal          = document.getElementById('tendancesModal');
+    const loading        = document.getElementById('tendancesLoading');
+    const content        = document.getElementById('tendancesContent');
+    const empty          = document.getElementById('emptyMessage');
+    const statsGrid      = document.getElementById('statsGrid');
+    const chartContainer = document.getElementById('chartContainer');
+    const chartLegend    = document.getElementById('chartLegend');
+    const modalEmail     = document.getElementById('modalUserEmail');
+
+    if (!modal) return;
+    modal.classList.add('open');
+    modalEmail.textContent = email;
+
+    loading.style.display  = '';
+    content.style.display  = 'none';
+    empty.style.display    = 'none';
+    statsGrid.innerHTML    = '';
+    chartContainer.style.display = 'none';
+    chartLegend.style.display    = 'none';
+
+    fetch(`/api/user/${encodeURIComponent(userId)}/tendances`)
+        .then(r => r.json())
+        .then(data => {
+            loading.style.display = 'none';
+            if (!data || !data.chartLabels || !data.chartData) {
+                empty.style.display = '';
+                content.style.display = '';
+                return;
+            }
+
+            if (data.stats && Array.isArray(data.stats)) {
+                data.stats.forEach(s => {
+                    const el = document.createElement('div');
+                    el.className = 'stat-card';
+                    el.innerHTML = `<div style="font-weight:700; font-size:1.1rem">${s.count}</div><div style="font-size:0.85rem; color:#6b7280">${s.label}</div>`;
+                    statsGrid.appendChild(el);
+                });
+            }
+
+            chartContainer.style.display = '';
+            chartLegend.style.display    = 'flex';
+
+            const ctx = document.getElementById('tendancesChart');
+            if (ctx && typeof Chart !== 'undefined') {
+                if (window._tendancesChart) {
+                    try { window._tendancesChart.destroy(); } catch(e) {}
+                    window._tendancesChart = null;
+                }
+                window._tendancesChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.chartLabels,
+                        datasets: [
+                            { label: 'Très bien', data: data.chartData.tres_bien || [], borderColor: '#16a34a', tension: 0.4, fill: false },
+                            { label: 'Bien',      data: data.chartData.bien      || [], borderColor: '#86efac', tension: 0.4, fill: false },
+                            { label: 'Neutre',    data: data.chartData.neutre    || [], borderColor: '#eab308', tension: 0.4, fill: false },
+                            { label: 'Pas bien',  data: data.chartData.pas_bien  || [], borderColor: '#fecaca', tension: 0.4, fill: false },
+                            { label: 'Très mal',  data: data.chartData.tres_mal  || [], borderColor: '#dc2626', tension: 0.4, fill: false }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+
+            content.style.display = '';
+        })
+        .catch(() => {
+            loading.style.display = 'none';
+            empty.style.display   = '';
+            content.style.display = '';
+        });
+}
+</script>
+{% endblock %}

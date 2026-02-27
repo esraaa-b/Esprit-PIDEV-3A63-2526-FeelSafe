@@ -1,0 +1,318 @@
+{% extends "professionnel/base.html.twig" %}
+
+{% block title %}Urgence & Support - FeelSafe{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8" x-data="emergencyReport()" x-cloak>
+    {# Header #}
+    <div>
+        <h1 class="text-3xl font-serif font-bold text-foreground">Urgence & Support</h1>
+        <p class="text-muted-foreground mt-1">
+            Obtenez de l'aide rapidement en cas de besoin
+        </p>
+    </div>
+
+    {# Emergency Alert #}
+    <div class="border border-destructive/50 bg-destructive/5 rounded-lg p-4">
+        <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div>
+                <h3 class="font-semibold text-destructive">En cas d'urgence vitale</h3>
+                <p class="text-destructive/80 text-sm mt-1">
+                    Si vous ou quelqu'un est en danger immediat, appelez le 15 (SAMU) ou le 112.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {# Quick Actions #}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {# Report Emergency Card #}
+        <div class="relative">
+            {# Card Trigger #}
+            <button @click="dialogOpen = true" class="w-full cursor-pointer hover:shadow-lg transition-all border border-destructive/20 hover:border-destructive/50 rounded-xl bg-card text-left">
+                <div class="p-6 text-center">
+                    <div class="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-foreground text-lg">Signaler une urgence</h3>
+                    <p class="text-sm text-muted-foreground mt-1">Demandez de l'aide rapidement</p>
+                </div>
+            </button>
+
+            {# Dialog Modal #}
+            <div x-show="dialogOpen" x-transition class="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4" @click.self="dialogOpen = false; resetForm()">
+                <div class="bg-card rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        {# Form View #}
+                        <div x-show="!isSubmitted">
+                            <div class="mb-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-5 h-5 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    <h2 class="text-xl font-serif font-semibold text-foreground">Signaler une situation urgente</h2>
+                                </div>
+                                <p class="text-muted-foreground text-sm">Votre demande sera traitee en priorite par notre equipe</p>
+                            </div>
+
+                            {# Urgency Level #}
+                            <div class="mb-4">
+                                <p class="text-sm font-medium text-foreground mb-3">Niveau d'urgence</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    {% set levels = [
+                                        { id: 'high', label: 'Eleve', color: 'border-destructive bg-destructive/5 text-destructive' },
+                                        { id: 'medium', label: 'Moyen', color: 'border-chart-2 bg-chart-2/5 text-chart-2' },
+                                        { id: 'low', label: 'Faible', color: 'border-primary bg-primary/5 text-primary' }
+                                    ] %}
+                                    {% for level in levels %}
+                                        <button type="button" @click="urgencyLevel = '{{ level.id }}'" :class="urgencyLevel === '{{ level.id }}' ? '{{ level.color }}' : 'border-border hover:border-muted-foreground'" class="p-3 rounded-lg border-2 transition-all">
+                                            <span class="font-medium">{{ level.label }}</span>
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            {# Description #}
+                            <div class="mb-6">
+                                <p class="text-sm font-medium text-foreground mb-2">Decrivez votre situation</p>
+                                <textarea x-model="description" placeholder="Expliquez brievement ce qui se passe..." class="w-full min-h-32 p-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                            </div>
+
+                            {# Buttons - FIXED: Removed <template> tags #}
+                            <div class="flex justify-end gap-2">
+                                <button type="button" @click="dialogOpen = false; resetForm()" class="px-4 py-2 rounded-lg border border-border hover:bg-secondary transition-colors">Annuler</button>
+                                <button type="button" @click="submitRequest()" :disabled="!urgencyLevel || !description || isSubmitting" class="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <div x-show="isSubmitting">
+                                        <span class="flex items-center gap-2">
+                                            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                                            </svg>
+                                            Envoi en cours...
+                                        </span>
+                                    </div>
+                                    <div x-show="!isSubmitting">
+                                        Envoyer ma demande
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        {# Success View #}
+                        <div x-show="isSubmitted" class="py-8 text-center">
+                            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-semibold text-foreground mb-2">Demande envoyee</h3>
+                            <p class="text-muted-foreground mb-6">Un membre de notre equipe vous contactera dans les plus brefs delais</p>
+                            <button type="button" @click="dialogOpen = false; resetForm()" class="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Fermer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Chat Card #}
+        <a href="#" class="cursor-pointer hover:shadow-lg transition-all border border-border rounded-xl bg-card block">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 rounded-full bg-chart-4/10 flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-chart-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-foreground text-lg">Chat d'urgence</h3>
+                <p class="text-sm text-muted-foreground mt-1">Parlez a quelqu'un maintenant</p>
+            </div>
+        </a>
+
+        {# Centers Card #}
+        <a href="#" class="cursor-pointer hover:shadow-lg transition-all border border-border rounded-xl bg-card block">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-foreground text-lg">Centres a proximite</h3>
+                <p class="text-sm text-muted-foreground mt-1">Trouvez de l'aide pres de vous</p>
+            </div>
+        </a>
+    </div>
+
+    {# Emergency Contacts #}
+    <div class="border border-border rounded-xl bg-card">
+        <div class="p-6 border-b border-border">
+            <div class="flex items-center gap-2 mb-2">
+                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                <h2 class="text-xl font-semibold text-foreground">Numeros d'urgence</h2>
+            </div>
+            <p class="text-muted-foreground text-sm">Ces lignes sont disponibles pour vous ecouter et vous aider</p>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for contact in [
+                    { name: "SOS Amitie", number: "09 72 39 40 50", desc: "Ecoute 24h/24" },
+                    { name: "Fil Sante Jeunes", number: "0 800 235 236", desc: "Gratuit et anonyme" },
+                    { name: "SAMU", number: "15", desc: "Urgences medicales" },
+                    { name: "Prevention suicide", number: "3114", desc: "24h/24, 7j/7" }
+                ] %}
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-foreground">{{ contact.name }}</p>
+                                <p class="text-sm text-muted-foreground">{{ contact.desc }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <a href="tel:{{ contact.number|replace({' ': ''}) }}" class="text-lg font-bold text-primary hover:underline">{{ contact.number }}</a>
+                            <p class="text-xs text-primary flex items-center gap-1 justify-end mt-1">
+                                <span class="w-2 h-2 rounded-full bg-primary"></span>
+                                Disponible
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# Previous Requests #}
+    <div class="border border-border rounded-xl bg-card">
+        <div class="p-6 border-b border-border">
+            <div class="flex items-center gap-2 mb-2">
+                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <h2 class="text-xl font-semibold text-foreground">Historique des demandes</h2>
+            </div>
+            <p class="text-muted-foreground text-sm">Suivez l'etat de vos demandes precedentes</p>
+        </div>
+        <div class="p-6">
+            {% if []|length > 0 %}
+                {# Previous requests would go here #}
+            {% else %}
+                <div class="text-center py-8">
+                    <svg class="w-12 h-12 text-muted-foreground mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <p class="text-muted-foreground">Aucune demande precedente</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Resources #}
+    <div class="border border-border rounded-xl bg-card">
+        <div class="p-6 border-b border-border">
+            <div class="flex items-center gap-2 mb-2">
+                <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <h2 class="text-xl font-semibold text-foreground">Ressources utiles</h2>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for resource in [
+                    { icon: 'shield', title: 'Guide de crise', desc: 'Comment gerer une crise', color: 'text-primary' },
+                    { icon: 'users', title: 'Communaute de soutien', desc: 'Vous n\'etes pas seul', color: 'text-chart-4' },
+                    { icon: 'heart', title: 'Auto-soins', desc: 'Techniques de relaxation', color: 'text-chart-2' }
+                ] %}
+                    <a href="#" class="flex items-center gap-3 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
+                        <svg class="w-5 h-5 {{ resource.color }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            {% if resource.icon == 'shield' %}
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            {% elseif resource.icon == 'users' %}
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            {% else %}
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            {% endif %}
+                        </svg>
+                        <div class="flex-1">
+                            <p class="font-medium text-foreground">{{ resource.title }}</p>
+                            <p class="text-xs text-muted-foreground">{{ resource.desc }}</p>
+                        </div>
+                        <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# SIMPLE Alpine.js initialization - NO Feather Icons calls #}
+<script>
+    // Initialize emergencyReport data BEFORE Alpine.js loads
+    window.emergencyReportData = {
+        dialogOpen: false,
+        urgencyLevel: null,
+        description: '',
+        isSubmitting: false,
+        isSubmitted: false,
+        
+        submitRequest() {
+            this.isSubmitting = true;
+            setTimeout(() => {
+                this.isSubmitting = false;
+                this.isSubmitted = true;
+            }, 2000);
+        },
+        
+        resetForm() {
+            this.urgencyLevel = null;
+            this.description = '';
+            this.isSubmitted = false;
+        }
+    };
+
+    // Wait for Alpine.js to be ready
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('emergencyReport', () => window.emergencyReportData);
+    });
+</script>
+
+{# DISABLE Feather Icons completely for this page #}
+<script>
+    if (typeof feather !== 'undefined') {
+        console.log('Feather Icons disabled for emergency page');
+        feather.replace = function() { return; };
+    }
+</script>
+{% endblock %}

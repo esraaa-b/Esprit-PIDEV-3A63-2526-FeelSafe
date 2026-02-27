@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FeelSafe - Tableau de bord{% endblock %}</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+    
+    {% block stylesheets %}{% endblock %}
+</head>
+<body class="bg-background">
+    
+    <div x-data="{
+        sidebarOpen: window.innerWidth >= 1024,
+        currentPath: window.location.pathname
+    }"
+    x-init="
+        sidebarOpen = window.innerWidth >= 1024;
+        window.addEventListener('resize', () => {
+            sidebarOpen = window.innerWidth >= 1024;
+        });
+    "
+    x-cloak
+    class="flex min-h-screen">
+        
+        {% include "components/dashboard_navbar.html.twig" %}
+        
+        <main class="flex-1 p-6 pt-20 lg:pt-6">
+            <div class="pt-16 lg:pt-0">
+                <div class="p-6 lg:p-8">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+    
+    <script>
+    document.addEventListener('alpine:init', function() {
+        setTimeout(function() {
+            if (typeof feather !== 'undefined') {
+                try {
+                    feather.replace();
+                } catch (error) {
+                    console.warn('Feather Icons:', error.message);
+                }
+            }
+        }, 100);
+    });
+    </script>
+    
+    {% block javascripts %}
+    <script>
+    document.addEventListener('alpine:init', function () {
+        Alpine.data('aiJournalPanel', function () {
+            return {
+                activeTab: 'affirmation',
+                affirmation: { text: null, loading: false, error: null, date: null },
+                prediction: { text: null, loading: false, error: null, html: null, predictsFor: null, entryCount: 0 },
+                analysis: { text: null, loading: false, error: null, html: null },
+                chat: { messages: [], input: '', loading: false },
+                init() {},
+                openDrawer() {
+                    document.getElementById('ai-drawer')?.classList.add('open');
+                    document.getElementById('ai-backdrop')?.classList.add('open');
+                },
+                closeDrawer() {
+                    document.getElementById('ai-drawer')?.classList.remove('open');
+                    document.getElementById('ai-backdrop')?.classList.remove('open');
+                },
+                loadAffirmation() {
+                    this.affirmation.loading = true;
+                    setTimeout(() => {
+                        this.affirmation.text = 'Vous êtes capable et résilient.';
+                        this.affirmation.date = new Date().toLocaleDateString();
+                        this.affirmation.loading = false;
+                    }, 600);
+                },
+                loadPrediction() {
+                    this.prediction.loading = true;
+                    setTimeout(() => {
+                        this.prediction.text = 'Une journée positive vous attend.';
+                        this.prediction.html = '<p>Bonne énergie</p>';
+                        this.prediction.loading = false;
+                    }, 600);
+                },
+                sendChat() {
+                    if (!this.chat.input || !this.chat.input.trim()) return;
+                    this.chat.loading = true;
+                    this.chat.messages.push({ role: 'user', text: this.chat.input });
+                    const userMsg = this.chat.input;
+                    this.chat.input = '';
+                    setTimeout(() => {
+                        this.chat.messages.push({ role: 'bot', text: "Merci de partager — je vous écoute." });
+                        this.chat.loading = false;
+                        try { this.$refs.chatList.scrollTop = this.$refs.chatList.scrollHeight; } catch (e) {}
+                    }, 600);
+                }
+            };
+        });
+    });
+
+    function closeAiDrawer() {
+        document.getElementById('ai-drawer')?.classList.remove('open');
+        document.getElementById('ai-backdrop')?.classList.remove('open');
+    }
+    </script>
+    {% endblock %}
+</body>
+<style>
+  [x-cloak] { display: none !important; }
+</style>
+</html>

@@ -1,0 +1,212 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Forum | FeelSafe Admin{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Publications</h1>
+            <p class="text-sm text-gray-600 mt-1">
+                Gérez les publications du forum
+            </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <a href="{{ path('admin_forum_stats') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                <span>📊</span>
+                Statistiques
+            </a>
+            <a href="{{ path('admin_report_index') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors shadow-sm">
+                <span>⚠️</span>
+                Signalements
+            </a>
+            <a href="{{ path('admin_forum_new') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                <span>➕</span>
+                Nouvelle publication
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        <form method="get" action="{{ path('admin_forum_index') }}" class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-medium text-gray-600 mb-1">Recherche par ID</label>
+                <input type="text" 
+                       name="search_id" 
+                       value="{{ app.request.query.get('search_id') }}"
+                       placeholder="ex: 42" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-medium text-gray-600 mb-1">Recherche par titre</label>
+                <input type="text" 
+                       name="search_titre" 
+                       value="{{ app.request.query.get('search_titre') }}"
+                       placeholder="Mots-clés..." 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                    Rechercher
+                </button>
+                <a href="{{ path('admin_forum_index') }}" 
+                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                    Réinitialiser
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Publications Table -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900">Liste des publications</h2>
+                    <p class="text-sm text-gray-600 mt-1">
+                        {{ publications|length }} publication(s)
+                        {% if sort_by is defined %}
+                            - Trié par 
+                            {% if sort_by == 'datePublication' %}
+                                date ({{ sort_order == 'DESC' ? 'plus récentes en premier' : 'plus anciennes en premier' }})
+                            {% elseif sort_by == 'titre' %}
+                                titre ({{ sort_order == 'ASC' ? 'A-Z' : 'Z-A' }})
+                            {% elseif sort_by == 'id' %}
+                                ID ({{ sort_order == 'ASC' ? 'croissant' : 'décroissant' }})
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <a href="{{ path('admin_forum_index', {
+                                'search_id': app.request.query.get('search_id'),
+                                'search_titre': app.request.query.get('search_titre'),
+                                'sort_by': 'id',
+                                'sort_order': (sort_by|default('datePublication') == 'id' and sort_order|default('DESC') == 'ASC') ? 'DESC' : 'ASC'
+                            }) }}" class="flex items-center gap-1 hover:text-gray-700 transition-colors">
+                                ID 
+                                {% if sort_by|default('datePublication') == 'id' %}
+                                    <span class="text-blue-600">{{ sort_order|default('DESC') == 'ASC' ? '↑' : '↓' }}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <a href="{{ path('admin_forum_index', {
+                                'search_id': app.request.query.get('search_id'),
+                                'search_titre': app.request.query.get('search_titre'),
+                                'sort_by': 'titre',
+                                'sort_order': (sort_by|default('datePublication') == 'titre' and sort_order|default('DESC') == 'ASC') ? 'DESC' : 'ASC'
+                            }) }}" class="flex items-center gap-1 hover:text-gray-700 transition-colors">
+                                Titre
+                                {% if sort_by|default('datePublication') == 'titre' %}
+                                    <span class="text-blue-600">{{ sort_order|default('DESC') == 'ASC' ? '↑' : '↓' }}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contenu</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <a href="{{ path('admin_forum_index', {
+                                'search_id': app.request.query.get('search_id'),
+                                'search_titre': app.request.query.get('search_titre'),
+                                'sort_by': 'datePublication',
+                                'sort_order': (sort_by|default('datePublication') == 'datePublication' and sort_order|default('DESC') == 'ASC') ? 'DESC' : 'ASC'
+                            }) }}" class="flex items-center gap-1 hover:text-gray-700 transition-colors">
+                                Date
+                                {% if sort_by|default('datePublication') == 'datePublication' %}
+                                    <span class="text-blue-600">{{ sort_order|default('DESC') == 'ASC' ? '↑' : '↓' }}</span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for publication in publications %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ publication.id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ publication.titre }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                            <div class="line-clamp-2">
+                                {{ publication.contenu|slice(0, 60) }}{% if publication.contenu|length > 60 %}...{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if publication.image %}
+                                <img src="{{ asset('uploads/' ~ publication.image) }}" 
+                                     alt="{{ publication.titre }}"
+                                     class="w-16 h-12 object-cover rounded-lg border border-gray-200">
+                            {% else %}
+                                <span class="text-sm text-gray-400">Aucune</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ publication.datePublication ? publication.datePublication|date('d/m/Y') : '-' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <a href="{{ path('admin_forum_show', {id: publication.id}) }}" 
+                                   class="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                                    Voir
+                                </a>
+                                <a href="{{ path('admin_forum_edit', {id: publication.id}) }}" 
+                                   class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                    Modifier
+                                </a>
+                                <form method="post" 
+                                      action="{{ path('admin_forum_delete', {'id': publication.id}) }}" 
+                                      class="inline"
+                                      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette publication ?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication.id) }}">
+                                    <button type="submit" 
+                                            class="px-3 py-1.5 bg-red-50 text-red-600 text-xs font-medium rounded-lg hover:bg-red-100 transition-colors">
+                                        🗑 Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-16 h-16 text-gray-300 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <p class="text-gray-500">Aucune publication pour le moment</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Styles additionnels pour line-clamp (si nécessaire) -->
+<style>
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
+{% endblock %}

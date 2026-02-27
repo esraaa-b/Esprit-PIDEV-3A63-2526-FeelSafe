@@ -1,0 +1,143 @@
+{% extends "professionnel/base.html.twig" %}
+
+{% block title %}Tableau de bord - FeelSafe{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+{% block page_subtitle %}{{ "now"|date("d F Y") }}{% endblock %}
+
+{% block body %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+            <div class="w-12 h-12 bg-[#eef8f9] rounded-xl flex items-center justify-center text-[#0f3b3e]">
+                <i class="fas fa-calendar-check text-xl"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-800">24</p>
+                <p class="text-sm text-gray-500">Sessions ce mois</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+            <div class="w-12 h-12 bg-[#eef8f9] rounded-xl flex items-center justify-center text-[#0f3b3e]">
+                <i class="fas fa-book-open text-xl"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-800">15</p>
+                <p class="text-sm text-gray-500">Notes professionnelles</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+            <div class="w-12 h-12 bg-[#eef8f9] rounded-xl flex items-center justify-center text-[#0f3b3e]">
+                <i class="fas fa-chart-line text-xl"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-800">85%</p>
+                <p class="text-sm text-gray-500">Performance globale</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+                <i class="fas fa-pen text-[#0f3b3e]"></i>
+                <h3 class="text-base font-semibold text-gray-800">Notes rapides</h3>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 italic border-l-4 border-[#0f3b3e] pl-4">
+                    "Excellente progression avec le programme de méditation. À poursuivre..."
+                </p>
+                <p class="text-xs text-gray-400 mt-2 ml-4">Il y a 2 heures</p>
+                <a href="{{ path('app_pro_journal_patients') }}" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#0f3b3e] text-white text-sm rounded-lg hover:bg-[#1e5a5f] transition-colors">
+                    <i class="fas fa-book-open"></i> Accéder au journal
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+                <i class="fas fa-clock text-[#0f3b3e]"></i>
+                <h3 class="text-base font-semibold text-gray-800">Activité récente</h3>
+            </div>
+            <div class="p-6 space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-[#eef8f9] rounded-lg flex items-center justify-center text-[#0f3b3e]">
+                        <i class="fas fa-spa text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800">Session de méditation</p>
+                        <p class="text-xs text-gray-400">Il y a 1 jour</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-[#eef8f9] rounded-lg flex items-center justify-center text-[#0f3b3e]">
+                        <i class="fas fa-wind text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800">Exercice de respiration</p>
+                        <p class="text-xs text-gray-400">Il y a 2 jours</p>
+                    </div>
+                </div>
+                <a href="{{ path('app_support') }}" class="mt-2 inline-flex items-center gap-2 px-4 py-2 border border-[#0f3b3e] text-[#0f3b3e] text-sm rounded-lg hover:bg-[#eef8f9] transition-colors">
+                    <i class="fas fa-list"></i> Voir toutes les activités
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outils professionnels -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-base font-semibold text-gray-800">Vos outils professionnels</h3>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <a href="{{ path('app_pro_security') }}" class="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-[#0f3b3e] hover:bg-[#eef8f9] transition-colors group">
+                <div class="w-10 h-10 bg-[#eef8f9] rounded-lg flex items-center justify-center text-[#0f3b3e] group-hover:bg-white">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Sécurité & Profil</p>
+                    <p class="text-xs text-gray-500">Gérez votre profil et paramètres</p>
+                </div>
+            </a>
+
+            <a href="{{ path('app_pro_journal_patients') }}" class="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-[#0f3b3e] hover:bg-[#eef8f9] transition-colors group">
+                <div class="w-10 h-10 bg-[#eef8f9] rounded-lg flex items-center justify-center text-[#0f3b3e] group-hover:bg-white">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Journal professionnel</p>
+                    <p class="text-xs text-gray-500">Documentez vos sessions</p>
+                </div>
+            </a>
+
+            <a href="{{ path('app_support') }}" class="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-[#0f3b3e] hover:bg-[#eef8f9] transition-colors group">
+                <div class="w-10 h-10 bg-[#eef8f9] rounded-lg flex items-center justify-center text-[#0f3b3e] group-hover:bg-white">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Accompagnement</p>
+                    <p class="text-xs text-gray-500">Suivi et support patients</p>
+                </div>
+            </a>
+
+            <a href="{{ path('app_support_stats') }}" class="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-[#0f3b3e] hover:bg-[#eef8f9] transition-colors group">
+                <div class="w-10 h-10 bg-[#eef8f9] rounded-lg flex items-center justify-center text-[#0f3b3e] group-hover:bg-white">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Statistiques</p>
+                    <p class="text-xs text-gray-500">Analysez les données patients</p>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

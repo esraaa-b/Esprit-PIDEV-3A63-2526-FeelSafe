@@ -1,0 +1,509 @@
+{% extends 'auth/auth_base.html.twig' %}
+
+{% block title %}Inscription - FeelSafe{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex">
+    <!-- Left Panel - Branding -->
+    <div class="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('/images/hero-wellness.jpg')] bg-cover bg-center opacity-20"></div>
+        <div class="relative z-10 flex flex-col justify-center px-12 text-primary-foreground">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-12 h-12 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
+                    <i data-feather="heart" class="w-7 h-7"></i>
+                </div>
+                <span class="text-3xl font-serif font-bold">FeelSafe</span>
+            </div>
+            <h1 class="text-4xl font-serif font-bold mb-6 leading-tight text-balance">
+                Rejoignez notre communauté bienveillante
+            </h1>
+            <p class="text-lg opacity-90 mb-8 leading-relaxed">
+                Créez votre compte et commencez votre parcours vers un meilleur bien-être mental.
+            </p>
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <i data-feather="shield" class="w-5 h-5"></i>
+                    <span>Données 100% sécurisées</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i data-feather="users" class="w-5 h-5"></i>
+                    <span>Communauté active et bienveillante</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i data-feather="star" class="w-5 h-5"></i>
+                    <span>Accompagnement personnalisé</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i data-feather="cpu" class="w-5 h-5"></i>
+                    <span>🤖 Validation intelligente par IA</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel - Registration Form -->
+    <div class="flex-1 flex items-center justify-center p-8 bg-background overflow-y-auto">
+        <div class="w-full max-w-md my-8">
+            <!-- Mobile Logo -->
+            <div class="lg:hidden flex items-center gap-2 mb-8 justify-center">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                    <i data-feather="heart" class="w-6 h-6 text-primary-foreground"></i>
+                </div>
+                <span class="text-2xl font-serif font-bold text-foreground">FeelSafe</span>
+            </div>
+
+            <div class="border-0 shadow-lg rounded-lg bg-card p-6">
+                <div class="space-y-1 pb-6">
+                    <h2 class="text-2xl font-serif font-bold">Créer un compte</h2>
+                    <p class="text-muted-foreground text-sm">
+                        Remplissez le formulaire pour commencer
+                    </p>
+                </div>
+
+                <div class="mb-6">
+                    {{ form_start(registrationForm, {'attr': {'class': 'space-y-4', 'novalidate': 'novalidate', 'id': 'registrationForm'}}) }}
+                    
+                    {# Flash Messages #}
+                    {% for label, messages in app.flashes %}
+                        {% for message in messages %}
+                            <div class="p-3 rounded-lg alert-auto-hide flex items-center gap-2 {% if label == 'success' %}bg-green-100 text-green-700{% elseif label == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %} text-sm">
+                                <i data-feather="{% if label == 'success' %}check-circle{% elseif label == 'error' %}alert-circle{% else %}info{% endif %}" class="w-4 h-4"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+
+                    {# Message d'erreur global #}
+                    <div id="global-error" class="p-3 rounded-lg bg-red-100 text-red-700 text-sm hidden items-center gap-2">
+                        <i data-feather="alert-circle" class="w-4 h-4"></i>
+                        <span>Compte n'est pas valide. Veuillez remplir tous les champs requis.</span>
+                    </div>
+
+                    {# Informations personnelles #}
+                    <div class="border-b pb-4 mb-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <i data-feather="user" class="w-5 h-5"></i>
+                            Informations personnelles
+                        </h3>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                {{ form_label(registrationForm.prenom, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                                {{ form_widget(registrationForm.prenom) }}
+                                <div class="form-error">
+                                    {{ form_errors(registrationForm.prenom) }}
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                {{ form_label(registrationForm.nom, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                                {{ form_widget(registrationForm.nom) }}
+                                <div class="form-error">
+                                    {{ form_errors(registrationForm.nom) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mt-4">
+                            {{ form_label(registrationForm.email, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.email) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.email) }}
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mt-4">
+                            {{ form_label(registrationForm.telephone, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.telephone) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.telephone) }}
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mt-4">
+                            {{ form_label(registrationForm.role, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.role) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.role) }}
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                Sélectionnez votre profil pour une expérience adaptée
+                            </p>
+                        </div>
+
+                        {# ⚡ CHAMP CODE SECRET ADMIN (Caché par défaut) #}
+                        <div class="space-y-2 mt-4" id="admin-code-field" style="display: none;">
+                            <label for="code_admin_secret" class="block text-sm font-medium text-foreground flex items-center gap-2">
+                                <i data-feather="key" class="w-4 h-4"></i>
+                                Code secret administrateur
+                            </label>
+                            <div class="relative password-field">
+                                <input 
+                                    type="password" 
+                                    id="code_admin_secret" 
+                                    name="code_admin_secret"
+                                    placeholder="Entrez le code secret"
+                                    class="w-full h-11 px-3 py-2 border rounded-md border-red-300 focus:border-red-500 focus:ring-red-500"
+                                />
+                                <button
+                                    type="button"
+                                    class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    title="Afficher/Masquer"
+                                >
+                                    <i data-feather="eye" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-red-600 flex items-center gap-1">
+                                <i data-feather="alert-circle" class="w-3 h-3"></i>
+                                Un code secret est requis pour créer un compte administrateur
+                            </p>
+                        </div>
+                    </div>
+
+                    {# Sécurité #}
+                    <div class="border-b pb-4 mb-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <i data-feather="lock" class="w-5 h-5"></i>
+                            Sécurité
+                        </h3>
+
+                        <div class="space-y-2">
+                            {{ form_label(registrationForm.plainPassword.first, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            <div class="relative password-field">
+                                {{ form_widget(registrationForm.plainPassword.first) }}
+                                <button
+                                    type="button"
+                                    class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    title="Afficher/Masquer le mot de passe"
+                                >
+                                    <i data-feather="eye" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.plainPassword.first) }}
+                            </div>
+                            
+                            {# ✅ BARRE DE PROGRESSION DU MOT DE PASSE #}
+                            <div id="password-strength" class="mt-2 hidden">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-medium flex items-center gap-1">
+                                        <i data-feather="shield" class="w-3 h-3"></i>
+                                        Force du mot de passe:
+                                    </span>
+                                    <span id="strength-level" class="text-xs font-bold"></span>
+                                </div>
+                                <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div id="strength-bar" class="h-full transition-all duration-300" style="width: 0%;"></div>
+                                </div>
+                                <div id="strength-suggestions" class="mt-2 text-xs text-muted-foreground"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mt-4">
+                            {{ form_label(registrationForm.plainPassword.second, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            <div class="relative password-field">
+                                {{ form_widget(registrationForm.plainPassword.second) }}
+                                <button
+                                    type="button"
+                                    class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    title="Afficher/Masquer le mot de passe"
+                                >
+                                    <i data-feather="eye" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.plainPassword.second) }}
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                Minimum 8 caractères avec majuscule, minuscule et chiffre
+                            </p>
+                        </div>
+                    </div>
+
+                    {# Paramètres de confidentialité #}
+                    <div class="border-b pb-4 mb-4">
+                        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                            <i data-feather="shield" class="w-5 h-5"></i>
+                            Confidentialité et préférences
+                        </h3>
+
+                        <div class="space-y-2">
+                            {{ form_label(registrationForm.visibiliteProfil, null, {'label_attr': {'class': 'block text-sm font-medium text-foreground'}}) }}
+                            {{ form_widget(registrationForm.visibiliteProfil) }}
+                            <div class="form-error">
+                                {{ form_errors(registrationForm.visibiliteProfil) }}
+                            </div>
+                            <p class="text-xs text-muted-foreground mt-1">
+                                <i data-feather="info" class="w-3 h-3 inline"></i>
+                                Vous pourrez modifier ce paramètre à tout moment dans votre profil
+                            </p>
+                        </div>
+
+                        <div class="space-y-3 mt-4">
+                            <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                                {{ form_widget(registrationForm.partageDonnees) }}
+                                <div class="flex-1">
+                                    {{ form_label(registrationForm.partageDonnees, null, {'label_attr': {'class': 'text-sm font-medium text-foreground cursor-pointer'}}) }}
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        Vos données seront anonymisées et utilisées uniquement pour la recherche médicale
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                                {{ form_widget(registrationForm.notificationsEmail) }}
+                                <div class="flex-1">
+                                    {{ form_label(registrationForm.notificationsEmail, null, {'label_attr': {'class': 'text-sm font-medium text-foreground cursor-pointer'}}) }}
+                                    <p class="text-xs text-muted-foreground mt-1">
+                                        Recevez des rappels et des conseils personnalisés
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        id="submit-button"
+                        class="w-full h-11 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <i data-feather="check-circle" class="w-5 h-5"></i>
+                        <span id="submit-text">Créer mon compte</span>
+                    </button>
+
+                    {{ form_end(registrationForm) }}
+                </div>
+
+                <div class="pt-0">
+                    <p class="text-center text-sm text-muted-foreground">
+                        Vous avez déjà un compte?
+                        <a href="{{ path('app_login') }}" class="text-primary font-medium hover:underline">
+                            Se connecter
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remplacer les icônes Feather
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+            
+            // ✅ NOUVEAU: Toggle password visibility (fonctionne pour tous les champs)
+            document.querySelectorAll('.toggle-password').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const passwordField = this.closest('.password-field');
+                    const input = passwordField.querySelector('input');
+                    const icon = this.querySelector('i');
+                    
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.setAttribute('data-feather', 'eye-off');
+                    } else {
+                        input.type = 'password';
+                        icon.setAttribute('data-feather', 'eye');
+                    }
+                    
+                    // Rafraîchir les icônes
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                });
+            });
+            
+            // ⚡ JavaScript pour afficher/cacher le champ code secret
+            const roleSelect = document.querySelector('select[name="registration_form[role]"]');
+            const adminCodeField = document.getElementById('admin-code-field');
+            const adminCodeInput = document.getElementById('code_admin_secret');
+            const registrationForm = document.getElementById('registrationForm');
+            const globalError = document.getElementById('global-error');
+            const submitButton = document.getElementById('submit-button');
+            const submitText = document.getElementById('submit-text');
+            
+            if (roleSelect && adminCodeField && adminCodeInput) {
+                function toggleAdminCodeField() {
+                    if (roleSelect.value === 'ROLE_ADMIN') {
+                        adminCodeField.style.display = 'block';
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+                    } else {
+                        adminCodeField.style.display = 'none';
+                        adminCodeInput.value = '';
+                    }
+                }
+                
+                toggleAdminCodeField();
+                
+                roleSelect.addEventListener('change', function() {
+                    toggleAdminCodeField();
+                });
+            }
+            
+            // ✅ Analyse du mot de passe en temps réel
+            const passwordInput = document.querySelector('input[name="registration_form[plainPassword][first]"]');
+            
+            if (passwordInput) {
+                const strengthDiv = document.getElementById('password-strength');
+                const strengthBar = document.getElementById('strength-bar');
+                const strengthLevel = document.getElementById('strength-level');
+                const strengthSuggestions = document.getElementById('strength-suggestions');
+                
+                let debounceTimer;
+                
+                passwordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    
+                    if (password.length === 0) {
+                        strengthDiv.classList.add('hidden');
+                        return;
+                    }
+                    
+                    strengthDiv.classList.remove('hidden');
+                    
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(async function() {
+                        try {
+                            const response = await fetch('/api/check-password-strength', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ password: password })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            strengthBar.style.width = data.score + '%';
+                            strengthBar.style.backgroundColor = data.color;
+                            strengthLevel.textContent = data.level;
+                            strengthLevel.style.color = data.color;
+                            
+                            if (data.suggestions.length > 0) {
+                                strengthSuggestions.innerHTML = '💡 ' + data.suggestions.join(', ');
+                            } else {
+                                strengthSuggestions.innerHTML = '✅ Excellent mot de passe!';
+                                strengthSuggestions.style.color = 'green';
+                            }
+                            
+                            if (typeof feather !== 'undefined') {
+                                feather.replace();
+                            }
+                            
+                        } catch (error) {
+                            console.error('Erreur analyse mot de passe:', error);
+                        }
+                    }, 500);
+                });
+            }
+            
+            // ⚡ Validation du formulaire
+            if (registrationForm && globalError) {
+                registrationForm.addEventListener('submit', function(e) {
+                    globalError.classList.add('hidden');
+                    globalError.classList.remove('flex');
+                    
+                    const requiredFields = [
+                        document.querySelector('input[name="registration_form[prenom]"]'),
+                        document.querySelector('input[name="registration_form[nom]"]'),
+                        document.querySelector('input[name="registration_form[email]"]'),
+                        document.querySelector('input[name="registration_form[telephone]"]'),
+                        document.querySelector('select[name="registration_form[role]"]'),
+                        document.querySelector('input[name="registration_form[plainPassword][first]"]'),
+                        document.querySelector('input[name="registration_form[plainPassword][second]"]'),
+                        document.querySelector('select[name="registration_form[visibiliteProfil]"]')
+                    ];
+                    
+                    let hasEmptyField = false;
+                    
+                    requiredFields.forEach(function(field) {
+                        if (field && !field.value.trim()) {
+                            hasEmptyField = true;
+                        }
+                    });
+                    
+                    if (roleSelect && roleSelect.value === 'ROLE_ADMIN') {
+                        if (adminCodeField.style.display !== 'none' && !adminCodeInput.value.trim()) {
+                            hasEmptyField = true;
+                        }
+                    }
+                    
+                    if (hasEmptyField) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        globalError.classList.remove('hidden');
+                        globalError.classList.add('flex');
+                        
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+                        
+                        globalError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        return false;
+                    }
+                    
+                    submitButton.disabled = true;
+                    submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    submitText.innerHTML = '<i data-feather="loader" class="w-5 h-5 animate-spin"></i> Validation IA en cours...';
+                    
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                    
+                    return true;
+                });
+            }
+            
+            // Auto-hide flash messages
+            const alerts = document.querySelectorAll('.alert-auto-hide');
+            if (alerts.length > 0) {
+                alerts.forEach(function(alert) {
+                    setTimeout(function() {
+                        alert.style.transition = 'opacity 0.5s ease';
+                        alert.style.opacity = '0';
+                        setTimeout(function() {
+                            alert.remove();
+                        }, 500);
+                    }, 5000);
+                });
+            }
+        });
+    </script>
+    
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Style pour les boutons toggle password */
+        .toggle-password {
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            z-index: 10;
+        }
+        
+        .password-field {
+            position: relative;
+        }
+        
+        .password-field input {
+            padding-right: 2.5rem !important;
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Journal Émotionnel — Rapport</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: "DejaVu Sans", "DM Sans", sans-serif;
+        font-size: 10.5px;
+        color: #1a1a2e;
+        background: #ffffff;
+        line-height: 1.6;
+    }
+
+    /* ══ HEADER ══════════════════════════════════════════════════════════════ */
+    .page-header {
+        background: #0f0f1a;
+        padding: 0;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Decorative vertical accent bar */
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #c084fc, #818cf8, #38bdf8);
+    }
+
+    /* Large ghosted circle ornament */
+    .page-header::after {
+        content: '';
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 260px; height: 260px;
+        border-radius: 50%;
+        border: 40px solid rgba(192, 132, 252, 0.07);
+    }
+
+    .header-inner {
+        display: table;
+        width: 100%;
+        padding: 36px 44px 32px 52px;
+    }
+
+    .header-left  { display: table-cell; vertical-align: middle; }
+    .header-right { display: table-cell; vertical-align: middle; text-align: right; width: 180px; }
+
+    .eyebrow {
+        font-size: 9px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #c084fc;
+        margin-bottom: 10px;
+        font-weight: 500;
+    }
+
+    .report-title {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: #ffffff;
+        line-height: 1.1;
+        margin-bottom: 6px;
+    }
+
+    .report-subtitle {
+        font-size: 11px;
+        color: rgba(255,255,255,0.45);
+        font-weight: 300;
+        letter-spacing: 0.3px;
+    }
+
+    .user-badge {
+        display: inline-block;
+        margin-top: 18px;
+        background: rgba(192, 132, 252, 0.12);
+        border: 1px solid rgba(192, 132, 252, 0.3);
+        border-radius: 4px;
+        padding: 5px 14px;
+        font-size: 10px;
+        font-weight: 500;
+        color: #e0c3ff;
+        letter-spacing: 0.5px;
+    }
+
+    .date-block {
+        text-align: right;
+    }
+
+    .date-day {
+        font-size: 42px;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1;
+        letter-spacing: -2px;
+    }
+
+    .date-monthyear {
+        font-size: 10px;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-top: 4px;
+    }
+
+    .date-time {
+        font-size: 9px;
+        color: rgba(192, 132, 252, 0.7);
+        margin-top: 6px;
+        letter-spacing: 1px;
+    }
+
+    /* ══ DIVIDER LINE ════════════════════════════════════════════════════════ */
+    .header-divider {
+        height: 1px;
+        background: linear-gradient(90deg, #c084fc, #818cf8 40%, transparent);
+        margin-left: 52px;
+    }
+
+    /* ══ CONTENT ════════════════════════════════════════════════════════════ */
+    .content { padding: 32px 44px 28px 52px; }
+
+    /* ══ WELLNESS NOTE ══════════════════════════════════════════════════════ */
+    .wellness-note {
+        border: 1px solid #e8e4f0;
+        border-left: 3px solid #c084fc;
+        border-radius: 0 6px 6px 0;
+        padding: 12px 18px;
+        margin-bottom: 28px;
+        font-size: 9.5px;
+        color: #6b5b8e;
+        background: #faf9ff;
+        line-height: 1.7;
+        font-style: italic;
+    }
+
+    /* ══ SECTION ════════════════════════════════════════════════════════════ */
+    .section { margin-bottom: 28px; }
+
+    .section-header {
+        display: table;
+        width: 100%;
+        margin-bottom: 14px;
+    }
+
+    .section-title {
+        display: table-cell;
+        font-size: 9px;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        vertical-align: middle;
+    }
+
+    .section-rule {
+        display: table-cell;
+        vertical-align: middle;
+        padding-left: 12px;
+    }
+
+    .section-rule-line {
+        height: 1px;
+        background: linear-gradient(90deg, #e5e7eb, transparent);
+    }
+
+    /* ══ STAT CARDS ═════════════════════════════════════════════════════════ */
+    .stats-row {
+        display: table;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 10px;
+        margin: 0 -10px 4px -10px;
+    }
+
+    .stat-card {
+        display: table-cell;
+        width: 25%;
+        background: #fafafa;
+        border: 1px solid #f0eef5;
+        border-top: 2px solid #c084fc;
+        border-radius: 0 0 8px 8px;
+        padding: 18px 14px 16px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .stat-card:nth-child(2) { border-top-color: #818cf8; }
+    .stat-card:nth-child(3) { border-top-color: #38bdf8; }
+    .stat-card:nth-child(4) { border-top-color: #34d399; }
+
+    .stat-number {
+        font-size: 30px;
+        font-weight: 700;
+        color: #1a1a2e;
+        display: block;
+        line-height: 1;
+        letter-spacing: -1px;
+    }
+
+    .stat-label {
+        font-size: 8.5px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 6px;
+        display: block;
+    }
+
+    .stat-icon {
+        font-size: 18px;
+        display: block;
+        margin-bottom: 8px;
+        opacity: 0.7;
+    }
+
+    /* ══ EMOTION BARS ═══════════════════════════════════════════════════════ */
+    .emotion-row {
+        display: table;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .emotion-icon-cell {
+        display: table-cell;
+        width: 24px;
+        vertical-align: middle;
+        font-size: 14px;
+    }
+
+    .emotion-label-cell {
+        display: table-cell;
+        width: 78px;
+        vertical-align: middle;
+        font-size: 9.5px;
+        color: #4b5563;
+        padding: 0 10px;
+        font-weight: 500;
+    }
+
+    .emotion-bar-cell {
+        display: table-cell;
+        vertical-align: middle;
+    }
+
+    .emotion-bar-bg {
+        background: #f3f4f6;
+        border-radius: 2px;
+        height: 10px;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .emotion-bar-fill {
+        height: 10px;
+        border-radius: 2px;
+        opacity: 0.85;
+    }
+
+    .emotion-count-cell {
+        display: table-cell;
+        width: 55px;
+        vertical-align: middle;
+        text-align: right;
+        font-size: 9.5px;
+        font-weight: 600;
+        color: #374151;
+        padding-left: 10px;
+    }
+
+    .emotion-pct {
+        color: #d1d5db;
+        font-weight: 400;
+        font-size: 9px;
+    }
+
+    /* ══ MONTHLY CHART ══════════════════════════════════════════════════════ */
+    .month-chart {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 6px 0;
+        margin-top: 4px;
+    }
+
+    .month-col { text-align: center; vertical-align: bottom; }
+
+    .month-bar-wrap {
+        height: 72px;
+        vertical-align: bottom;
+        position: relative;
+    }
+
+    .month-bar {
+        width: 100%;
+        background: #1a1a2e;
+        border-radius: 2px 2px 0 0;
+        min-height: 4px;
+        display: block;
+        margin: 0 auto;
+        opacity: 0.85;
+    }
+
+    .month-bar-accent {
+        width: 30%;
+        height: 3px;
+        background: #c084fc;
+        border-radius: 2px;
+        margin: 0 auto;
+        margin-top: -1px;
+    }
+
+    .month-label {
+        font-size: 8.5px;
+        color: #9ca3af;
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .month-count {
+        font-size: 9px;
+        font-weight: 700;
+        color: #374151;
+        margin-top: 2px;
+    }
+
+    /* ══ ENTRIES TABLE ══════════════════════════════════════════════════════ */
+    .entries-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .entries-table thead tr {
+        border-bottom: 2px solid #1a1a2e;
+    }
+
+    .entries-table th {
+        background: transparent;
+        color: #6b7280;
+        padding: 6px 10px;
+        text-align: left;
+        font-size: 8.5px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .entries-table td {
+        padding: 9px 10px;
+        font-size: 9.5px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+        color: #374151;
+    }
+
+    .entries-table tr:last-child td { border-bottom: none; }
+
+    .date-cell-main { font-weight: 500; color: #1a1a2e; }
+    .date-cell-time { color: #d1d5db; font-size: 8.5px; margin-top: 1px; }
+
+    .emotion-pill {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 3px;
+        font-size: 8.5px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+    }
+
+    .content-preview {
+        color: #9ca3af;
+        font-style: italic;
+        max-width: 200px;
+        overflow: hidden;
+        font-size: 9px;
+    }
+
+    .media-cell { text-align: center; font-size: 12px; opacity: 0.6; }
+
+    /* ══ FOOTER ═════════════════════════════════════════════════════════════ */
+    .page-footer {
+        margin-top: 28px;
+        padding-top: 12px;
+        border-top: 1px solid #f0eef5;
+        display: table;
+        width: 100%;
+    }
+
+    .footer-left {
+        display: table-cell;
+        font-size: 8px;
+        color: #d1d5db;
+        letter-spacing: 0.5px;
+        vertical-align: middle;
+    }
+
+    .footer-right {
+        display: table-cell;
+        text-align: right;
+        font-size: 8px;
+        color: #d1d5db;
+        letter-spacing: 0.5px;
+        vertical-align: middle;
+    }
+
+    .footer-dot {
+        display: inline-block;
+        width: 4px; height: 4px;
+        background: #c084fc;
+        border-radius: 50%;
+        vertical-align: middle;
+        margin: 0 6px;
+    }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════════════════ -->
+<div class="page-header">
+    <div class="header-inner">
+        <div class="header-left">
+            <div class="eyebrow">Rapport · Bien-être mental</div>
+            <div class="report-title">Journal<br>Émotionnel</div>
+            <div class="report-subtitle">Analyse de votre parcours émotionnel</div>
+            <div class="user-badge">
+                {{ user.prenom ?? '' }} {{ user.nom ?? user.email }}
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="date-block">
+                <div class="date-day">{{ generatedAt|date('d') }}</div>
+                <div class="date-monthyear">{{ generatedAt|date('M Y') }}</div>
+                <div class="date-time">{{ generatedAt|date('H:i') }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="header-divider"></div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════════════════ -->
+<div class="content">
+    <!-- ── KEY STATS ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">Vue d'ensemble</div>
+            <div class="section-rule"><div class="section-rule-line"></div></div>
+        </div>
+        <div class="stats-row">
+            <div class="stat-card">
+                <span class="stat-icon">📝</span>
+                <span class="stat-number">{{ totalEntries }}</span>
+                <span class="stat-label">Entrées totales</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📅</span>
+                <span class="stat-number">{{ monthEntries }}</span>
+                <span class="stat-label">Ce mois-ci</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🔥</span>
+                <span class="stat-number">{{ consecutiveDays }}</span>
+                <span class="stat-label">Jours consécutifs</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">✨</span>
+                <span class="stat-number">{{ positivePercent }}%</span>
+                <span class="stat-label">Humeur positive</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── EMOTION BREAKDOWN ── -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">Répartition des émotions</div>
+            <div class="section-rule"><div class="section-rule-line"></div></div>
+        </div>
+        {% for emotionValue, data in moodCounts %}
+            {% set color = emotionColors[emotionValue] ?? '#94a3b8' %}
+            {% set pct = totalEntries > 0 ? ((data.count / totalEntries) * 100)|round : 0 %}
+            <div class="emotion-row">
+                <div class="emotion-icon-cell">{{ data.icon }}</div>
+                <div class="emotion-label-cell">{{ data.label }}</div>
+                <div class="emotion-bar-cell">
+                    <div class="emotion-bar-bg">
+                        <div class="emotion-bar-fill"
+                             style="width: {{ pct }}%; background-color: {{ color }};"></div>
+                    </div>
+                </div>
+                <div class="emotion-count-cell">
+                    {{ data.count }} <span class="emotion-pct">({{ pct }}%)</span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- ── MONTHLY ACTIVITY ── -->
+    {% if entriesByMonth|length > 0 %}
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">Activité mensuelle</div>
+            <div class="section-rule"><div class="section-rule-line"></div></div>
+        </div>
+        {% set maxCount = 1 %}
+        {% for monthKey, count in entriesByMonth %}
+            {% if count > maxCount %}{% set maxCount = count %}{% endif %}
+        {% endfor %}
+        <table class="month-chart">
+            <tr>
+                {% for monthKey, count in entriesByMonth %}
+                    {% set barHeightPx = ((count / maxCount) * 60)|round %}
+                    <td class="month-col">
+                        <table style="width:100%; height:72px;" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="vertical-align:bottom; text-align:center; height:72px;">
+                                    <div class="month-bar" style="height: {{ barHeightPx > 4 ? barHeightPx : 4 }}px;"></div>
+                                    <div class="month-bar-accent"></div>
+                                </td>
+                            </tr>
+                        </table>
+                        <div class="month-label">
+                            {% set parts = monthKey|split('-') %}
+                            {% set monthNames = {
+                                '01': 'Jan', '02': 'Fév', '03': 'Mar',
+                                '04': 'Avr', '05': 'Mai', '06': 'Jun',
+                                '07': 'Jul', '08': 'Aoû', '09': 'Sep',
+                                '10': 'Oct', '11': 'Nov', '12': 'Déc'
+                            } %}
+                            {{ monthNames[parts[1]] ?? parts[1] }}
+                        </div>
+                        <div class="month-count">{{ count }}</div>
+                    </td>
+                {% endfor %}
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- ── RECENT ENTRIES TABLE ── -->
+    {% if recentTen|length > 0 %}
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">10 dernières entrées</div>
+            <div class="section-rule"><div class="section-rule-line"></div></div>
+        </div>
+        <table class="entries-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Émotion</th>
+                    <th>Contenu</th>
+                    <th style="text-align:center;">Média</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in recentTen %}
+                    {% set color = emotionColors[entry.emotion.value] ?? '#94a3b8' %}
+                    <tr>
+                        <td style="white-space:nowrap;">
+                            <div class="date-cell-main">{{ entry.dateCreation|date('d/m/Y') }}</div>
+                            <div class="date-cell-time">{{ entry.dateCreation|date('H:i') }}</div>
+                        </td>
+                        <td>
+                            <span class="emotion-pill" style="background-color: {{ color }}18; color: {{ color }}; border: 1px solid {{ color }}35;">
+                                {{ entry.emotion.icon() }} {{ entry.emotion.label() }}
+                            </span>
+                        </td>
+                        <td class="content-preview">
+                            {% if entry.contenu %}
+                                {{ entry.contenu|slice(0, 80) }}{% if entry.contenu|length > 80 %}…{% endif %}
+                            {% else %}
+                                <span style="color:#e5e7eb;">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="media-cell">
+                            {% if entry.image %}🖼️{% endif %}
+                            {% if entry.audio %}🎵{% endif %}
+                            {% if not entry.image and not entry.audio %}<span style="color:#e5e7eb;">—</span>{% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- ── FOOTER ── -->
+    <div class="page-footer">
+        <div class="footer-left">
+            Journal Émotionnel
+            <span class="footer-dot"></span>
+            Rapport confidentiel
+            <span class="footer-dot"></span>
+            Généré automatiquement
+        </div>
+        <div class="footer-right">
+            Document strictement personnel et confidentiel
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

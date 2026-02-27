@@ -1,0 +1,63 @@
+{% extends 'auth/auth_base.html.twig' %}
+
+{% block title %}Email envoyé - FeelSafe{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center p-8 bg-background">
+    <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="flex items-center gap-2 mb-8 justify-center">
+            <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                <i data-feather="heart" class="w-6 h-6 text-primary-foreground"></i>
+            </div>
+            <span class="text-2xl font-serif font-bold text-foreground">FeelSafe</span>
+        </div>
+
+        <div class="border-0 shadow-lg rounded-lg bg-card p-6">
+            <!-- Icône de succès -->
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                    <i data-feather="check-circle" class="w-8 h-8 text-green-600"></i>
+                </div>
+            </div>
+
+            <div class="space-y-2 pb-6 text-center">
+                <h2 class="text-2xl font-serif font-bold">Email envoyé !</h2>
+                <p class="text-muted-foreground text-sm">
+                    Vérifiez votre boîte de réception
+                </p>
+            </div>
+
+            <!-- Message d'information -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start gap-3">
+                    <i data-feather="mail" class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"></i>
+                    <div class="text-sm text-blue-900">
+                        <p class="font-medium mb-2">Nous vous avons envoyé un email avec un lien de réinitialisation.</p>
+                        <ul class="space-y-1 text-blue-800">
+                            <li>• Cliquez sur le lien dans l'email</li>
+                            <li>• Le lien expire dans 1 heure</li>
+                            <li>• Vérifiez vos spams si vous ne le voyez pas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lien retour -->
+            <div class="text-center">
+                <a 
+                    href="{{ path('app_login') }}"
+                    class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+                >
+                    <i data-feather="arrow-left" class="w-4 h-4"></i>
+                    Retour à la connexion
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    feather.replace();
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FeelSafe - Tableau de bord{% endblock %}</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+    
+    <!-- Alpine.js with DEFER attribute -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+    
+    {% block stylesheets %}{% endblock %}
+    {% block javascripts_head %}{% endblock %}
+</head>
+<body class="bg-background {% block body_padding %}pt-20 lg:pt-32{% endblock %}">
+    <div class="flex flex-col min-h-screen">
+        {% block dashboard_navbar %}{% include "components/dashboard_navbar.html.twig" %}{% endblock %}
+
+        <main class="flex-1 w-full px-6 py-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+<style>
+    :root {
+  --navbar-height: 72px;
+}
+[x-cloak] { display: none !important; }
+</style>
+
+    
+    <script>
+    document.addEventListener('alpine:init', () => {
+        console.log('✅ Alpine.js initialized!');
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    });
+    
+    document.addEventListener('alpine:initialized', () => {
+        console.log('✅ Alpine.js fully ready!');
+    });
+    </script>
+    
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

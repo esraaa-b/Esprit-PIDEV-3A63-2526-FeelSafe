@@ -1,0 +1,165 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-chart-2/10 text-chart-2 text-sm font-medium mb-4">
+                <span class="w-2 h-2 rounded-full bg-chart-2 animate-pulse"></span>
+                Session en cours
+            </div>
+            <h1 class="text-3xl font-serif font-bold text-foreground mb-2">
+                {{ session.activite.nomActivite }}
+            </h1>
+            <p class="text-muted-foreground">
+                Prenez votre temps et suivez les instructions
+            </p>
+        </div>
+
+        <!-- Timer Card -->
+        <div class="bg-card rounded-lg border border-border p-8">
+            <div x-data="{
+                startTime: {{ session.dateDebut.timestamp }},
+                currentTime: Math.floor(Date.now() / 1000),
+                elapsedSeconds: 0,
+                isPaused: false,
+                interval: null,
+                init() {
+                    this.updateTimer();
+                    this.interval = setInterval(() => {
+                        if (!this.isPaused) {
+                            this.updateTimer();
+                        }
+                    }, 1000);
+                },
+                updateTimer() {
+                    this.currentTime = Math.floor(Date.now() / 1000);
+                    this.elapsedSeconds = this.currentTime - this.startTime;
+                },
+                formatTime(seconds) {
+                    const hours = Math.floor(seconds / 3600);
+                    const minutes = Math.floor((seconds % 3600) / 60);
+                    const secs = seconds % 60;
+                    
+                    if (hours > 0) {
+                        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    }
+                    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+                },
+                togglePause() {
+                    this.isPaused = !this.isPaused;
+                }
+            }" class="space-y-8">
+                
+                <!-- Timer Display -->
+                <div class="text-center">
+                    <div class="relative inline-block">
+                        <svg class="w-64 h-64 transform -rotate-90" viewBox="0 0 100 100">
+                            <!-- Background circle -->
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="8" class="text-secondary" />
+                            <!-- Progress circle -->
+                            <circle 
+                                cx="50" 
+                                cy="50" 
+                                r="45" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                stroke-width="8" 
+                                class="text-primary transition-all duration-1000"
+                                :stroke-dasharray="`${(elapsedSeconds % 60) * 4.71} 283`"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center">
+                                <p class="text-5xl font-bold text-foreground" x-text="formatTime(elapsedSeconds)"></p>
+                                <p class="text-sm text-muted-foreground mt-2">
+                                    {% if session.activite.dureeSuggeree %}
+                                        Suggéré: {{ session.activite.dureeSuggeree }} min
+                                    {% else %}
+                                        Temps écoulé
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center justify-center gap-4">
+                    <button @click="togglePause()" type="button" class="w-16 h-16 rounded-full bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+                        <template x-if="!isPaused">
+                            <svg class="w-6 h-6 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="6" y="4" width="4" height="16"></rect>
+                                <rect x="14" y="4" width="4" height="16"></rect>
+                            </svg>
+                        </template>
+                        <template x-if="isPaused">
+                            <svg class="w-6 h-6 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                        </template>
+                    </button>
+                    
+                    <a href="{{ path('app_wellness_session_complete', {'id': session.id}) }}" class="px-8 py-4 bg-primary text-primary-foreground rounded-full font-semibold hover:bg-primary/90 transition-colors inline-flex items-center gap-2">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Terminer la session
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        {% if session.activite.instructionsDetaillees %}
+            <div class="bg-card rounded-lg border border-border p-6">
+                <h2 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Instructions à suivre
+                </h2>
+                <div class="prose prose-sm max-w-none text-muted-foreground space-y-2">
+                    {{ session.activite.instructionsDetaillees|nl2br }}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Tips -->
+        <div class="bg-primary/5 rounded-lg border border-primary/20 p-6">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-primary flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M2 12h20"></path>
+                    <circle cx="12" cy="12" r="10"></circle>
+                </svg>
+                <div class="text-sm">
+                    <p class="font-semibold text-foreground mb-2">Conseils pour votre pratique</p>
+                    <ul class="text-muted-foreground space-y-1 list-disc list-inside">
+                        <li>Trouvez un endroit calme et confortable</li>
+                        <li>Éteignez les distractions (téléphone, notifications)</li>
+                        <li>Respirez profondément et détendez-vous</li>
+                        <li>Ne vous pressez pas, allez à votre rythme</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Exit -->
+        <div class="text-center">
+            <a href="{{ path('app_wellness') }}" class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Abandonner la session
+            </a>
+        </div>
+    </div>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+{% endblock %}

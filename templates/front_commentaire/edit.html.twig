@@ -1,0 +1,37 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block title %}Modifier le commentaire{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">Modifier le commentaire</h1>
+
+    <form method="POST" action="{{ path('app_front_commentaire_edit', {id: commentaire.id}) }}" class="space-y-2">
+        <textarea name="contenu"
+                  id="standalone-edit-textarea"
+                  rows="4"
+                  class="w-full border border-border rounded-lg p-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary">{{ commentaire.contenu }}</textarea>
+
+        <input type="hidden" name="gif_url" id="standalone-edit-gif-url" value="{{ commentaire.gifUrl }}">
+
+        {# Giphy Picker #}
+        {% include 'front_publication/_giphy_picker.html.twig' with {
+            textareaId: 'standalone-edit-textarea',
+            hiddenInputId: 'standalone-edit-gif-url',
+            initialGif: commentaire.gifUrl
+        } only %}
+
+        <div class="flex gap-2">
+            <button type="submit"
+                    class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90">
+                Enregistrer
+            </button>
+
+            <a href="{{ path('app_front_publication_show', {id: commentaire.publication.id}) }}"
+               class="px-4 py-2 rounded-lg border border-border hover:bg-muted">
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

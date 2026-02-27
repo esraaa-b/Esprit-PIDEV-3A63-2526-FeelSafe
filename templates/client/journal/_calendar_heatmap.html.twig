@@ -1,0 +1,360 @@
+{#
+    Partial: _calendar_heatmap.html.twig
+    Uses FullCalendar 6 (JS-only bundle — CSS is injected automatically).
+    State lives in journalApp(). Open button is in index.html.twig header.
+#}
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+<!-- ══════════════════════════════════════════════════════════
+     CALENDAR MODAL
+══════════════════════════════════════════════════════════ -->
+<div x-show="calendarModalOpen"
+     x-cloak
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+     style="background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);"
+     @keydown.escape.window="closeCalendarModal()"
+     @click.self="closeCalendarModal()">
+
+    <div x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         class="ec-modal flex flex-col"
+         style="width:100%; max-width:780px; max-height:76vh; overflow:hidden;
+                background:#fff; border-radius:20px;
+                box-shadow: 0 32px 64px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.06);"
+         @click.stop>
+
+        <!-- ── Gradient header ── -->
+        <div class="ec-header shrink-0"
+             style="background: linear-gradient(135deg, #14532d 0%, #16a34a 60%, #4ade80 100%);
+                    border-radius: 20px 20px 0 0; padding: 16px 20px 14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <!-- Icon + title -->
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:36px; height:36px; border-radius:10px;
+                                background:rgba(255,255,255,0.18); backdrop-filter:blur(8px);
+                                display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 style="margin:0; font-size:1rem; font-weight:700; color:#fff;
+                                   letter-spacing:-0.01em; line-height:1.2;">
+                            Calendrier émotionnel
+                        </h2>
+                        <p style="margin:2px 0 0; font-size:0.72rem; color:rgba(255,255,255,0.65);">
+                            La couleur reflète l'émotion dominante du jour
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Close button -->
+                <button @click="closeCalendarModal()"
+                        style="width:32px; height:32px; border-radius:8px; border:none; cursor:pointer;
+                               background:rgba(255,255,255,0.15); color:#fff; display:flex;
+                               align-items:center; justify-content:center; flex-shrink:0;
+                               transition: background 0.15s ease;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Stats row inside header -->
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px;">
+                <div class="ec-stat-pill">
+                    <span class="ec-stat-num" x-text="calendarTotalEntries"></span>
+                    <span class="ec-stat-label">Entrées · 365 j</span>
+                </div>
+                <div class="ec-stat-pill">
+                    <span class="ec-stat-num" x-text="calendarActiveDays"></span>
+                    <span class="ec-stat-label">Jours actifs</span>
+                </div>
+                <div class="ec-stat-pill">
+                    <span class="ec-stat-num" x-text="calendarLongestStreak + ' j'"></span>
+                    <span class="ec-stat-label">Meilleure série</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Calendar body ── -->
+        <div style="padding: 12px 16px 8px; flex:1; overflow-y:auto; background:#fff;">
+            <div id="emotion-fullcalendar"></div>
+        </div>
+
+        <!-- ── Legend footer ── -->
+        <div style="padding: 10px 20px 12px; border-top: 1px solid #f1f5f9;
+                    background: #fafbfc; border-radius: 0 0 20px 20px; flex-shrink:0;">
+            <div style="display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:center; align-items:center;">
+                <div class="ec-legend-item">
+                    <span class="ec-legend-dot" style="background:#16a34a;"></span>
+                    <span class="ec-legend-text">😊 Très bien</span>
+                </div>
+                <div class="ec-legend-item">
+                    <span class="ec-legend-dot" style="background:#4ade80;"></span>
+                    <span class="ec-legend-text">🙂 Bien</span>
+                </div>
+                <div class="ec-legend-item">
+                    <span class="ec-legend-dot" style="background:#eab308;"></span>
+                    <span class="ec-legend-text">😐 Neutre</span>
+                </div>
+                <div class="ec-legend-item">
+                    <span class="ec-legend-dot" style="background:#fecaca;"></span>
+                    <span class="ec-legend-text">😕 Pas bien</span>
+                </div>
+                <div class="ec-legend-item">
+                    <span class="ec-legend-dot" style="background:#dc2626;"></span>
+                    <span class="ec-legend-text">😢 Très mal</span>
+                </div>
+                <div class="ec-legend-item">
+                    <span class="ec-legend-dot" style="background:#e2e8f0; border:1px solid #cbd5e1;"></span>
+                    <span class="ec-legend-text" style="color:#94a3b8;">Aucune entrée</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     STYLES
+══════════════════════════════════════════════════════════ -->
+<style>
+.ec-stat-pill {
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(8px);
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ec-stat-num {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+.ec-stat-label {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+.ec-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.ec-legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.ec-legend-text {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+/* ── FullCalendar overrides ── */
+#emotion-fullcalendar .fc { font-family: inherit; }
+
+#emotion-fullcalendar .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 10px !important;
+    align-items: center;
+}
+#emotion-fullcalendar .fc-toolbar-title {
+    font-size: 0.92rem !important;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+}
+#emotion-fullcalendar .fc-button {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+    border-radius: 8px !important;
+    padding: 4px 10px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    transition: all 0.15s ease !important;
+}
+#emotion-fullcalendar .fc-button:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+#emotion-fullcalendar .fc-button-active,
+#emotion-fullcalendar .fc-button:active {
+    background: #e2e8f0 !important;
+}
+
+/* Column headers */
+#emotion-fullcalendar .fc-col-header-cell {
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.07em !important;
+    padding: 6px 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+#emotion-fullcalendar .fc-col-header-cell-cushion {
+    color: #94a3b8 !important;
+    text-decoration: none !important;
+}
+
+/* Day cells */
+#emotion-fullcalendar .fc-daygrid-day {
+    transition: filter 0.12s ease;
+    cursor: default;
+    border-color: #f1f5f9 !important;
+}
+#emotion-fullcalendar .fc-daygrid-day:hover { filter: brightness(0.95); }
+#emotion-fullcalendar .fc-daygrid-day-frame { min-height: 58px !important; }
+
+/* Day numbers */
+#emotion-fullcalendar .fc-daygrid-day-number {
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    padding: 4px 6px !important;
+    text-decoration: none !important;
+}
+
+/* Today cell */
+#emotion-fullcalendar .fc-day-today { background: transparent !important; }
+#emotion-fullcalendar .fc-day-today .fc-daygrid-day-frame {
+    box-shadow: inset 0 0 0 2px #3b82f6;
+    border-radius: 4px;
+}
+#emotion-fullcalendar .fc-day-today .fc-daygrid-day-number {
+    color: #2563eb !important;
+    font-weight: 800 !important;
+}
+
+/* Event pill */
+#emotion-fullcalendar .fc-daygrid-event {
+    border: none !important;
+    border-radius: 20px !important;
+    padding: 2px 7px !important;
+    font-size: 0.66rem !important;
+    font-weight: 700 !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    margin: 1px 3px 2px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15) !important;
+}
+#emotion-fullcalendar .fc-event-title { font-weight: 700 !important; }
+
+/* Hide unnecessary view-switch button */
+#emotion-fullcalendar .fc-dayGridMonth-button { display: none !important; }
+
+/* Remove outer border */
+#emotion-fullcalendar .fc-scrollgrid { border: none !important; }
+#emotion-fullcalendar .fc-scrollgrid td,
+#emotion-fullcalendar .fc-scrollgrid th { border-color: #f1f5f9 !important; }
+</style>
+
+<!-- ══════════════════════════════════════════════════════════
+     FULLCALENDAR LOGIC
+══════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    const EMOTION_COLORS = {
+        tres_bien: { bg: '#16a34a', text: '#ffffff', cell: '#dcfce7' },
+        bien:      { bg: '#4ade80', text: '#14532d', cell: '#f0fdf4' },
+        neutre:    { bg: '#eab308', text: '#ffffff', cell: '#fffbeb' },
+        pas_bien:  { bg: '#fecaca', text: '#ffffff', cell: '#fff7ed' },
+        tres_mal:  { bg: '#dc2626', text: '#ffffff', cell: '#fef2f2' },
+    };
+
+    let fcInstance = null;
+
+    function buildEvents(data) {
+        const ICONS = { tres_bien:'😊', bien:'🙂', neutre:'😐', pas_bien:'😕', tres_mal:'😢' };
+        return data.filter(d => d && d.count > 0).map(d => {
+            const c = EMOTION_COLORS[d.dominantEmotion] || { bg:'#94a3b8', text:'#fff' };
+            return {
+                title: (ICONS[d.dominantEmotion] || '') + ' ' +
+                       d.count + (d.count > 1 ? ' entrées' : ' entrée'),
+                start: d.date,
+                allDay: true,
+                backgroundColor: c.bg,
+                textColor: c.text,
+                extendedProps: { label: d.dominantLabel, count: d.count }
+            };
+        });
+    }
+
+    function colorCells(data) {
+        const map = Object.fromEntries(data.map(d => [d.date, d]));
+        document.querySelectorAll('#emotion-fullcalendar .fc-daygrid-day').forEach(cell => {
+            const d = map[cell.getAttribute('data-date')];
+            cell.style.backgroundColor = (!d || d.count === 0)
+                ? '#f8fafc'
+                : (EMOTION_COLORS[d.dominantEmotion]?.cell || '#f1f5f9');
+        });
+    }
+
+    function destroyCalendar() {
+        if (fcInstance) { fcInstance.destroy(); fcInstance = null; }
+    }
+
+    function initCalendar(data) {
+        destroyCalendar();
+        const el = document.getElementById('emotion-fullcalendar');
+        if (!el) return;
+
+        fcInstance = new FullCalendar.Calendar(el, {
+            locale: 'fr',
+            initialView: 'dayGridMonth',
+            height: 'auto',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+            buttonText: { today: "Aujourd'hui" },
+            firstDay: 1,
+            events: buildEvents(data),
+            eventDisplay: 'block',
+            dayMaxEvents: 1,
+            showNonCurrentDates: false,
+            datesSet: () => setTimeout(() => colorCells(data), 0),
+            eventDidMount: info => {
+                const p = info.event.extendedProps;
+                info.el.title = p.label + ' · ' + p.count +
+                                (p.count > 1 ? ' entrées' : ' entrée');
+            },
+            dateClick:  () => false,
+            eventClick: info => info.jsEvent.preventDefault(),
+        });
+
+        fcInstance.render();
+        setTimeout(() => colorCells(data), 60);
+    }
+
+    document.addEventListener('emotion-calendar:open',
+        e => setTimeout(() => initCalendar(e.detail.calendarData), 80));
+    document.addEventListener('emotion-calendar:close', destroyCalendar);
+})();
+</script>

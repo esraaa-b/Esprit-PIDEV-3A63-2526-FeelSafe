@@ -1,0 +1,651 @@
+{% extends 'client/base.html.twig' %}
+
+{% block title %}Mon Profil — FeelSafe{% endblock %}
+
+{% block stylesheets %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --brand:        #22c55e;
+  --brand-dark:   #16a34a;
+  --brand-light:  #dcfce7;
+  --brand-glow:   rgba(34,197,94,.18);
+  --danger:       #ef4444;
+  --danger-light: rgba(239,68,68,.10);
+  --danger-border:rgba(239,68,68,.25);
+  --warning:      #f59e0b;
+
+  --bg:           #f7f9f7;
+  --surface:      #ffffff;
+  --surface-2:    #f4f6f4;
+  --border:       #e4e8e4;
+  --border-strong:#c8d0c8;
+
+  --text-main:    #111827;
+  --text-muted:   #6b7280;
+  --text-light:   #9ca3af;
+
+  --radius-sm:    8px;
+  --radius:       14px;
+  --radius-lg:    20px;
+  --shadow-sm:    0 1px 4px rgba(0,0,0,.07);
+  --shadow-md:    0 4px 20px rgba(0,0,0,.09);
+  --transition:   all .22s cubic-bezier(.4,0,.2,1);
+}
+
+* { box-sizing: border-box; }
+body { font-family: 'Figtree', sans-serif; background: var(--bg); }
+
+/* ── Page header ── */
+.page-header { margin-bottom: 32px; }
+.page-header h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  color: var(--text-main);
+  margin: 0 0 6px;
+}
+.page-header p { font-size: .9rem; color: var(--text-muted); margin: 0; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 32px;
+  padding-bottom: 0;
+}
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tab-btn:hover { color: var(--brand); background: var(--brand-light); }
+.tab-btn.active {
+  color: var(--brand-dark);
+  border-bottom-color: var(--brand);
+  background: var(--brand-light);
+}
+
+/* ── Tab panels ── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Section card ── */
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.section-card:hover { box-shadow: var(--shadow-md); }
+
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.section-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-light);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+.section-icon.danger { background: var(--danger-light); }
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 3px;
+  letter-spacing: -.02em;
+}
+.section-sub {
+  font-size: .82rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Avatar ── */
+.avatar-area {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 26px;
+  padding: 18px 20px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.avatar-circle {
+  width: 68px; height: 68px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--brand), #16a34a);
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px var(--brand-glow);
+  letter-spacing: -.02em;
+}
+.avatar-info .name {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 3px;
+}
+.avatar-info .role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: .72rem;
+  font-weight: 700;
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  border: 1px solid rgba(34,197,94,.25);
+  letter-spacing: .03em;
+}
+.avatar-info .since {
+  font-size: .78rem;
+  color: var(--text-light);
+  margin: 5px 0 0;
+}
+
+/* ── Form grid ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.form-grid.full { grid-template-columns: 1fr; }
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+
+.form-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+}
+
+.form-input {
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem;
+  color: var(--text-main);
+  background: var(--surface-2);
+  transition: var(--transition);
+  width: 100%;
+}
+.form-input:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-glow);
+  background: var(--surface);
+}
+.form-input::placeholder { color: var(--text-light); }
+
+.input-icon-wrap { position: relative; }
+.input-icon-wrap .icon {
+  position: absolute;
+  left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--text-light);
+  font-size: 14px;
+  pointer-events: none;
+}
+.input-icon-wrap .form-input { padding-left: 38px; }
+
+/* ── Buttons ── */
+.btn {
+  padding: 11px 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  letter-spacing: -.01em;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: white;
+  box-shadow: 0 4px 14px var(--brand-glow);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--brand-dark), #14532d);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(34,197,94,.3);
+}
+.btn-danger {
+  background: var(--danger);
+  color: white;
+  box-shadow: 0 4px 14px rgba(239,68,68,.25);
+}
+.btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239,68,68,.35);
+}
+.btn-ghost {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+}
+.btn-ghost:hover {
+  background: var(--border);
+  color: var(--text-main);
+}
+
+/* ── Alerts ── */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: .875rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeInDown .3s ease both;
+}
+.alert-success {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  border: 1px solid rgba(34,197,94,.3);
+}
+.alert-error {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+/* ── Toggle switch ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label .tl-title {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: block;
+}
+.toggle-label .tl-desc {
+  font-size: .78rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+.toggle {
+  position: relative;
+  width: 46px; height: 26px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #e5e7eb;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: .25s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: .25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.toggle input:checked + .toggle-slider { background: var(--brand); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* ── Select ── */
+.form-select {
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem;
+  color: var(--text-main);
+  background: var(--surface-2);
+  transition: var(--transition);
+  width: 100%;
+  cursor: pointer;
+}
+.form-select:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+
+/* ── Danger zone ── */
+.danger-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--danger-border);
+}
+.danger-row:last-child { border-bottom: none; }
+.danger-row-info .dr-title {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.danger-row-info .dr-desc {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Delete confirm modal ── */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .2s ease;
+}
+.modal-box {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  animation: slideUp .25s ease;
+}
+.modal-box h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--danger);
+  margin: 0 0 10px;
+}
+.modal-box p {
+  font-size: .88rem;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+.confirm-input {
+  padding: 11px 14px;
+  border: 1.5px solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  font-family: 'Figtree', sans-serif;
+  font-size: .9rem;
+  width: 100%;
+  margin-bottom: 18px;
+  transition: var(--transition);
+}
+.confirm-input:focus {
+  border-color: var(--danger);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--danger-light);
+}
+
+/* ── Animations ── */
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Mon Profil</h1>
+  <p>Gérez vos informations personnelles et vos paramètres</p>
+</div>
+
+{# ── Flash messages ── #}
+{% for msg in app.flashes('success') %}
+  <div class="alert alert-success">✅ {{ msg }}</div>
+{% endfor %}
+{% for msg in app.flashes('error') %}
+  <div class="alert alert-error">⚠️ {{ msg }}</div>
+{% endfor %}
+
+{# ── Tabs ── #}
+{% set activeTab = app.request.query.get('tab', 'profil') %}
+
+<div class="tabs">
+  <button class="tab-btn {% if activeTab == 'profil' %}active{% endif %}"
+          onclick="switchTab('profil')">
+    👤 Profil
+  </button>
+  <button class="tab-btn {% if activeTab == 'confidentialite' %}active{% endif %}"
+          onclick="switchTab('confidentialite')">
+    🔒 Confidentialité
+  </button>
+</div>
+
+{# ══════════════════════════════
+   TAB : PROFIL
+   ══════════════════════════════ #}
+<div id="tab-profil" class="tab-panel {% if activeTab == 'profil' %}active{% endif %}">
+
+  <div class="section-card">
+    <div class="section-head">
+      <div class="section-icon">👤</div>
+      <div>
+        <p class="section-title">Informations personnelles</p>
+        <p class="section-sub">Mettez à jour vos informations de profil</p>
+      </div>
+    </div>
+
+    {# Avatar #}
+    <div class="avatar-area">
+      <div class="avatar-circle">
+        {{ user.prenom|slice(0,1)|upper }}{{ user.nom|slice(0,1)|upper }}
+      </div>
+      <div class="avatar-info">
+        <p class="name">{{ user.prenom }} {{ user.nom }}</p>
+        <span class="role-badge">
+          {% if user.isAdmin() %}👑 Administrateur
+          {% elseif user.isProfessionnel() %}💼 Professionnel
+          {% else %}👤 Client{% endif %}
+        </span>
+        <p class="since">Membre depuis le {{ user.dateCreation|date('d/m/Y') }}</p>
+      </div>
+    </div>
+
+    {# Form #}
+    <form method="POST" action="{{ path('client_profil_update') }}">
+      <div class="form-grid" style="margin-bottom: 18px;">
+        <div class="form-group">
+          <label class="form-label" for="prenom">Prénom *</label>
+          <input class="form-input" type="text" id="prenom" name="prenom"
+                 value="{{ user.prenom }}" required placeholder="Votre prénom">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="nom">Nom *</label>
+          <input class="form-input" type="text" id="nom" name="nom"
+                 value="{{ user.nom }}" required placeholder="Votre nom">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="email">Email *</label>
+          <div class="input-icon-wrap">
+            <span class="icon">✉️</span>
+            <input class="form-input" type="email" id="email" name="email"
+                   value="{{ user.email }}" required placeholder="votre@email.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="telephone">Téléphone</label>
+          <div class="input-icon-wrap">
+            <span class="icon">📱</span>
+            <input class="form-input" type="tel" id="telephone" name="telephone"
+                   value="{{ user.telephone }}" placeholder="+216 XX XXX XXX">
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">💾 Sauvegarder les modifications</button>
+    </form>
+  </div>
+
+</div>
+
+{# ══════════════════════════════
+   TAB : CONFIDENTIALITÉ
+   ══════════════════════════════ #}
+<div id="tab-confidentialite" class="tab-panel {% if activeTab == 'confidentialite' %}active{% endif %}">
+
+  {% set conf = user.confidentialite %}
+
+  {# ── Privacy settings ── #}
+  <div class="section-card">
+    <div class="section-head">
+      <div class="section-icon">🔒</div>
+      <div>
+        <p class="section-title">Paramètres de confidentialité</p>
+        <p class="section-sub">Contrôlez qui peut voir vos informations</p>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ path('client_profil_confidentialite') }}">
+      <div class="toggle-row">
+        <label class="toggle-label" for="partage_donnees">
+          <span class="tl-title">Partage de données</span>
+          <span class="tl-desc">Permettre le partage anonyme pour améliorer FeelSafe</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="partage_donnees" name="partage_donnees" value="1"
+                 {% if conf and conf.isPartageDonnees() %}checked{% endif %}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <label class="toggle-label" for="notifications_email">
+          <span class="tl-title">Notifications email</span>
+          <span class="tl-desc">Recevoir des rappels et mises à jour par email</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="notifications_email" name="notifications_email" value="1"
+                 {% if conf and conf.isNotificationsEmail() %}checked{% endif %}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+        <label class="toggle-label">
+          <span class="tl-title">Visibilité du profil</span>
+          <span class="tl-desc">Qui peut voir votre profil sur FeelSafe</span>
+        </label>
+        <select class="form-select" name="visibilite_profil" style="max-width: 280px;">
+          <option value="public"  {% if conf and conf.getVisibiliteProfil() == 'public'  %}selected{% endif %}>🌍 Public</option>
+          <option value="prive"   {% if not conf or conf.getVisibiliteProfil() == 'prive' %}selected{% endif %}>🔒 Privé</option>
+          <option value="amis"    {% if conf and conf.getVisibiliteProfil() == 'amis'    %}selected{% endif %}>👥 Amis uniquement</option>
+        </select>
+      </div>
+
+      <div style="margin-top: 22px;">
+        <button type="submit" class="btn btn-primary">💾 Enregistrer les préférences</button>
+      </div>
+    </form>
+  </div>
+
+  {# ── Danger zone ── #}
+  <div class="section-card" style="border-color: var(--danger-border); border-width: 1.5px;">
+    <div class="section-head" style="border-bottom-color: var(--danger-border);">
+      <div class="section-icon danger">⚠️</div>
+      <div>
+        <p class="section-title" style="color: var(--danger);">Zone dangereuse</p>
+        <p class="section-sub">Actions irréversibles concernant votre compte</p>
+      </div>
+    </div>
+
+    <div class="danger-row">
+      <div class="danger-row-info">
+        <p class="dr-title">Supprimer mon compte</p>
+        <p class="dr-desc">Cette action est définitive et irréversible. Toutes vos données seront supprimées.</p>
+      </div>
+      <button type="button" class="btn btn-danger" onclick="openDeleteModal()">
+        🗑️ Supprimer mon compte
+      </button>
+    </div>
+  </div>
+
+</div>
+
+{# ── Modal suppression ── #}
+<div id="deleteModal" class="modal-bg" style="display:none;" onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal-box">
+    <h3>⚠️ Supprimer mon compte</h3>
+    <p>
+      Cette action est <strong>définitive et irréversible</strong>.<br>
+      Toutes vos données personnelles, journaux et historiques seront supprimés.<br><br>
+      Tapez <strong>SUPPRIMER</strong> pour confirmer.
+    </p>
+    <form method="POST" action="{{ path('client_profil_supprimer') }}">
+      <input class="confirm-input" type="text" name="confirmation"
+             placeholder="Tapez SUPPRIMER ici" autocomplete="off">
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost" onclick="closeDeleteModal()">Annuler</button>
+        <button type="submit" class="btn btn-danger">🗑️ Supprimer définitivement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  history.replaceState(null, '', '?tab=' + name);
+}
+
+function openDeleteModal()  { document.getElementById('deleteModal').style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none';  document.body.style.overflow = ''; }
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDeleteModal(); });
+</script>
+{% endblock %}

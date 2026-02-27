@@ -1,0 +1,61 @@
+parameters:
+    journal_images_dir: '%kernel.project_dir%/public/uploads/journals/images'
+    journal_audio_dir: '%kernel.project_dir%/public/uploads/journals/audio'
+    admin.secret.code: '%env(ADMIN_SECRET_CODE)%'
+    uploads_directory: '%kernel.project_dir%/public/uploads'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    App\Controller\AiJournalController:
+        arguments:
+            $anthropicApiKey: '%env(ANTHROPIC_API_KEY)%'
+
+    App\Repository\:
+        resource: '../src/Repository/'
+
+    Symfony\Component\Security\Csrf\CsrfTokenManagerInterface: '@security.csrf.token_manager'
+
+    App\Service\RegistrationAIService:
+        arguments:
+            $openrouterApiKey: '%env(OPENROUTER_API_KEY)%'
+
+
+
+ # Weather Service
+    App\Service\WeatherService:
+        arguments:
+            $apiKey: '%env(OPENWEATHER_API_KEY)%'
+            $defaultCity: '%env(OPENWEATHER_DEFAULT_CITY)%'
+
+    # Activity Recommendation Service
+    App\Service\ActivityRecommendationService:
+        autowire: true
+        autoconfigure: true
+
+    App\Service\AIWellnessQuizService:
+        arguments:
+            $geminiApiKey: '%env(GEMINI_API_KEY)%'
+
+
+    App\Service\EmergencyChatbotService:
+        arguments:
+            $geminiApiKey: '%env(GEMINI_API_KEY)%'
+
+    App\Service\EmergencyMailService:
+        arguments:
+            $adminEmail: 'aoueslatii95@gmail.com'
+

@@ -1,0 +1,46 @@
+<div x-data="{ open: false }" class="relative">
+    <button type="button" @click="open = !open" class="p-2 hover:bg-secondary rounded-lg transition-colors relative">
+        <svg class="w-5 h-5 text-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        {% if count > 0 %}
+            <span class="absolute top-1 right-1 w-4 h-4 bg-destructive text-white text-[10px] flex items-center justify-center rounded-full border-2 border-card">
+                {{ count }}
+            </span>
+        {% endif %}
+    </button>
+
+    <div x-show="open" 
+         @click.outside="open = false" 
+         x-transition 
+         class="absolute top-full right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden" 
+         style="display: none;">
+        <div class="p-4 border-b border-border flex justify-between items-center bg-secondary/30">
+            <h3 class="font-semibold text-sm">Notifications</h3>
+            {% if count > 0 %}
+                <button @click="fetch('{{ path('app_notification_mark_as_read') }}', {method: 'POST'}).then(() => window.location.reload())" 
+                        class="text-xs text-primary hover:underline">
+                    Tout marquer comme lu
+                </button>
+            {% endif %}
+        </div>
+        <div class="max-h-96 overflow-y-auto">
+            {% if notifications is empty %}
+                <div class="p-8 text-center text-muted-foreground">
+                    <p class="text-sm">Aucune nouvelle notification</p>
+                </div>
+            {% else %}
+                {% for notif in notifications %}
+                    <div class="p-4 border-b border-border hover:bg-secondary/50 transition-colors last:border-0 relative">
+                        <p class="text-sm text-foreground pr-2">{{ notif.notificationMessage }}</p>
+                        <p class="text-[10px] text-muted-foreground mt-1">
+                            {{ notif.notificationDate ? notif.notificationDate|date('d/m à H:i') : '' }}
+                        </p>
+                        <div class="absolute top-4 right-4 w-2 h-2 bg-primary rounded-full"></div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>

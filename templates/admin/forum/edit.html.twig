@@ -1,0 +1,128 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Modifier la publication | Admin FeelSafe{% endblock %}
+
+{% block content %}
+<style>
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.admin-header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.admin-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    max-width: 850px;
+    margin: 20px auto;
+}
+
+.card-header {
+    border-bottom: 2px solid #f3f4f6;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+}
+
+.card-title {
+    font-size: 1.5rem;
+    color: #111827;
+    font-weight: 700;
+    margin: 0;
+}
+
+.btn-admin {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    border: none;
+}
+
+.btn-admin-primary {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-admin-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn-admin-outline {
+    background: white;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+}
+
+.btn-admin-outline:hover {
+    background: #f3f4f6;
+}
+
+.btn-delete-zone {
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.form-error-message {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+</style>
+
+<div class="admin-header">
+    <div>
+        <h1>Modifier la publication #{{ publication.id }}</h1>
+        <p style="color: #6b7280; margin-top:6px;">
+            Modifiez le contenu de votre publication
+        </p>
+    </div>
+    <a href="{{ path('admin_forum_index') }}" class="btn-admin btn-admin-outline">
+        ← Retour à la liste
+    </a>
+</div>
+
+<div class="admin-card">
+    <div class="card-header">
+        <h2 class="card-title">Modifier la publication</h2>
+    </div>
+
+    {{ include('admin/forum/_form.html.twig', {
+        'form': form,
+        'publication': publication,
+        'button_label': 'Enregistrer les modifications'
+    }) }}
+
+    <div class="btn-delete-zone">
+        <p style="color: #991b1b; font-size: 13px; margin-bottom: 10px; font-weight: 600;">
+            Zone de danger : Cette action est irréversible.
+        </p>
+        {{ include('admin/forum/_delete_form.html.twig') }}
+    </div>
+</div>
+{% endblock %}

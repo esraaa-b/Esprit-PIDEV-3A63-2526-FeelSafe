@@ -1,0 +1,67 @@
+{% extends 'professionnel/base.html.twig' %}
+
+{% block title %}Statistiques{% endblock %}
+{% block page_title %}Statistiques du mois {{ month }}{% endblock %}
+{% block page_subtitle %}Analysez les performances de vos rendez-vous pour le mois sélectionné{% endblock %}
+
+{% block body %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900"></h1>
+        <a href="{{ path('app_support') }}" class="btn btn-outline">← Rendez-vous</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div class="text-sm text-gray-500">Total RDV</div>
+            <div class="mt-2 text-3xl font-bold text-gray-900">{{ total }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div class="text-sm text-gray-500">Planifiés</div>
+            <div class="mt-2 text-3xl font-bold text-blue-700">{{ planifie }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div class="text-sm text-gray-500">Honorés</div>
+            <div class="mt-2 text-3xl font-bold text-green-700">{{ honore }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div class="text-sm text-gray-500">Annulés</div>
+            <div class="mt-2 text-3xl font-bold text-red-700">{{ annule }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div class="text-sm text-gray-500">Non honorés</div>
+            <div class="mt-2 text-3xl font-bold text-gray-700">{{ non_honore }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div class="text-sm text-gray-500">Prochain RDV (Oui/Non)</div>
+            <div class="mt-2 text-xl font-bold text-gray-900">{{ prochainOui }} / {{ prochainNon }}</div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div class="text-sm text-gray-500">Priorité moyenne</div>
+            <div class="mt-2 text-3xl font-bold text-gray-900">{{ avgPriorite ?? '—' }}</div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Métrique</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valeur</th>
+            </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+            <tr><td class="px-6 py-4 text-sm">Total RDV</td><td class="px-6 py-4 text-sm">{{ total }}</td></tr>
+            <tr><td class="px-6 py-4 text-sm">Planifiés</td><td class="px-6 py-4 text-sm">{{ planifie }}</td></tr>
+            <tr><td class="px-6 py-4 text-sm">Honorés</td><td class="px-6 py-4 text-sm">{{ honore }}</td></tr>
+            <tr><td class="px-6 py-4 text-sm">Annulés</td><td class="px-6 py-4 text-sm">{{ annule }}</td></tr>
+            <tr><td class="px-6 py-4 text-sm">Non honorés</td><td class="px-6 py-4 text-sm">{{ non_honore }}</td></tr>
+            <tr><td class="px-6 py-4 text-sm">Prochain RDV Oui</td><td class="px-6 py-4 text-sm">{{ prochainOui }}</td></tr>
+            <tr><td class="px-6 py-4 text-sm">Prochain RDV Non</td><td class="px-6 py-4 text-sm">{{ prochainNon }}</td></tr>
+            <tr><td class="px-6 py-4 text-sm">Priorité moyenne</td><td class="px-6 py-4 text-sm">{{ avgPriorite ?? '—' }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

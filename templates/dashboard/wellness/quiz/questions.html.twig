@@ -1,0 +1,114 @@
+{% extends "dashboard/base.html.twig" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <form method="post" action="{{ path('app_wellness_quiz_results') }}" x-data="quizForm()" class="space-y-8">
+        <!-- Progress Bar -->
+        <div class="bg-card rounded-lg border border-border p-6">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium text-foreground">Progression</span>
+                <span class="text-sm text-muted-foreground" x-text="`${currentQuestion + 1} / ${totalQuestions}`"></span>
+            </div>
+            <div class="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                <div class="h-full bg-primary rounded-full transition-all duration-300" 
+                     :style="`width: ${((currentQuestion + 1) / totalQuestions) * 100}%`"></div>
+            </div>
+        </div>
+
+        <!-- Questions -->
+        {% for question in questions %}
+            <div x-show="currentQuestion === {{ loop.index0 }}" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-x-4"
+                 x-transition:enter-end="opacity-100 translate-x-0"
+                 class="bg-card rounded-lg border border-border p-8">
+                
+                <h2 class="text-2xl font-semibold text-foreground mb-6">
+                    {{ question.question }}
+                </h2>
+
+                <div class="space-y-3">
+                    {% for option in question.options %}
+                        <label class="block cursor-pointer group">
+                            <input type="radio" 
+                                   name="{{ question.id }}" 
+                                   value="{{ option.value }}"
+                                   class="peer sr-only"
+                                   required
+                                   @change="selectAnswer('{{ question.id }}', '{{ option.value }}')">
+                            <div class="p-4 rounded-lg border-2 border-border peer-checked:border-primary peer-checked:bg-primary/5 group-hover:border-primary/50 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">{{ option.emoji }}</span>
+                                    <span class="text-foreground font-medium">{{ option.label }}</span>
+                                </div>
+                            </div>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Navigation -->
+        <div class="flex items-center justify-between">
+            <button type="button" 
+                    @click="previousQuestion()"
+                    x-show="currentQuestion > 0"
+                    class="px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors inline-flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Précédent
+            </button>
+
+            <button type="button"
+                    @click="nextQuestion()"
+                    x-show="currentQuestion < totalQuestions - 1"
+                    :disabled="!answers['{{ questions[0].id }}'] && currentQuestion === 0"
+                    class="ml-auto px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                Suivant
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+
+            <button type="submit"
+                    x-show="currentQuestion === totalQuestions - 1"
+                    class="ml-auto px-8 py-3 bg-gradient-to-r from-primary to-chart-2 text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-all shadow-lg inline-flex items-center gap-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                Obtenir mes recommandations
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function quizForm() {
+    return {
+        currentQuestion: 0,
+        totalQuestions: {{ questions|length }},
+        answers: {},
+        
+        selectAnswer(questionId, value) {
+            this.answers[questionId] = value;
+        },
+        
+        nextQuestion() {
+            if (this.currentQuestion < this.totalQuestions - 1) {
+                this.currentQuestion++;
+            }
+        },
+        
+        previousQuestion() {
+            if (this.currentQuestion > 0) {
+                this.currentQuestion--;
+            }
+        }
+    }
+}
+</script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+{% endblock %}
