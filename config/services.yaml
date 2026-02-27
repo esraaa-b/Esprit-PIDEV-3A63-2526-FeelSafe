@@ -48,9 +48,31 @@ services:
     arguments:
       $geminiApiKey: "%env(GEMINI_API_KEY)%"
 
+<<<<<<< HEAD
   App\Service\EmergencyChatbotService:
     arguments:
       $geminiApiKey: "%env(GEMINI_API_KEY)%"
+=======
+    # Activity Recommendation Service
+    App\Service\ActivityRecommendationService:
+        autowire: true
+        autoconfigure: true
+
+    App\Service\AIWellnessQuizService:
+        arguments:
+            $geminiApiKey: '%env(GEMINI_API_KEY)%'
+
+
+    App\Service\EmergencyChatbotService:
+        arguments:
+            $geminiApiKey: '%env(GEMINI_API_KEY)%'
+
+    App\Service\EmergencyMailService:
+        arguments:
+
+            $adminEmail: 'aoueslatii95@gmail.com'
+
+>>>>>>> a8f19f7a9e554e16e06194fb2c610f7b6ad3b495
 
   App\Service\EmergencyMailService:
     arguments:

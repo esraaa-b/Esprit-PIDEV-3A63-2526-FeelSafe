@@ -8,12 +8,55 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900"></h1>
+<<<<<<< HEAD
         <div class="flex items-center gap-2">
+=======
+        <div class="flex items-center gap-4">
+            <div class="relative">
+                <button id="notif-btn" class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 hover:bg-gray-50">
+                    <svg class="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 17h5l-1.405-1.405C18.79 14.79 18 13.42 18 12V8a6 6 0 10-12 0v4c0 1.42-.79 2.79-1.595 3.595L3 17h5" />
+                        <path d="M13.73 21a2 2 0 01-3.46 0" />
+                    </svg>
+                    <span id="notif-badge" class="hidden absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] rounded-full bg-red-500 text-white">0</span>
+                </button>
+                <div id="notif-panel" class="hidden absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <div class="flex items-center justify-between p-3 border-b border-gray-100">
+                        <div class="text-sm font-medium text-gray-700">Notifications</div>
+                        <button id="notif-clear" class="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50">Tout effacer</button>
+                    </div>
+                    <div id="notif-list" class="max-h-80 overflow-auto divide-y divide-gray-100"></div>
+                </div>
+            </div>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
             <a href="{{ path('app_support_calendar') }}" class="btn btn-outline">Calendrier</a>
             <a href="{{ path('app_support_accomp') }}" class="btn btn-outline">Accompagnement</a>
         </div>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+<<<<<<< HEAD
+=======
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="col-span-2 bg-gray-50 rounded-lg border border-gray-200 p-4">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <div class="text-sm text-gray-500">Prévision RDV (14 jours)</div>
+                        <div id="forecast-summary" class="mt-1 text-sm text-gray-700"></div>
+                    </div>
+                    <div class="h-16 w-56">
+                        <svg id="forecast-spark" viewBox="0 0 224 64" preserveAspectRatio="none" class="w-full h-full"></svg>
+                    </div>
+                </div>
+            </div>
+            <a href="{{ path('app_support_stats') }}" class="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4 hover:shadow transition-shadow">
+                <div>
+                    <div class="text-sm text-gray-500">Voir les statistiques</div>
+                    <div class="text-sm text-gray-700">Résumé mensuel</div>
+                </div>
+                <span class="text-gray-400">→</span>
+            </a>
+        </div>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
         {% set clientIds = [] %}
         {% set clientList = [] %}
         {% for r in rdvs %}
@@ -65,6 +108,12 @@
                         </td>
                         <td class="px-6 py-4 text-sm">
                             <div class="flex items-center gap-2">
+<<<<<<< HEAD
+=======
+                                {% if rdv.mode.value == 'en_ligne' %}
+                                <button type="button" class="btn btn-sm btn-primary" onclick="openJitsi('{{ rdv.id }}','{{ app.user.getFullName()|e('js') }}','{{ ('RDV avec ' ~ (rdv.utilisateur ? rdv.utilisateur.getFullName() : 'client') ~ ' — ' ~ rdv.dateRdv|date('d/m/Y') ~ ' ' ~ rdv.heureRdv|date('H:i'))|e('js') }}')">Rejoindre</button>
+                                {% endif %}
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                                 <form action="{{ path('support_rdv_accept', { id: rdv.id }) }}" method="post">
                                     <button type="submit" class="btn btn-sm">Accepter</button>
                                 </form>
@@ -98,6 +147,125 @@
             </table>
         </div>
     </div>
+<<<<<<< HEAD
+=======
+    <div id="jitsi-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50">
+        <div class="absolute top-4 right-4">
+            <button id="jitsi-close" class="px-3 py-1 rounded bg-white text-gray-800 border">Fermer</button>
+        </div>
+        <div id="jitsi-container" class="w-full h-full"></div>
+    </div>
+    <script src="https://meet.jit.si/external_api.js"></script>
+    <script>
+        (function(){
+            const btn = document.getElementById('notif-btn');
+            const panel = document.getElementById('notif-panel');
+            const badge = document.getElementById('notif-badge');
+            const list = document.getElementById('notif-list');
+            function fmtItem(it){
+                const p = it.payload || {};
+                if (it.type === 'new_rdv') {
+                    return '<div class="p-3 text-sm"><div class="font-medium text-gray-900">Nouveau RDV</div><div class="text-gray-600">Avec '+(p.client||'—')+' le '+(p.date||'—')+' à '+(p.time||'—')+'</div></div>';
+                }
+                if (it.type === 'rdv_canceled') {
+                    return '<div class="p-3 text-sm"><div class="font-medium text-gray-900">RDV annulé</div><div class="text-gray-600">'+(p.client||'—')+' • '+(p.date||'—')+' '+(p.time||'—')+'</div></div>';
+                }
+                if (it.type === 'rdv_refused') {
+                    return '<div class="p-3 text-sm"><div class="font-medium text-gray-900">RDV refusé</div><div class="text-gray-600">'+(p.client||'—')+' • '+(p.date||'—')+' '+(p.time||'—')+'</div></div>';
+                }
+                return '<div class="p-3 text-sm text-gray-600">Notification</div>';
+            }
+            function loadNotif(){
+                fetch('{{ path('support_notifications') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r=>r.json())
+                .then(d=>{
+                    if(!d||!d.success){return;}
+                    const items=d.notifications||[];
+                    if(items.length){ badge.textContent=String(items.length); badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
+                    list.innerHTML = items.map(fmtItem).join('') || '<div class="p-3 text-sm text-gray-600">Aucune notification</div>';
+                })
+                .catch(()=>{});
+            }
+            if (btn) {
+                btn.addEventListener('click',()=>{ panel.classList.toggle('hidden'); if(!panel.classList.contains('hidden')) loadNotif(); });
+                setInterval(loadNotif, 15000);
+                loadNotif();
+            }
+            const clearBtn = document.getElementById('notif-clear');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function(){
+                    clearBtn.disabled = true;
+                    const oldLabel = clearBtn.textContent;
+                    clearBtn.textContent = 'Nettoyage…';
+                    fetch('{{ path('support_notifications_clear') }}', { 
+                        method:'POST', 
+                        headers:{ 
+                            'X-Requested-With':'XMLHttpRequest',
+                            'Accept':'application/json'
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(r=> r.ok ? r.json() : Promise.reject(new Error('HTTP '+r.status)))
+                    .then(d=>{
+                        if(d&&d.success){
+                            list.innerHTML = '<div class="p-3 text-sm text-gray-600">Aucune notification</div>';
+                            badge.classList.add('hidden');
+                            loadNotif();
+                        } else {
+                            clearBtn.textContent = 'Erreur';
+                            setTimeout(()=>{ clearBtn.textContent = oldLabel; clearBtn.disabled=false; }, 1200);
+                        }
+                    })
+                    .catch(()=>{
+                        clearBtn.textContent = 'Erreur';
+                        setTimeout(()=>{ clearBtn.textContent = oldLabel; clearBtn.disabled=false; }, 1200);
+                    })
+                    .finally(()=>{ clearBtn.disabled = false; clearBtn.textContent = oldLabel; });
+                });
+            }
+            fetch('{{ path('support_forecast') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+              .then(r => r.json())
+              .then(d => {
+                if(!d || !d.success) return;
+                const series = d.forecast || [];
+                const max = Math.max(1, ...series.map(x => x.predicted));
+                const W = 224, H = 64, pad = 6;
+                const step = (W - 2*pad) / Math.max(1, series.length - 1);
+                let p = '';
+                series.forEach((v, i) => {
+                    const x = pad + i * step;
+                    const y = H - pad - (v.predicted / max) * (H - 2*pad);
+                    p += (i === 0 ? 'M ' : ' L ') + x.toFixed(1) + ' ' + y.toFixed(1);
+                });
+                const spark = document.getElementById('forecast-spark');
+                if (spark) {
+                    spark.innerHTML = '<path d="'+p+'" fill="none" stroke="#2563eb" stroke-width="2"/>' +
+                                      '<line x1="'+pad+'" y1="'+(H-pad)+'" x2="'+(W-pad)+'" y2="'+(H-pad)+'" stroke="#e5e7eb" stroke-width="1"/>';
+                }
+                const total = series.reduce((acc, v) => acc + v.predicted, 0);
+                const avg = (total / Math.max(1, series.length)).toFixed(1);
+                const first = series[0]?.predicted ?? 0;
+                const last = series[series.length-1]?.predicted ?? 0;
+                const delta = (last - first).toFixed(1);
+                const sumEl = document.getElementById('forecast-summary');
+                if (sumEl) {
+                    sumEl.textContent = 'Moyenne: ' + avg + ' / jour • Tendance: ' + (delta >= 0 ? '+' : '') + delta;
+                }
+              })
+              .catch(()=>{});
+        })();
+        let jitsiApi=null;
+        function computeRoomAndPass(rdvId){const seed=btoa('feelsafe-v1:'+rdvId).replace(/[^A-Za-z0-9]/g,'');return{room:'feelsafe-'+rdvId+'-'+seed.slice(0,10),pass:seed.slice(-8)};}
+        function openJitsi(rdvId,displayName,subject){
+            const modal=document.getElementById('jitsi-modal'),container=document.getElementById('jitsi-container'),c=computeRoomAndPass(rdvId);
+            if(jitsiApi){try{jitsiApi.dispose();}catch(e){}jitsiApi=null;}
+            modal.classList.remove('hidden');
+            jitsiApi=new JitsiMeetExternalAPI('meet.jit.si',{roomName:c.room,parentNode:container,width:'100%',height:'100%',interfaceConfigOverwrite:{HIDE_DEEP_LINKING_LOGO:true,TOOLBAR_BUTTONS:['microphone','camera','closedcaptions','desktop','chat','raisehand','tileview','hangup']},configOverwrite:{prejoinPageEnabled:false,startWithAudioMuted:true,startWithVideoMuted:true},userInfo:{displayName:displayName}});
+            jitsiApi.addListener('videoConferenceJoined',function(){try{jitsiApi.executeCommand('subject',subject||'Rendez-vous');}catch(e){}try{jitsiApi.executeCommand('password',c.pass);}catch(e){}});
+            document.getElementById('jitsi-close').onclick=function(){try{jitsiApi.executeCommand('hangup');}catch(e){}setTimeout(function(){if(jitsiApi){try{jitsiApi.dispose();}catch(e){}jitsiApi=null;}modal.classList.add('hidden');container.innerHTML='';},300);};
+        }
+    </script>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
     <script>
         (function(){
             var fc=document.getElementById('filter-client');

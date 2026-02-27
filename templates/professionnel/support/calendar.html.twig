@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "dashboard/base.html.twig" %}
 
 {% block title %}Calendrier RDV{% endblock %}
@@ -33,11 +34,56 @@
                                 </div>
                             </div>
                             <div>
+=======
+{% extends 'professionnel/base.html.twig' %}
+
+{% block title %}Calendrier des RDV{% endblock %}
+{% block page_title %}Calendrier des rendez-vous{% endblock %}
+{% block page_subtitle %}Vue simple et moderne de vos prochains rendez-vous{% endblock %}
+
+{% block body %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <a href="{{ path('app_support') }}" class="btn btn-outline">← Demandes</a>
+        <div class="flex items-center gap-2">
+            <button id="prev" class="btn btn-outline btn-sm">Semaine précédente</button>
+            <button id="today" class="btn btn-outline btn-sm">Aujourd'hui</button>
+            <button id="next" class="btn btn-outline btn-sm">Semaine suivante</button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div id="week-range" class="text-sm text-gray-600 mb-4"></div>
+        <div id="calendar-grid" class="grid grid-cols-1 md:grid-cols-7 gap-4"></div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4">Tous les rendez-vous</h2>
+        <div class="space-y-4">
+            {% set grouped = {} %}
+            {% for r in rdvs %}
+                {% set key = r.dateRdv|date('Y-m-d') %}
+                {% set grouped = grouped|merge({ (key): (grouped[key]|default([]))|merge([r]) }) %}
+            {% endfor %}
+            {% for date, items in grouped %}
+                <div class="border border-gray-200 rounded-lg">
+                    <div class="px-4 py-2 bg-gray-50 border-b border-gray-200 text-sm text-gray-700">
+                        {{ date|date('d/m/Y') }}
+                    </div>
+                    <div class="p-4 divide-y divide-gray-100">
+                        {% for r in items %}
+                            <div class="py-2 flex items-center justify-between">
+                                <div class="text-sm">
+                                    <div class="font-medium text-gray-900">{{ r.utilisateur ? r.utilisateur.getFullName() : '—' }}</div>
+                                    <div class="text-gray-600">{{ r.heureRdv|date('H:i') }} • {{ r.mode.value == 'en_ligne' ? 'En ligne' : (r.localisation ?: 'Présentiel') }}</div>
+                                </div>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                                 <span class="text-xs px-2 py-1 rounded-full 
                                     {% if r.statut.value == 'planifie' %}bg-blue-100 text-blue-700{% elseif r.statut.value == 'honore' %}bg-green-100 text-green-700{% elseif r.statut.value == 'annule' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
                                     {{ r.statut.value }}
                                 </span>
                             </div>
+<<<<<<< HEAD
                         </div>
                     {% endfor %}
                 </div>
@@ -48,3 +94,68 @@
     </div>
 </div>
 {% endblock %}
+=======
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-sm text-gray-500">Aucun rendez-vous.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function(){
+  const data = [
+    {% for r in rdvs %}
+      { date: '{{ r.dateRdv|date('Y-m-d') }}', time: '{{ r.heureRdv|date('H:i') }}', name: '{{ r.utilisateur ? r.utilisateur.getFullName()|e('js') : '—' }}', mode: '{{ r.mode.value }}' },
+    {% endfor %}
+  ];
+  let start = new Date();
+  start.setDate(start.getDate() - (start.getDay() === 0 ? 6 : start.getDay() - 1)); // Lundi de cette semaine
+
+  const grid = document.getElementById('calendar-grid');
+  const rangeEl = document.getElementById('week-range');
+
+  function fmt(d){return d.toISOString().split('T')[0];}
+  function label(d){return d.toLocaleDateString('fr-FR', { weekday: 'short', day:'2-digit', month:'2-digit' });}
+  function inRange(d, s){ const t=new Date(d); return t>=s && t< new Date(s.getTime()+7*86400000);}
+
+  function render(){
+    grid.innerHTML = '';
+    const end = new Date(start.getTime()+6*86400000);
+    rangeEl.textContent = 'Du ' + start.toLocaleDateString('fr-FR') + ' au ' + end.toLocaleDateString('fr-FR');
+    for(let i=0;i<7;i++){
+      const d = new Date(start.getTime()+i*86400000);
+      const key = fmt(d);
+      const items = data.filter(x => x.date === key).sort((a,b)=>a.time.localeCompare(b.time));
+      const col = document.createElement('div');
+      col.className = 'border border-gray-200 rounded-lg p-3';
+      col.innerHTML = '<div class="text-xs text-gray-500 mb-2">'+label(d)+'</div>' +
+        (items.length ? items.map(it =>
+          '<div class="mb-2 flex items-center justify-between bg-gray-50 border border-gray-200 rounded px-2 py-1">' +
+            '<div class="text-sm text-gray-800">'+ it.time +' • '+ it.name +'</div>' +
+            '<span class="text-[10px] px-2 py-0.5 rounded-full '+(it.mode==='en_ligne'?'bg-blue-100 text-blue-700':'bg-emerald-100 text-emerald-700')+'">'+(it.mode==='en_ligne'?'En ligne':'Présentiel')+'</span>' +
+          '</div>'
+        ).join('') : '<div class="text-xs text-gray-400">—</div>');
+      grid.appendChild(col);
+    }
+  }
+
+  document.getElementById('today').addEventListener('click', () => {
+    start = new Date();
+    start.setDate(start.getDate() - (start.getDay() === 0 ? 6 : start.getDay() - 1));
+    render();
+  });
+  document.getElementById('prev').addEventListener('click', () => { start = new Date(start.getTime()-7*86400000); render(); });
+  document.getElementById('next').addEventListener('click', () => { start = new Date(start.getTime()+7*86400000); render(); });
+  render();
+})();
+</script>
+{% endblock %}
+
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
