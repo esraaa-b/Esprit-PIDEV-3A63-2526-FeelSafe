@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\RendezVous;
 use App\Entity\Utilisateur;
+use App\Enum\StatutRendezVous;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ForecastService
@@ -12,138 +13,150 @@ class ForecastService
     {
     }
 
-    public function forecastForProfessional(Utilisateur $pro, int $days = 14, ?\DateTimeInterface $fromDate = null): array
+    public function getForecastForProfessional(Utilisateur $pro, int $days = 14, int $lookbackWeeks = 12, float $lambda = 0.35): array
     {
-        $today = $fromDate ? new \DateTime($fromDate->format('Y-m-d')) : new \DateTime('today');
-        $start = (clone $today)->modify('-90 days');
-        $qb = $this->em->createQuery(
-            'SELECT r.dateRdv AS d, COUNT(r.id) AS c
-             FROM App\Entity\RendezVous r
-             WHERE r.professionnel = :pro AND r.dateRdv BETWEEN :start AND :end
-             GROUP BY r.dateRdv
-             ORDER BY r.dateRdv ASC'
-        )->setParameter('pro', $pro)
-         ->setParameter('start', $start)
-         ->setParameter('end', $today);
+        $today = new \DateTimeImmutable('today');
+        $start = $today->modify('-' . $lookbackWeeks . ' weeks');
 
-        $rows = $qb->getResult();
-        $byDow = [];
-        $byDate = [];
-        foreach ($rows as $row) {
-            $date = $row['d'];
-            if (!$date instanceof \DateTime) {
-                $date = new \DateTime($row['d']);
-            }
-            $key = $date->format('Y-m-d');
-            $count = (int) $row['c'];
-            $byDate[$key] = $count;
-            $dow = (int) $date->format('w');
-            $byDow[$dow] = $byDow[$dow] ?? [];
-            $byDow[$dow][$key] = $count;
+        $qb = $this->em->createQueryBuilder()
+            ->select('r')
+            ->from(RendezVous::class, 'r')
+            ->where('r.professionnel = :pro')
+            ->andWhere('r.dateRdv BETWEEN :start AND :end')
+            ->setParameter('pro', $pro)
+            ->setParameter('start', new \DateTime($start->format('Y-m-d')))
+            ->setParameter('end', new \DateTime($today->format('Y-m-d')));
+
+        $rdvs = $qb->getQuery()->getResult();
+
+        $weekdayCounts = array_fill(1, 7, 0.0);
+        $baseWeightSum = 0.0;
+        for ($k = 0; $k < $lookbackWeeks; $k++) {
+            $baseWeightSum += exp(-$lambda * $k);
         }
 
-        $predictions = [];
-        $lambda = 0.3;
-        for ($i = 1; $i <= $days; $i++) {
-            $d = (clone $today)->modify("+$i day");
-            $dow = (int) $d->format('w');
-            $weights = [];
-            $values = [];
-            if (!empty($byDow[$dow])) {
-                foreach ($byDow[$dow] as $dateStr => $c) {
-                    $past = new \DateTime($dateStr);
-                    $diffDays = (int) $past->diff($today)->format('%a');
-                    $weeksAgo = $diffDays / 7.0;
-                    $w = exp(-$lambda * $weeksAgo);
-                    $weights[] = $w;
-                    $values[] = $c;
-                }
+        foreach ($rdvs as $rdv) {
+            if (!$rdv instanceof RendezVous) {
+                continue;
             }
-            $pred = 0.0;
-            if (!empty($weights)) {
-                $sumW = array_sum($weights);
-                $sum = 0.0;
-                for ($k = 0; $k < count($weights); $k++) {
-                    $sum += $weights[$k] * $values[$k];
-                }
-                $pred = $sumW > 0 ? $sum / $sumW : 0.0;
-            } else {
-                $pred = !empty($byDate) ? array_sum($byDate) / max(count($byDate), 1) : 0.0;
+            $status = $rdv->getStatut()->value ?? null;
+            if ($status === StatutRendezVous::ANNULE->value) {
+                continue;
             }
-            $predictions[] = [
+            $date = $rdv->getDateRdv();
+            if (!$date) {
+                continue;
+            }
+            $weekday = (int) $date->format('N'); // 1..7
+            $weeksAgo = max(0, (int) floor((($today->getTimestamp() - $date->getTimestamp()) / 86400) / 7));
+            $w = exp(-$lambda * $weeksAgo);
+            $weekdayCounts[$weekday] += $w;
+        }
+
+        $avgByWeekday = [];
+        for ($d = 1; $d <= 7; $d++) {
+            $avgByWeekday[$d] = $baseWeightSum > 0 ? ($weekdayCounts[$d] / $baseWeightSum) : 0.0;
+        }
+
+        $overallPerDay = ($baseWeightSum > 0) ? ((array_sum($weekdayCounts) / $baseWeightSum) / 7.0) : 0.0;
+
+        $forecast = [];
+        for ($i = 0; $i < $days; $i++) {
+            $d = $today->modify('+' . $i . ' day');
+            $wd = (int) $d->format('N');
+            $pred = $avgByWeekday[$wd] ?: $overallPerDay;
+            $forecast[] = [
                 'date' => $d->format('Y-m-d'),
-                'weekday' => $d->format('l'),
-                'predicted' => max(0, (int) round($pred)),
+                'predicted' => max(0, round($pred, 2)),
             ];
         }
 
-        return $predictions;
-    }
-    public function getNextRecommendations(Utilisateur $client, int $limit = 6): array
-{
-    // Get past appointments for this client
-    $rdvs = $this->em->getRepository(RendezVous::class)->findBy(
-        ['utilisateur' => $client],
-        ['dateRdv' => 'DESC']
-    );
-
-    if (empty($rdvs)) {
-        return [];
+        return $forecast;
     }
 
-    // Analyze preferred days of week and hours
-    $dowCounts = [];
-    $hourCounts = [];
-    $modeCounts = [];
+    public function getNextRecommendations(Utilisateur $user, int $limit = 5, int $lookbackMonths = 6, float $lambda = 0.35): array
+    {
+        $now = new \DateTimeImmutable('now');
+        $start = $now->modify('-' . $lookbackMonths . ' months');
 
-    foreach ($rdvs as $rdv) {
-        $dow = $rdv->getDateRdv()->format('w'); // 0=Sun, 6=Sat
-        $hour = $rdv->getHeureRdv()->format('H');
-        $mode = $rdv->getMode()->value;
+        $qb = $this->em->createQueryBuilder()
+            ->select('r')
+            ->from(RendezVous::class, 'r')
+            ->where('r.utilisateur = :user')
+            ->andWhere('r.dateRdv BETWEEN :start AND :end')
+            ->setParameter('user', $user)
+            ->setParameter('start', new \DateTime($start->format('Y-m-d')))
+            ->setParameter('end', new \DateTime($now->format('Y-m-d')));
 
-        $dowCounts[$dow] = ($dowCounts[$dow] ?? 0) + 1;
-        $hourCounts[$hour] = ($hourCounts[$hour] ?? 0) + 1;
-        $modeCounts[$mode] = ($modeCounts[$mode] ?? 0) + 1;
-    }
+        $rdvs = $qb->getQuery()->getResult();
 
-    // Sort to get most frequent preferences
-    arsort($dowCounts);
-    arsort($hourCounts);
-    arsort($modeCounts);
-
-    $preferredDows = array_keys($dowCounts);
-    $preferredHours = array_keys($hourCounts);
-    $preferredMode = array_key_first($modeCounts);
-
-    // Generate future slot suggestions starting from tomorrow
-    $suggestions = [];
-    $today = new \DateTime('today');
-    $maxDaysAhead = 60;
-
-    for ($i = 1; $i <= $maxDaysAhead && count($suggestions) < $limit; $i++) {
-        $candidate = (clone $today)->modify("+$i day");
-        $dow = $candidate->format('w');
-
-        // Only suggest days matching preferred days of week
-        if (!in_array($dow, $preferredDows, true)) {
-            continue;
+        $slotScores = [];
+        foreach ($rdvs as $rdv) {
+            if (!$rdv instanceof RendezVous) {
+                continue;
+            }
+            $date = $rdv->getDateRdv();
+            $time = $rdv->getHeureRdv();
+            if (!$date || !$time) {
+                continue;
+            }
+            $weekday = (int) $date->format('N'); // 1..7
+            $hour = $time->format('H:i');
+            $slotKey = $weekday . '|' . $hour;
+            $weeksAgo = max(0, (int) floor((($now->getTimestamp() - $date->getTimestamp()) / 86400) / 7));
+            $w = exp(-$lambda * $weeksAgo);
+            $delta = 0.0;
+            $st = $rdv->getStatut()->value ?? null;
+            if ($st === StatutRendezVous::HONORE->value) {
+                $delta = 1.0;
+            } elseif ($st === StatutRendezVous::ANNULE->value || $st === StatutRendezVous::NON_HONORE->value) {
+                $delta = -1.0;
+            }
+            $slotScores[$slotKey] = ($slotScores[$slotKey] ?? 0.0) + $delta * $w;
         }
 
-        foreach ($preferredHours as $hour) {
-            if (count($suggestions) >= $limit) {
+        arsort($slotScores);
+        $topSlots = array_keys($slotScores);
+
+        $suggestions = [];
+        $added = 0;
+        $maxDaysScan = 21;
+        foreach ($topSlots as $slot) {
+            if ($added >= $limit) {
                 break;
             }
-            $suggestions[] = [
-                'date'    => $candidate->format('Y-m-d'),
-                'weekday' => $candidate->format('l'),
-                'hour'    => $hour . ':00',
-                'mode'    => $preferredMode,
-            ];
-            break; // one suggestion per day
+            [$wd, $hour] = explode('|', $slot);
+            $targetWd = (int) $wd;
+            $score = round($slotScores[$slot], 2);
+            for ($i = 0; $i < $maxDaysScan && $added < $limit; $i++) {
+                $d = $now->modify('+' . $i . ' day');
+                if ((int) $d->format('N') !== $targetWd) {
+                    continue;
+                }
+                $dateStr = $d->format('Y-m-d');
+                $key = $dateStr . ' ' . $hour;
+                if (!isset($suggestions[$key]) && $d->format('Y-m-d') >= $now->format('Y-m-d')) {
+                    $suggestions[$key] = [
+                        'date' => $dateStr,
+                        'time' => $hour,
+                        'score' => $score,
+                    ];
+                    $added++;
+                }
+            }
         }
+
+        if ($added === 0) {
+            for ($i = 1; $i <= min($limit, 5); $i++) {
+                $d = $now->modify('+' . $i . ' day');
+                $suggestions[$d->format('Y-m-d') . ' 10:00'] = [
+                    'date' => $d->format('Y-m-d'),
+                    'time' => '10:00',
+                    'score' => 0.0,
+                ];
+            }
+        }
+
+        return array_values($suggestions);
     }
-
-    return $suggestions;
 }
-}
-

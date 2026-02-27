@@ -113,11 +113,35 @@
                         </select>
                     </div>
                 </div>
+<<<<<<< HEAD
+=======
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600">Action en masse:</label>
+                        <select id="rdv-bulk-status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                            <option value="">— Changer statut —</option>
+                            <option value="planifie">Planifié</option>
+                            <option value="honore">Honoré</option>
+                            <option value="annule">Annulé</option>
+                            <option value="non_honore">Non honoré</option>
+                        </select>
+                        <button id="rdv-bulk-apply" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">Appliquer</button>
+                        <button id="rdv-bulk-delete" class="px-3 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700">Supprimer</button>
+                    </div>
+                    <div class="ml-auto">
+                        <a href="{{ path('admin_rdv_export') }}" class="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white hover:bg-gray-50">Exporter CSV</a>
+                    </div>
+                </div>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                 
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+<<<<<<< HEAD
+=======
+                                <th class="px-6 py-3"><input type="checkbox" id="rdv-select-all"></th>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Professionnel</th>
@@ -130,6 +154,10 @@
                         <tbody id="rdv-table-body" class="bg-white divide-y divide-gray-200">
                             {% for rdv in rendezVous %}
                             <tr data-id="{{ rdv.id }}" class="hover:bg-gray-50 transition-colors">
+<<<<<<< HEAD
+=======
+                                <td class="px-6 py-4"><input type="checkbox" class="rdv-select" value="{{ rdv.id }}"></td>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ rdv.id }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
@@ -230,11 +258,34 @@
                         </select>
                     </div>
                 </div>
+<<<<<<< HEAD
+=======
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600">Priorité (masse):</label>
+                        <select id="accomp-bulk-priority" class="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                            <option value="">— Définir priorité —</option>
+                            <option value="1">Haute</option>
+                            <option value="2">Moyenne</option>
+                            <option value="3">Basse</option>
+                        </select>
+                        <button id="accomp-bulk-apply" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700">Appliquer</button>
+                        <button id="accomp-bulk-delete" class="px-3 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700">Supprimer</button>
+                    </div>
+                    <div class="ml-auto">
+                        <a href="{{ path('admin_accompagnement_export') }}" class="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white hover:bg-gray-50">Exporter CSV</a>
+                    </div>
+                </div>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                 
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+<<<<<<< HEAD
+=======
+                                <th class="px-6 py-3"><input type="checkbox" id="accomp-select-all"></th>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RDV lié</th>
@@ -247,6 +298,10 @@
                         <tbody id="accomp-table-body" class="bg-white divide-y divide-gray-200">
                             {% for accomp in accompagnements %}
                             <tr data-id="{{ accomp.id }}" class="hover:bg-gray-50 transition-colors">
+<<<<<<< HEAD
+=======
+                                <td class="px-6 py-4"><input type="checkbox" class="accomp-select" value="{{ accomp.id }}"></td>
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ accomp.id }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
@@ -924,6 +979,64 @@ function filterAccompTable() {
     });
 }
 
+<<<<<<< HEAD
+=======
+// ====== BULK ACTIONS RDV ======
+function getSelectedRdvIds(){
+    return Array.from(document.querySelectorAll('.rdv-select:checked')).map(i=>parseInt(i.value,10)).filter(Boolean);
+}
+document.getElementById('rdv-select-all')?.addEventListener('change', function(){
+    const checked = this.checked;
+    document.querySelectorAll('.rdv-select').forEach(cb=>cb.checked=checked);
+});
+document.getElementById('rdv-bulk-apply')?.addEventListener('click', async function(){
+    const ids = getSelectedRdvIds(); const statut = document.getElementById('rdv-bulk-status').value;
+    if (!ids.length || !statut) { showNotification('Sélectionnez des RDV et un statut.', 'error'); return; }
+    try{
+        const r = await fetch('/admin/rdv-accompagnement/rdv/bulk/status',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({ids,statut})});
+        const d = await r.json();
+        if(d.success){ showNotification('Statut mis à jour pour '+d.updated+' RDV.', 'success'); setTimeout(()=>location.reload(),1000); }
+        else showNotification(d.message||'Erreur', 'error');
+    }catch(e){ showNotification('Erreur réseau: '+e.message, 'error'); }
+});
+document.getElementById('rdv-bulk-delete')?.addEventListener('click', async function(){
+    const ids = getSelectedRdvIds(); if (!ids.length){ showNotification('Sélectionnez des RDV.', 'error'); return; }
+    try{
+        const r = await fetch('/admin/rdv-accompagnement/rdv/bulk/delete',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({ids})});
+        const d = await r.json();
+        if(d.success){ showNotification('RDV supprimés: '+d.deleted, 'success'); setTimeout(()=>location.reload(),1000); }
+        else showNotification(d.message||'Erreur', 'error');
+    }catch(e){ showNotification('Erreur réseau: '+e.message, 'error'); }
+});
+
+// ====== BULK ACTIONS ACCOMPAGNEMENT ======
+function getSelectedAccompIds(){
+    return Array.from(document.querySelectorAll('.accomp-select:checked')).map(i=>parseInt(i.value,10)).filter(Boolean);
+}
+document.getElementById('accomp-select-all')?.addEventListener('change', function(){
+    const checked = this.checked;
+    document.querySelectorAll('.accomp-select').forEach(cb=>cb.checked=checked);
+});
+document.getElementById('accomp-bulk-apply')?.addEventListener('click', async function(){
+    const ids = getSelectedAccompIds(); const priorite = document.getElementById('accomp-bulk-priority').value;
+    if (!ids.length || !priorite){ showNotification('Sélectionnez des accompagnements et une priorité.', 'error'); return; }
+    try{
+        const r = await fetch('/admin/rdv-accompagnement/accompagnement/bulk/priority',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({ids,priorite:parseInt(priorite,10)})});
+        const d = await r.json();
+        if(d.success){ showNotification('Priorité mise à jour pour '+d.updated+' accompagnements.', 'success'); setTimeout(()=>location.reload(),1000); }
+        else showNotification(d.message||'Erreur', 'error');
+    }catch(e){ showNotification('Erreur réseau: '+e.message, 'error'); }
+});
+document.getElementById('accomp-bulk-delete')?.addEventListener('click', async function(){
+    const ids = getSelectedAccompIds(); if (!ids.length){ showNotification('Sélectionnez des accompagnements.', 'error'); return; }
+    try{
+        const r = await fetch('/admin/rdv-accompagnement/accompagnement/bulk/delete',{method:'POST',headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},body:JSON.stringify({ids})});
+        const d = await r.json();
+        if(d.success){ showNotification('Accompagnements supprimés: '+d.deleted, 'success'); setTimeout(()=>location.reload(),1000); }
+        else showNotification(d.message||'Erreur', 'error');
+    }catch(e){ showNotification('Erreur réseau: '+e.message, 'error'); }
+});
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
 function showNotification(message, type = 'info') {
     const container = document.getElementById('notification-container');
     
@@ -978,4 +1091,8 @@ document.addEventListener('keydown', function(event) {
     }
 });
 </script>
+<<<<<<< HEAD
 {% endblock %}
+=======
+{% endblock %}
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))

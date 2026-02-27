@@ -74,10 +74,13 @@ class EmergencyController extends AbstractController
                 $entityManager->flush();
 
                 // SEND EMAIL NOTIFICATION TO ADMIN ONLY
+<<<<<<< HEAD
                 if (!$user instanceof \App\Entity\Utilisateur) {
                 $logger->error('User is not an Utilisateur instance');
                 throw new \LogicException('Expected Utilisateur');
             }
+=======
+>>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                 $this->mailService->sendEmergencyNotification($urgence, $user);
 
                 // UPDATE SUCCESS MESSAGE

@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Service\ProNotificationService;
 
 class SupportController extends AbstractController
 {
@@ -133,7 +134,7 @@ class SupportController extends AbstractController
     }
     #[Route('/dashboard/support/create', name: 'support_create', methods: ['POST'])]
     #[IsGranted('ROLE_CLIENT')]
-    public function create(Request $request, EntityManagerInterface $em): Response
+    public function create(Request $request, EntityManagerInterface $em, ProNotificationService $notifier): Response
     {
         $user = $this->getUser();
         if (!$user instanceof Utilisateur) {
@@ -155,6 +156,16 @@ class SupportController extends AbstractController
 
         if (!$date || !$time) {
             $this->addFlash('error', 'Date et heure sont obligatoires');
+            return $this->redirectToRoute('app_support');
+        }
+
+        $alreadyPlanned = (int) $em->createQuery(
+            'SELECT COUNT(r.id) FROM App\Entity\RendezVous r WHERE r.utilisateur = :client AND r.statut = :statut'
+        )->setParameter('client', $user)
+         ->setParameter('statut', StatutRendezVous::PLANIFIE)
+         ->getSingleScalarResult();
+        if ($alreadyPlanned > 0) {
+            $this->addFlash('error', 'Vous avez déjà un rendez-vous planifié. Un seul RDV à la fois.');
             return $this->redirectToRoute('app_support');
         }
 
@@ -191,6 +202,16 @@ class SupportController extends AbstractController
             $this->addFlash('error', 'Ce créneau est déjà réservé chez ce professionnel');
             return $this->redirectToRoute('app_support');
         }
+        $clientConflict = (int) $em->createQuery(
+            'SELECT COUNT(r.id) FROM App\Entity\RendezVous r WHERE r.utilisateur = :client AND r.dateRdv = :d AND r.heureRdv = :h'
+        )->setParameter('client', $user)
+         ->setParameter('d', new \DateTime($date))
+         ->setParameter('h', new \DateTime($time))
+         ->getSingleScalarResult();
+        if ($clientConflict > 0) {
+            $this->addFlash('error', 'Vous avez déjà un rendez-vous à ce créneau.');
+            return $this->redirectToRoute('app_support');
+        }
 
         try {
             $rdv = new RendezVous();
@@ -206,6 +227,20 @@ class SupportController extends AbstractController
 
             $em->persist($rdv);
             $em->flush();
+
+            try {
+                $notifier->add(
+                    $professionnel,
+                    'new_rdv',
+                    [
+                        'rdvId' => $rdv->getId(),
+                        'client' => $user->getFullName(),
+                        'date' => $rdv->getDateRdv()?->format('Y-m-d'),
+                        'time' => $rdv->getHeureRdv()?->format('H:i'),
+                        'mode' => $rdv->getMode()->value,
+                    ]
+                );
+            } catch (\Throwable $e) {}
 
             $this->addFlash('success', 'Rendez-vous créé avec succès');
         } catch (\Throwable $e) {
@@ -233,6 +268,18 @@ class SupportController extends AbstractController
         $ancien = $rdv->getStatut()->value;
         $comment = $request->request->get('commentaire');
         $rdv->setCommentaire($comment ?: $rdv->getCommentaire());
+        $conflict = (int) $em->createQuery(
+            'SELECT COUNT(r2.id) FROM App\Entity\RendezVous r2 WHERE r2.professionnel = :pro AND r2.id <> :id AND r2.dateRdv = :d AND r2.heureRdv = :h AND r2.statut = :statut'
+        )->setParameter('pro', $user)
+         ->setParameter('id', $rdv->getId())
+         ->setParameter('d', $rdv->getDateRdv())
+         ->setParameter('h', $rdv->getHeureRdv())
+         ->setParameter('statut', StatutRendezVous::PLANIFIE)
+         ->getSingleScalarResult();
+        if ($conflict > 0) {
+            $this->addFlash('error', 'Conflit: un autre RDV est déjà planifié à ce créneau.');
+            return $this->redirectToRoute('app_support');
+        }
         $rdv->setStatut(StatutRendezVous::PLANIFIE);
 
         $em->flush();
@@ -248,7 +295,7 @@ class SupportController extends AbstractController
 
     #[Route('/dashboard/support/rdv/{id}/refuse', name: 'support_rdv_refuse', methods: ['POST'])]
     #[IsGranted('ROLE_PROFESSIONNEL')]
-    public function refuse(int $id, Request $request, EntityManagerInterface $em): Response
+    public function refuse(int $id, Request $request, EntityManagerInterface $em, ProNotificationService $notifier): Response
     {
         $user = $this->getUser();
         if (!$user instanceof Utilisateur) {
@@ -272,8 +319,32 @@ class SupportController extends AbstractController
                 [$rdv->getId(), $user->getId(), 'refuse', $ancien, 'annule', $comment]
             );
         } catch (\Throwable $e) {}
+
+        try {
+            $accToDelete = $em->createQuery(
+                'SELECT a FROM App\Entity\Accompagnement a WHERE a.rendezvous = :rdv'
+            )->setParameter('rdv', $rdv)->getResult();
+            foreach ($accToDelete as $a) {
+                $em->remove($a);
+            }
+            $em->flush();
+        } catch (\Throwable $e) {}
+
         $em->remove($rdv);
         $em->flush();
+
+        try {
+            $notifier->add(
+                $user,
+                'rdv_refused',
+                [
+                    'rdvId' => $id,
+                    'client' => $rdv->getUtilisateur()?->getFullName(),
+                    'date' => $rdv->getDateRdv()?->format('Y-m-d'),
+                    'time' => $rdv->getHeureRdv()?->format('H:i'),
+                ]
+            );
+        } catch (\Throwable $e) {}
         $this->addFlash('success', 'Demande refusée et supprimée');
         return $this->redirectToRoute('app_support');
     }
@@ -297,7 +368,22 @@ class SupportController extends AbstractController
         $comment = $request->request->get('commentaire');
 
         if ($statut) {
-            $rdv->setStatut(StatutRendezVous::from($statut));
+            $newStatut = StatutRendezVous::from($statut);
+            if ($newStatut === StatutRendezVous::PLANIFIE) {
+                $conflict = (int) $em->createQuery(
+                    'SELECT COUNT(r2.id) FROM App\Entity\RendezVous r2 WHERE r2.professionnel = :pro AND r2.id <> :id AND r2.dateRdv = :d AND r2.heureRdv = :h AND r2.statut = :statut'
+                )->setParameter('pro', $user)
+                 ->setParameter('id', $rdv->getId())
+                 ->setParameter('d', $rdv->getDateRdv())
+                 ->setParameter('h', $rdv->getHeureRdv())
+                 ->setParameter('statut', StatutRendezVous::PLANIFIE)
+                 ->getSingleScalarResult();
+                if ($conflict > 0) {
+                    $this->addFlash('error', 'Conflit: un autre RDV est déjà planifié à ce créneau.');
+                    return $this->redirectToRoute('app_support');
+                }
+            }
+            $rdv->setStatut($newStatut);
         }
         if ($comment !== null) {
             $rdv->setCommentaire($comment);
@@ -471,11 +557,28 @@ class SupportController extends AbstractController
         if (!$user instanceof Utilisateur) {
             return $this->redirectToRoute('app_login');
         }
-        $rdvsClient = $em->getRepository(RendezVous::class)->findBy(['utilisateur' => $user], ['dateRdv' => 'DESC']);
+        $rdvsClient = $em->getRepository(RendezVous::class)->findBy(['utilisateur' => $user], ['dateRdv' => 'ASC', 'heureRdv' => 'ASC']);
+        $now = new \DateTimeImmutable('now');
+        $nextRdv = null;
+        $nextRdvIso = null;
+        foreach ($rdvsClient as $r) {
+            try {
+                $dt = new \DateTimeImmutable($r->getDateRdv()->format('Y-m-d') . ' ' . $r->getHeureRdv()->format('H:i'));
+            } catch (\Throwable $e) {
+                continue;
+            }
+            if ($dt >= $now && $r->getStatut()->value === \App\Enum\StatutRendezVous::PLANIFIE->value) {
+                $nextRdv = $r;
+                $nextRdvIso = $dt->format(\DateTimeInterface::ATOM);
+                break;
+            }
+        }
         $suggestions = $forecast->getNextRecommendations($user, 6);
         return $this->render('client/support/next.html.twig', [
             'rdvs' => $rdvsClient,
             'suggestions' => $suggestions,
+            'nextRdv' => $nextRdv,
+            'nextRdvIso' => $nextRdvIso,
         ]);
     }
 
@@ -490,6 +593,21 @@ class SupportController extends AbstractController
         $rdvs = $em->getRepository(RendezVous::class)->findBy(['professionnel' => $user], ['dateRdv' => 'ASC', 'heureRdv' => 'ASC']);
         return $this->render('professionnel/support/calendar.html.twig', [
             'rdvs' => $rdvs,
+        ]);
+    }
+    #[Route('/dashboard/support/forecast', name: 'support_forecast', methods: ['GET'])]
+    #[IsGranted('ROLE_PROFESSIONNEL')]
+    public function forecast(\App\Service\ForecastService $forecastService): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            return $this->json(['success' => false], 401);
+        }
+        $data = $forecastService->getForecastForProfessional($user, 14);
+        return $this->json([
+            'success' => true,
+            'horizon' => 14,
+            'forecast' => $data,
         ]);
     }
     #[Route('/dashboard/support/recommend-slots', name: 'support_recommend_slots', methods: ['GET'])]
@@ -513,7 +631,7 @@ public function recommendSlots(Request $request, EntityManagerInterface $em, \Ap
 }
 #[Route('/dashboard/support/rdv/{id}/cancel', name: 'support_rdv_cancel', methods: ['POST'])]
 #[IsGranted('ROLE_CLIENT')]
-public function cancel(int $id, EntityManagerInterface $em): Response
+public function cancel(int $id, Request $request, EntityManagerInterface $em, ProNotificationService $notifier): Response
 {
     $user = $this->getUser();
     if (!$user instanceof Utilisateur) {
@@ -529,7 +647,52 @@ public function cancel(int $id, EntityManagerInterface $em): Response
     $rdv->setStatut(\App\Enum\StatutRendezVous::ANNULE);
     $em->flush();
 
+    try {
+        if ($rdv->getProfessionnel()) {
+            $notifier->add(
+                $rdv->getProfessionnel(),
+                'rdv_canceled',
+                [
+                    'rdvId' => $rdv->getId(),
+                    'client' => $rdv->getUtilisateur()?->getFullName(),
+                    'date' => $rdv->getDateRdv()?->format('Y-m-d'),
+                    'time' => $rdv->getHeureRdv()?->format('H:i'),
+                ]
+            );
+        }
+    } catch (\Throwable $e) {}
+
+    if ($request->isXmlHttpRequest()) {
+        return $this->json(['success' => true]);
+    }
     $this->addFlash('success', 'Rendez-vous annulé');
     return $this->redirectToRoute('app_support');
 }
+
+    #[Route('/dashboard/support/notifications', name: 'support_notifications', methods: ['GET'])]
+    #[IsGranted('ROLE_PROFESSIONNEL')]
+    public function notifications(ProNotificationService $notifier): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            return $this->json(['success' => false], 401);
+        }
+        $items = $notifier->list($user);
+        return $this->json([
+            'success' => true,
+            'notifications' => $items,
+        ]);
+    }
+
+    #[Route('/dashboard/support/notifications/clear', name: 'support_notifications_clear', methods: ['POST'])]
+    #[IsGranted('ROLE_PROFESSIONNEL')]
+    public function clearNotifications(ProNotificationService $notifier): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            return $this->json(['success' => false], 401);
+        }
+        $ok = $notifier->clear($user);
+        return $this->json(['success' => $ok]);
+    }
 }

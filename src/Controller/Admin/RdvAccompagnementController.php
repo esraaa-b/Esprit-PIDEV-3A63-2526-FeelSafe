@@ -10,386 +10,390 @@ use App\Enum\StatutRendezVous;
 use App\Enum\ProchainRdv;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/rdv-accompagnement')]
+#[IsGranted('ROLE_ADMIN')]
 class RdvAccompagnementController extends AbstractController
 {
-    #[Route('/', name: 'admin_rdv_accompagnement', methods: ['GET'])]
+    #[Route('', name: 'admin_rdv_accompagnement', methods: ['GET'])]
     public function index(EntityManagerInterface $em): Response
     {
-        // Récupérer tous les rendez-vous
-        $rendezVous = $em->getRepository(RendezVous::class)->findAll();
-        
-        // Récupérer tous les accompagnements
-        $accompagnements = $em->getRepository(Accompagnement::class)->findAll();
-        
-        // Récupérer TOUS les utilisateurs
-        $utilisateurs = $em->getRepository(Utilisateur::class)->findAll();
+        $rendezVous = $em->getRepository(RendezVous::class)->findBy([], ['dateRdv' => 'DESC', 'heureRdv' => 'DESC']);
+        $accompagnements = $em->getRepository(Accompagnement::class)->findBy([], ['id' => 'DESC']);
+        $utilisateurs = $em->getRepository(Utilisateur::class)->findBy([], ['prenom' => 'ASC']);
+        // Si le repo propose findByRole pour les pros
+        if (method_exists($em->getRepository(Utilisateur::class), 'findByRole')) {
+            $professionnels = $em->getRepository(Utilisateur::class)->findByRole('ROLE_PROFESSIONNEL');
+        } else {
+            $professionnels = array_filter($utilisateurs, fn ($u) => $u instanceof Utilisateur && $u->hasRole('ROLE_PROFESSIONNEL'));
+        }
 
         return $this->render('admin/rdv_accompagnement/index.html.twig', [
             'rendezVous' => $rendezVous,
             'accompagnements' => $accompagnements,
             'utilisateurs' => $utilisateurs,
+            'professionnels' => $professionnels,
+            'modes' => ModeRendezVous::cases(),
+            'statuts' => StatutRendezVous::cases(),
         ]);
     }
 
-    #[Route('/rdv/new', name: 'admin_rdv_new', methods: ['POST'])]
-    public function newRdv(Request $request, EntityManagerInterface $em): JsonResponse
+    #[Route('/rdv/bulk/status', name: 'admin_rdv_bulk_status', methods: ['POST'])]
+    public function rdvBulkStatus(Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-        
+        $data = json_decode($request->getContent(), true) ?: [];
+        $ids = array_map('intval', $data['ids'] ?? []);
+        $statut = $data['statut'] ?? null;
+        if (!$ids || !$statut) {
+            return $this->json(['success' => false, 'message' => 'IDs ou statut manquant']);
+        }
+        try {
+            $count = 0;
+            foreach ($ids as $id) {
+                $rdv = $em->getRepository(RendezVous::class)->find($id);
+                if ($rdv) {
+                    $rdv->setStatut(StatutRendezVous::from($statut));
+                    $count++;
+                }
+            }
+            $em->flush();
+            return $this->json(['success' => true, 'updated' => $count]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    #[Route('/rdv/bulk/delete', name: 'admin_rdv_bulk_delete', methods: ['POST'])]
+    public function rdvBulkDelete(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?: [];
+        $ids = array_map('intval', $data['ids'] ?? []);
+        if (!$ids) {
+            return $this->json(['success' => false, 'message' => 'IDs manquants']);
+        }
+        try {
+            $deleted = 0;
+            foreach ($ids as $id) {
+                $rdv = $em->getRepository(RendezVous::class)->find($id);
+                if ($rdv) {
+                    $accs = $em->getRepository(Accompagnement::class)->findBy(['rendezvous' => $rdv]);
+                    foreach ($accs as $a) {
+                        $em->remove($a);
+                    }
+                    $em->remove($rdv);
+                    $deleted++;
+                }
+            }
+            $em->flush();
+            return $this->json(['success' => true, 'deleted' => $deleted]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    #[Route('/accompagnement/bulk/priority', name: 'admin_accompagnement_bulk_priority', methods: ['POST'])]
+    public function accompBulkPriority(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?: [];
+        $ids = array_map('intval', $data['ids'] ?? []);
+        $priorite = isset($data['priorite']) ? (int)$data['priorite'] : null;
+        if (!$ids || !$priorite) {
+            return $this->json(['success' => false, 'message' => 'IDs ou priorité manquants']);
+        }
+        try {
+            $count = 0;
+            foreach ($ids as $id) {
+                $a = $em->getRepository(Accompagnement::class)->find($id);
+                if ($a) {
+                    $a->setNiveauPriorite($priorite);
+                    $count++;
+                }
+            }
+            $em->flush();
+            return $this->json(['success' => true, 'updated' => $count]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    #[Route('/accompagnement/bulk/delete', name: 'admin_accompagnement_bulk_delete', methods: ['POST'])]
+    public function accompBulkDelete(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?: [];
+        $ids = array_map('intval', $data['ids'] ?? []);
+        if (!$ids) {
+            return $this->json(['success' => false, 'message' => 'IDs manquants']);
+        }
+        try {
+            $deleted = 0;
+            foreach ($ids as $id) {
+                $a = $em->getRepository(Accompagnement::class)->find($id);
+                if ($a) {
+                    $em->remove($a);
+                    $deleted++;
+                }
+            }
+            $em->flush();
+            return $this->json(['success' => true, 'deleted' => $deleted]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    #[Route('/rdv/export.csv', name: 'admin_rdv_export', methods: ['GET'])]
+    public function rdvExport(EntityManagerInterface $em): Response
+    {
+        $rdvs = $em->getRepository(RendezVous::class)->findBy([], ['dateRdv' => 'DESC', 'heureRdv' => 'DESC']);
+        $rows = [["ID","Patient","Professionnel","Date","Heure","Mode","Statut"]];
+        foreach ($rdvs as $r) {
+            $rows[] = [
+                $r->getId(),
+                $r->getUtilisateur()?->getPrenom().' '.$r->getUtilisateur()?->getNom(),
+                $r->getProfessionnel()?->getPrenom().' '.$r->getProfessionnel()?->getNom(),
+                $r->getDateRdv()?->format('Y-m-d'),
+                $r->getHeureRdv()?->format('H:i'),
+                $r->getMode()->value,
+                $r->getStatut()->value,
+            ];
+        }
+        $csv = '';
+        foreach ($rows as $row) { $csv .= implode(';', array_map(fn($v)=>str_replace([';',"\n","\r"],' ',$v), $row))."\r\n"; }
+        return new Response($csv, 200, ['Content-Type'=>'text/csv; charset=UTF-8','Content-Disposition'=>'attachment; filename="rdv.csv"']);
+    }
+
+    #[Route('/accompagnement/export.csv', name: 'admin_accompagnement_export', methods: ['GET'])]
+    public function accompExport(EntityManagerInterface $em): Response
+    {
+        $accs = $em->getRepository(Accompagnement::class)->findBy([], ['id' => 'DESC']);
+        $rows = [["ID","Utilisateur","RDV","Prochain RDV","Date prochain","Priorité","Objectifs","Notes"]];
+        foreach ($accs as $a) {
+            $rows[] = [
+                $a->getId(),
+                $a->getUtilisateur()?->getPrenom().' '.$a->getUtilisateur()?->getNom(),
+                $a->getRendezvous()?->getId(),
+                $a->getProchainRdv()->value,
+                $a->getDateProchainRdv()?->format('Y-m-d H:i'),
+                $a->getNiveauPriorite(),
+                $a->getObjectifs(),
+                $a->getNotesSuivi(),
+            ];
+        }
+        $csv = '';
+        foreach ($rows as $row) { $csv .= implode(';', array_map(fn($v)=>str_replace([';',"\n","\r"],' ',$v), $row))."\r\n"; }
+        return new Response($csv, 200, ['Content-Type'=>'text/csv; charset=UTF-8','Content-Disposition'=>'attachment; filename="accompagnements.csv"']);
+    }
+    #[Route('/rdv/new', name: 'admin_rdv_new', methods: ['POST'])]
+    public function rdvNew(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true) ?: [];
+        $userId = (int)($data['utilisateur_id'] ?? 0);
+        $proId = (int)($data['professionnel_id'] ?? 0);
+
+        $user = $em->getRepository(Utilisateur::class)->find($userId);
+        $pro = $em->getRepository(Utilisateur::class)->find($proId);
+        if (!$user || !$pro) {
+            return $this->json(['success' => false, 'message' => 'Utilisateur ou professionnel invalide']);
+        }
         try {
             $rdv = new RendezVous();
-            
-            // Récupérer les utilisateurs
-            $utilisateur = $em->getRepository(Utilisateur::class)->find($data['utilisateur_id']);
-            $professionnel = $em->getRepository(Utilisateur::class)->find($data['professionnel_id']);
-            
-            // Validation basique
-            if (!$utilisateur || !$professionnel) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'Utilisateur non trouvé'
-                ], 400);
-            }
-            
-            $rdv->setUtilisateur($utilisateur);
-            $rdv->setProfessionnel($professionnel);
-            $rdv->setDateRdv(new \DateTime($data['date_rdv']));
-            $rdv->setHeureRdv(new \DateTime($data['heure_rdv']));
-            
-            // Gérer les Enums
-            $rdv->setMode(ModeRendezVous::from($data['mode']));
-            $rdv->setStatut(StatutRendezVous::from($data['statut']));
-            
-            $rdv->setLocalisation($data['localisation'] ?? null);
-            $rdv->setCommentaire($data['commentaire'] ?? null);
-            
+            $rdv->setUtilisateur($user);
+            $rdv->setProfessionnel($pro);
+            $rdv->setDateRdv(new \DateTime($data['date_rdv'] ?? 'now'));
+            $rdv->setHeureRdv(new \DateTime($data['heure_rdv'] ?? '00:00'));
+            $rdv->setMode(ModeRendezVous::from($data['mode'] ?? ModeRendezVous::EN_LIGNE->value));
+            $rdv->setLocalisation($data['localisation'] ?: null);
+            $rdv->setStatut(StatutRendezVous::from($data['statut'] ?? StatutRendezVous::PLANIFIE->value));
+            $rdv->setCommentaire($data['commentaire'] ?: null);
+            $rdv->setDateCreation(new \DateTime());
             $em->persist($rdv);
             $em->flush();
-            
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Rendez-vous créé avec succès',
-                'data' => [
-                    'id' => $rdv->getId(),
-                    'client' => $rdv->getUtilisateur()->getPrenom() . ' ' . $rdv->getUtilisateur()->getNom(),
-                    'professionnel' => $rdv->getProfessionnel()->getPrenom() . ' ' . $rdv->getProfessionnel()->getNom(),
-                    'date_rdv' => $rdv->getDateRdv()->format('d/m/Y'),
-                    'heure_rdv' => $rdv->getHeureRdv()->format('H:i'),
-                ]
-            ]);
-            
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
-            ], 400);
+            return $this->json(['success' => true, 'message' => 'RDV créé', 'id' => $rdv->getId()]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => 'Erreur: '.$e->getMessage()]);
         }
     }
 
     #[Route('/rdv/{id}/get', name: 'admin_rdv_get', methods: ['GET'])]
-    public function getRdv(int $id, EntityManagerInterface $em, SerializerInterface $serializer): JsonResponse
+    public function rdvGet(int $id, EntityManagerInterface $em): JsonResponse
     {
         $rdv = $em->getRepository(RendezVous::class)->find($id);
-        
         if (!$rdv) {
-            return new JsonResponse(['success' => false, 'message' => 'Rendez-vous non trouvé'], 404);
+            return $this->json(['success' => false, 'message' => 'RDV introuvable']);
         }
-        
-        try {
-            // Préparer les données pour le formulaire
-            $data = [
+        return $this->json([
+            'success' => true,
+            'rdv' => [
                 'id' => $rdv->getId(),
-                'utilisateur_id' => $rdv->getUtilisateur()->getId(),
-                'professionnel_id' => $rdv->getProfessionnel()->getId(),
-                'date_rdv' => $rdv->getDateRdv()->format('Y-m-d'),
-                'heure_rdv' => $rdv->getHeureRdv()->format('H:i'),
+                'utilisateur_id' => $rdv->getUtilisateur()?->getId(),
+                'professionnel_id' => $rdv->getProfessionnel()?->getId(),
+                'date_rdv' => $rdv->getDateRdv()?->format('Y-m-d'),
+                'heure_rdv' => $rdv->getHeureRdv()?->format('H:i'),
                 'mode' => $rdv->getMode()->value,
                 'localisation' => $rdv->getLocalisation(),
                 'statut' => $rdv->getStatut()->value,
-                'commentaire' => $rdv->getCommentaire()
-            ];
-            
-            return new JsonResponse([
-                'success' => true,
-                'rdv' => $data
-            ]);
-            
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
-            ], 400);
-        }
+                'commentaire' => $rdv->getCommentaire(),
+            ],
+        ]);
     }
 
     #[Route('/rdv/{id}/edit', name: 'admin_rdv_edit', methods: ['POST'])]
-    public function editRdv(int $id, Request $request, EntityManagerInterface $em): JsonResponse
+    public function rdvEdit(int $id, Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
         $rdv = $em->getRepository(RendezVous::class)->find($id);
-        
         if (!$rdv) {
-            return new JsonResponse(['success' => false, 'message' => 'Rendez-vous non trouvé'], 404);
+            return $this->json(['success' => false, 'message' => 'RDV introuvable']);
         }
-        
+        $data = json_decode($request->getContent(), true) ?: [];
         try {
-            if (isset($data['utilisateur_id'])) {
-                $utilisateur = $em->getRepository(Utilisateur::class)->find($data['utilisateur_id']);
-                if ($utilisateur) {
-                    $rdv->setUtilisateur($utilisateur);
-                }
+            if (!empty($data['utilisateur_id'])) {
+                $u = $em->getRepository(Utilisateur::class)->find((int)$data['utilisateur_id']);
+                if ($u) $rdv->setUtilisateur($u);
             }
-            
-            if (isset($data['professionnel_id'])) {
-                $professionnel = $em->getRepository(Utilisateur::class)->find($data['professionnel_id']);
-                if ($professionnel) {
-                    $rdv->setProfessionnel($professionnel);
-                }
+            if (!empty($data['professionnel_id'])) {
+                $p = $em->getRepository(Utilisateur::class)->find((int)$data['professionnel_id']);
+                if ($p) $rdv->setProfessionnel($p);
             }
-            
-            if (isset($data['date_rdv'])) {
-                $rdv->setDateRdv(new \DateTime($data['date_rdv']));
-            }
-            
-            if (isset($data['heure_rdv'])) {
-                $rdv->setHeureRdv(new \DateTime($data['heure_rdv']));
-            }
-            
-            if (isset($data['mode'])) {
-                $rdv->setMode(ModeRendezVous::from($data['mode']));
-            }
-            
-            if (isset($data['localisation'])) {
-                $rdv->setLocalisation($data['localisation']);
-            }
-            
-            if (isset($data['statut'])) {
-                $rdv->setStatut(StatutRendezVous::from($data['statut']));
-            }
-            
-            if (isset($data['commentaire'])) {
-                $rdv->setCommentaire($data['commentaire']);
-            }
-            
+            if (!empty($data['date_rdv'])) $rdv->setDateRdv(new \DateTime($data['date_rdv']));
+            if (!empty($data['heure_rdv'])) $rdv->setHeureRdv(new \DateTime($data['heure_rdv']));
+            if (!empty($data['mode'])) $rdv->setMode(ModeRendezVous::from($data['mode']));
+            $rdv->setLocalisation($data['localisation'] ?? null);
+            if (!empty($data['statut'])) $rdv->setStatut(StatutRendezVous::from($data['statut']));
+            $rdv->setCommentaire($data['commentaire'] ?? null);
             $em->flush();
-            
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Rendez-vous modifié avec succès'
-            ]);
-            
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
-            ], 400);
+            return $this->json(['success' => true, 'message' => 'RDV mis à jour']);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => 'Erreur: '.$e->getMessage()]);
         }
     }
 
     #[Route('/rdv/{id}/delete', name: 'admin_rdv_delete', methods: ['DELETE'])]
-    public function deleteRdv(int $id, EntityManagerInterface $em): JsonResponse
+    public function rdvDelete(int $id, EntityManagerInterface $em): JsonResponse
     {
         $rdv = $em->getRepository(RendezVous::class)->find($id);
-        
         if (!$rdv) {
-            return new JsonResponse(['success' => false, 'message' => 'Rendez-vous non trouvé'], 404);
+            return $this->json(['success' => false, 'message' => 'RDV introuvable']);
         }
-        
         try {
+            // supprimer les accompagnements liés d'abord pour éviter contrainte FK
+            $accs = $em->getRepository(Accompagnement::class)->findBy(['rendezvous' => $rdv]);
+            foreach ($accs as $a) {
+                $em->remove($a);
+            }
             $em->remove($rdv);
             $em->flush();
-            
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Rendez-vous supprimé avec succès'
-            ]);
-            
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
-            ], 400);
+            return $this->json(['success' => true, 'message' => 'RDV supprimé']);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => 'Erreur: '.$e->getMessage()]);
         }
     }
 
     #[Route('/accompagnement/new', name: 'admin_accompagnement_new', methods: ['POST'])]
-    public function newAccompagnement(Request $request, EntityManagerInterface $em): JsonResponse
+    public function accompNew(Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-        
+        $data = json_decode($request->getContent(), true) ?: [];
+        $rdvId = (int)($data['rendezvous_id'] ?? 0);
+        $userId = (int)($data['utilisateur_id'] ?? 0);
+        $rdv = $em->getRepository(RendezVous::class)->find($rdvId);
+        $user = $em->getRepository(Utilisateur::class)->find($userId);
+        if (!$rdv || !$user) {
+            return $this->json(['success' => false, 'message' => 'Données invalides']);
+        }
         try {
-            $accompagnement = new Accompagnement();
-            
-            // Récupérer le rendez-vous et l'utilisateur
-            $rendezVous = $em->getRepository(RendezVous::class)->find($data['rendezvous_id']);
-            $utilisateur = $em->getRepository(Utilisateur::class)->find($data['utilisateur_id']);
-            
-            // Validation basique
-            if (!$rendezVous || !$utilisateur) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'Rendez-vous ou utilisateur non trouvé'
-                ], 400);
+            $acc = new Accompagnement();
+            $acc->setRendezvous($rdv);
+            $acc->setUtilisateur($user);
+            $acc->setProchainRdv(ProchainRdv::from($data['prochain_rdv'] ?? ProchainRdv::NON->value));
+            if (!empty($data['date_prochain_rdv'])) {
+                $acc->setDateProchainRdv(new \DateTime($data['date_prochain_rdv']));
+            } else {
+                $acc->setDateProchainRdv(null);
             }
-            
-            $accompagnement->setRendezvous($rendezVous);
-            $accompagnement->setUtilisateur($utilisateur);
-            $accompagnement->setProchainRdv(ProchainRdv::from($data['prochain_rdv'] ?? 'non'));
-            
-            if (isset($data['date_prochain_rdv']) && $data['date_prochain_rdv']) {
-                $accompagnement->setDateProchainRdv(new \DateTime($data['date_prochain_rdv']));
-            }
-            
-            $accompagnement->setObjectifs($data['objectifs'] ?? null);
-            $accompagnement->setNotesSuivi($data['notes_suivi'] ?? null);
-            $accompagnement->setNiveauPriorite($data['niveau_priorite'] ?? 3);
-            
-            $em->persist($accompagnement);
+            $acc->setObjectifs($data['objectifs'] ? substr(strip_tags($data['objectifs']), 0, 255) : null);
+            $acc->setNotesSuivi($data['notes_suivi'] ? substr(strip_tags($data['notes_suivi']), 0, 255) : null);
+            $acc->setNiveauPriorite(isset($data['niveau_priorite']) ? (int)$data['niveau_priorite'] : null);
+            $em->persist($acc);
             $em->flush();
-            
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Accompagnement créé avec succès'
-            ]);
-            
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
-            ], 400);
+            return $this->json(['success' => true, 'message' => 'Accompagnement créé', 'id' => $acc->getId()]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => 'Erreur: '.$e->getMessage()]);
         }
     }
 
     #[Route('/accompagnement/{id}/get', name: 'admin_accompagnement_get', methods: ['GET'])]
-    public function getAccompagnement(int $id, EntityManagerInterface $em): JsonResponse
+    public function accompGet(int $id, EntityManagerInterface $em): JsonResponse
     {
-        $accompagnement = $em->getRepository(Accompagnement::class)->find($id);
-        
-        if (!$accompagnement) {
-            return new JsonResponse(['success' => false, 'message' => 'Accompagnement non trouvé'], 404);
+        $a = $em->getRepository(Accompagnement::class)->find($id);
+        if (!$a) {
+            return $this->json(['success' => false, 'message' => 'Accompagnement introuvable']);
         }
-        
-        try {
-            // Préparer les données pour le formulaire
-            $data = [
-                'id' => $accompagnement->getId(),
-                'rendezvous_id' => $accompagnement->getRendezvous()->getId(),
-                'utilisateur_id' => $accompagnement->getUtilisateur()->getId(),
-                'prochain_rdv' => $accompagnement->getProchainRdv()->value,
-                'date_prochain_rdv' => $accompagnement->getDateProchainRdv() ? 
-                    $accompagnement->getDateProchainRdv()->format('Y-m-d') : null,
-                'objectifs' => $accompagnement->getObjectifs(),
-                'notes_suivi' => $accompagnement->getNotesSuivi(),
-                'niveau_priorite' => $accompagnement->getNiveauPriorite()
-            ];
-            
-            return new JsonResponse([
-                'success' => true,
-                'accompagnement' => $data
-            ]);
-            
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
-            ], 400);
-        }
+        return $this->json([
+            'success' => true,
+            'accompagnement' => [
+                'id' => $a->getId(),
+                'rendezvous_id' => $a->getRendezvous()?->getId(),
+                'utilisateur_id' => $a->getUtilisateur()?->getId(),
+                'prochain_rdv' => $a->getProchainRdv()->value,
+                'date_prochain_rdv' => $a->getDateProchainRdv()?->format('Y-m-d\TH:i'),
+                'objectifs' => $a->getObjectifs(),
+                'notes_suivi' => $a->getNotesSuivi(),
+                'niveau_priorite' => $a->getNiveauPriorite(),
+            ],
+        ]);
     }
 
     #[Route('/accompagnement/{id}/edit', name: 'admin_accompagnement_edit', methods: ['POST'])]
-    public function editAccompagnement(int $id, Request $request, EntityManagerInterface $em): JsonResponse
+    public function accompEdit(int $id, Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-        $accompagnement = $em->getRepository(Accompagnement::class)->find($id);
-        
-        if (!$accompagnement) {
-            return new JsonResponse(['success' => false, 'message' => 'Accompagnement non trouvé'], 404);
+        $a = $em->getRepository(Accompagnement::class)->find($id);
+        if (!$a) {
+            return $this->json(['success' => false, 'message' => 'Accompagnement introuvable']);
         }
-        
+        $data = json_decode($request->getContent(), true) ?: [];
         try {
-            if (isset($data['rendezvous_id'])) {
-                $rendezVous = $em->getRepository(RendezVous::class)->find($data['rendezvous_id']);
-                if ($rendezVous) {
-                    $accompagnement->setRendezvous($rendezVous);
-                }
+            if (!empty($data['rendezvous_id'])) {
+                $rdv = $em->getRepository(RendezVous::class)->find((int)$data['rendezvous_id']);
+                if ($rdv) $a->setRendezvous($rdv);
             }
-            
-            if (isset($data['utilisateur_id'])) {
-                $utilisateur = $em->getRepository(Utilisateur::class)->find($data['utilisateur_id']);
-                if ($utilisateur) {
-                    $accompagnement->setUtilisateur($utilisateur);
-                }
+            if (!empty($data['utilisateur_id'])) {
+                $u = $em->getRepository(Utilisateur::class)->find((int)$data['utilisateur_id']);
+                if ($u) $a->setUtilisateur($u);
             }
-            
-            if (isset($data['prochain_rdv'])) {
-                $accompagnement->setProchainRdv(ProchainRdv::from($data['prochain_rdv']));
+            if (!empty($data['prochain_rdv'])) {
+                $a->setProchainRdv(ProchainRdv::from($data['prochain_rdv']));
             }
-            
-            if (isset($data['date_prochain_rdv'])) {
-                if ($data['date_prochain_rdv']) {
-                    $accompagnement->setDateProchainRdv(new \DateTime($data['date_prochain_rdv']));
-                } else {
-                    $accompagnement->setDateProchainRdv(null);
-                }
+            if (array_key_exists('date_prochain_rdv', $data)) {
+                $a->setDateProchainRdv($data['date_prochain_rdv'] ? new \DateTime($data['date_prochain_rdv']) : null);
             }
-            
-            if (isset($data['objectifs'])) {
-                $accompagnement->setObjectifs($data['objectifs']);
+            $a->setObjectifs($data['objectifs'] !== null ? substr(strip_tags((string)$data['objectifs']), 0, 255) : $a->getObjectifs());
+            $a->setNotesSuivi($data['notes_suivi'] !== null ? substr(strip_tags((string)$data['notes_suivi']), 0, 255) : $a->getNotesSuivi());
+            if (array_key_exists('niveau_priorite', $data)) {
+                $a->setNiveauPriorite($data['niveau_priorite'] !== null ? (int)$data['niveau_priorite'] : null);
             }
-            
-            if (isset($data['notes_suivi'])) {
-                $accompagnement->setNotesSuivi($data['notes_suivi']);
-            }
-            
-            if (isset($data['niveau_priorite'])) {
-                $accompagnement->setNiveauPriorite($data['niveau_priorite']);
-            }
-            
             $em->flush();
-            
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Accompagnement modifié avec succès'
-            ]);
-            
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
-            ], 400);
+            return $this->json(['success' => true, 'message' => 'Accompagnement mis à jour']);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => 'Erreur: '.$e->getMessage()]);
         }
     }
 
     #[Route('/accompagnement/{id}/delete', name: 'admin_accompagnement_delete', methods: ['DELETE'])]
-    public function deleteAccompagnement(int $id, EntityManagerInterface $em): JsonResponse
+    public function accompDelete(int $id, EntityManagerInterface $em): JsonResponse
     {
-        $accompagnement = $em->getRepository(Accompagnement::class)->find($id);
-        
-        if (!$accompagnement) {
-            return new JsonResponse(['success' => false, 'message' => 'Accompagnement non trouvé'], 404);
+        $a = $em->getRepository(Accompagnement::class)->find($id);
+        if (!$a) {
+            return $this->json(['success' => false, 'message' => 'Accompagnement introuvable']);
         }
-        
         try {
-            $em->remove($accompagnement);
+            $em->remove($a);
             $em->flush();
-            
-            return new JsonResponse([
-                'success' => true,
-                'message' => 'Accompagnement supprimé avec succès'
-            ]);
-            
-        } catch (\Exception $e) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
-            ], 400);
+            return $this->json(['success' => true, 'message' => 'Accompagnement supprimé']);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => 'Erreur: '.$e->getMessage()]);
         }
     }
 }
