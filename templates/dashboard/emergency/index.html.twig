@@ -54,11 +54,8 @@
 <div x-show="dialogOpen" x-transition class="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4" @click.self="dialogOpen = false">
     <div class="bg-card rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
-<<<<<<< HEAD
             <form method="POST" action="{{ path('app_emergency') }}" @submit="validateAndSubmit">
-=======
             <form method="POST" action="{{ path('app_emergency') }}" @submit.prevent="validateAndSubmit" novalidate>
->>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                 <div class="mb-4">
                     <div class="flex items-center gap-2 mb-2">
                         <svg class="w-5 h-5 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -498,7 +495,7 @@ document.addEventListener('alpine:init', () => {
                     setTimeout(() => {
                         this.chatMessages.push({
                             sender: 'bot',
-                            text: data.message,  // Full message, no truncation
+                            text: data.message,
                             time: data.timestamp || new Date().toLocaleTimeString()
                         });
                         this.chatTyping = false;
@@ -507,7 +504,7 @@ document.addEventListener('alpine:init', () => {
                         this.scrollToBottom();
                         
                         console.log('Message added to chat, total messages:', this.chatMessages.length);
-                    }, 800); // Slightly shorter delay for better UX
+                    }, 800);
                     
                 } else {
                     throw new Error(data.message || 'Failed to get response');
@@ -558,77 +555,280 @@ document.addEventListener('alpine:init', () => {
             }
         },
         
-<<<<<<< HEAD
-validateAndSubmit(e) {
-    this.errors = [];
-
-    if (!this.form.urgencyLevel) {
-        this.errors.push('Veuillez sélectionner un niveau d\'urgence');
-    }
-    if (!this.form.location) {
-        this.errors.push('Veuillez sélectionner votre localisation');
-    }
-    if (!this.form.description || this.form.description.trim().length < 10) {
-        this.errors.push('La description doit contenir au moins 10 caractères');
-    }
-
-    if (this.errors.length > 0) {
-        e.preventDefault(); // only prevent if invalid
-        return;
-    }
-    // if valid, let the form submit normally (no e.preventDefault)
-=======
-        // Existing validateAndSubmit function
-validateAndSubmit(e) {
-    console.log('🔍 FORM SUBMISSION STARTED');
-    console.log('Form element:', e.target);
-    console.log('Form data:', {
-        urgencyLevel: this.form.urgencyLevel,
-        location: this.form.location,
-        description: this.form.description
-    });
-    
-    this.errors = [];
-    
-    // Check each field
-    if (!this.form.urgencyLevel) {
-        this.errors.push('Veuillez sélectionner un niveau d\'urgence');
-        console.log('❌ Missing: urgency level');
-    } else {
-        console.log('✅ Urgency level:', this.form.urgencyLevel);
-    }
-    
-    if (!this.form.location) {
-        this.errors.push('Veuillez sélectionner votre localisation');
-        console.log('❌ Missing: location');
-    } else {
-        console.log('✅ Location:', this.form.location);
-    }
-    
-    if (!this.form.description || this.form.description.trim().length < 10) {
-        this.errors.push('La description doit contenir au moins 10 caractères');
-        console.log('❌ Description too short:', this.form.description?.length || 0);
-    } else {
-        console.log('✅ Description length:', this.form.description.length);
-    }
-    
-    if (this.errors.length > 0) {
-        console.log('❌ Validation failed with errors:', this.errors);
-        e.preventDefault();
-        return false;
-    }
-    
-    console.log('✅ Validation passed! Submitting form...');
-    
-    // Manually submit the form
-    e.target.submit();
-    
-    // Prevent the default Alpine handler
-    return false;
->>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
-},
+        // Validate and submit form
+        validateAndSubmit(e) {
+            console.log('🔍 FORM SUBMISSION STARTED');
+            console.log('Form element:', e.target);
+            console.log('Form data:', {
+                urgencyLevel: this.form.urgencyLevel,
+                location: this.form.location,
+                description: this.form.description
+            });
+            
+            this.errors = [];
+            
+            // Check each field
+            if (!this.form.urgencyLevel) {
+                this.errors.push('Veuillez sélectionner un niveau d\'urgence');
+                console.log('❌ Missing: urgency level');
+            } else {
+                console.log('✅ Urgency level:', this.form.urgencyLevel);
+            }
+            
+            if (!this.form.location) {
+                this.errors.push('Veuillez sélectionner votre localisation');
+                console.log('❌ Missing: location');
+            } else {
+                console.log('✅ Location:', this.form.location);
+            }
+            
+            if (!this.form.description || this.form.description.trim().length < 10) {
+                this.errors.push('La description doit contenir au moins 10 caractères');
+                console.log('❌ Description too short:', this.form.description?.length || 0);
+            } else {
+                console.log('✅ Description length:', this.form.description.length);
+            }
+            
+            if (this.errors.length > 0) {
+                console.log('❌ Validation failed with errors:', this.errors);
+                e.preventDefault();
+                return false;
+            }
+            
+            console.log('✅ Validation passed! Submitting form...');
+            
+            // Manually submit the form
+            e.target.submit();
+            
+            // Prevent the default Alpine handler
+            return false;
+        },
+        
+        // Reset form
+        resetForm() {
+            this.form = {
+                urgencyLevel: '',
+                location: '',
+                description: ''
+            };
+            this.errors = [];
+            this.dialogOpen = false;
+        },
+        
+        // Close chat
+        closeChat() {
+            this.chatOpen = false;
+        }
+    }));
+});
+</script><script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('emergencyReport', () => ({
+        // Existing properties
+        dialogOpen: false,
+        chatOpen: false,
+        mapOpen: false,
+        form: {
+            urgencyLevel: '',
+            location: '',
+            description: ''
+        },
+        errors: [],
+        
+        // Chat properties
+        chatMessages: [],
+        chatInput: '',
+        chatTyping: false,
+        
+        // Initialize chat when opened
+        initChat() {
+            console.log('Chat opened - initializing...');
+            this.loadChatHistory();
+        },
+        
+        // Load previous chat messages
+        async loadChatHistory() {
+            console.log('Loading chat history...');
+            try {
+                const response = await fetch('/chat/history');
+                const data = await response.json();
+                console.log('Chat history response:', data);
                 
-        // Existing resetForm function
+                if (data.success && data.history.length > 0) {
+                    this.chatMessages = data.history;
+                } else {
+                    // Welcome message
+                    this.chatMessages = [{
+                        sender: 'bot',
+                        text: 'Hello, I\'m your FeelSafe emergency assistant. How can I help you today? If this is an emergency, please call 15, 17, or 112 immediately.',
+                        time: new Date().toLocaleTimeString()
+                    }];
+                }
+            } catch (error) {
+                console.error('Error loading chat history:', error);
+                this.chatMessages = [{
+                    sender: 'bot',
+                    text: 'Hello, I\'m your FeelSafe emergency assistant. How can I help you today? If this is an emergency, please call 15, 17, or 112 immediately.',
+                    time: new Date().toLocaleTimeString()
+                }];
+            }
+            
+            // Scroll to bottom after loading
+            this.$nextTick(() => {
+                this.scrollToBottom();
+            });
+        },
+        
+        // Send chat message
+        async sendChatMessage() {
+            if (!this.chatInput.trim() || this.chatTyping) return;
+            
+            const userMessage = this.chatInput;
+            console.log('Sending message:', userMessage);
+            
+            // Add user message to chat
+            this.chatMessages.push({
+                sender: 'user',
+                text: userMessage,
+                time: new Date().toLocaleTimeString()
+            });
+            
+            this.chatInput = '';
+            this.chatTyping = true;
+            
+            // Scroll to bottom
+            this.scrollToBottom();
+            
+            try {
+                const response = await fetch('/chat/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: userMessage })
+                });
+                
+                const data = await response.json();
+                console.log('Full API response:', data);
+                
+                if (data.success) {
+                    console.log('Bot message received, length:', data.message.length);
+                    console.log('Bot message content:', data.message);
+                    
+                    // Add bot response after a short delay
+                    setTimeout(() => {
+                        this.chatMessages.push({
+                            sender: 'bot',
+                            text: data.message,
+                            time: data.timestamp || new Date().toLocaleTimeString()
+                        });
+                        this.chatTyping = false;
+                        
+                        // Scroll to bottom
+                        this.scrollToBottom();
+                        
+                        console.log('Message added to chat, total messages:', this.chatMessages.length);
+                    }, 800);
+                    
+                } else {
+                    throw new Error(data.message || 'Failed to get response');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                this.chatMessages.push({
+                    sender: 'bot',
+                    text: "I'm having trouble connecting. Please call emergency services if you need immediate help: 15 (SAMU), 17 (Police), or 112.",
+                    time: new Date().toLocaleTimeString()
+                });
+                this.chatTyping = false;
+                this.scrollToBottom();
+            }
+        },
+        
+        // Helper function to scroll to bottom
+        scrollToBottom() {
+            this.$nextTick(() => {
+                const chatDiv = this.$refs.chatMessages;
+                if (chatDiv) {
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
+                }
+            });
+        },
+        
+        // Clear chat history
+        async clearChat() {
+            console.log('Clearing chat...');
+            try {
+                await fetch('/chat/clear', { method: 'POST' });
+                this.chatMessages = [{
+                    sender: 'bot',
+                    text: 'Chat cleared. How can I help you today?',
+                    time: new Date().toLocaleTimeString()
+                }];
+                this.scrollToBottom();
+            } catch (error) {
+                console.error('Error clearing chat:', error);
+            }
+        },
+        
+        // Handle Enter key in chat input
+        handleChatKeyPress(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendChatMessage();
+            }
+        },
+        
+        // Validate and submit form
+        validateAndSubmit(e) {
+            console.log('🔍 FORM SUBMISSION STARTED');
+            console.log('Form element:', e.target);
+            console.log('Form data:', {
+                urgencyLevel: this.form.urgencyLevel,
+                location: this.form.location,
+                description: this.form.description
+            });
+            
+            this.errors = [];
+            
+            // Check each field
+            if (!this.form.urgencyLevel) {
+                this.errors.push('Veuillez sélectionner un niveau d\'urgence');
+                console.log('❌ Missing: urgency level');
+            } else {
+                console.log('✅ Urgency level:', this.form.urgencyLevel);
+            }
+            
+            if (!this.form.location) {
+                this.errors.push('Veuillez sélectionner votre localisation');
+                console.log('❌ Missing: location');
+            } else {
+                console.log('✅ Location:', this.form.location);
+            }
+            
+            if (!this.form.description || this.form.description.trim().length < 10) {
+                this.errors.push('La description doit contenir au moins 10 caractères');
+                console.log('❌ Description too short:', this.form.description?.length || 0);
+            } else {
+                console.log('✅ Description length:', this.form.description.length);
+            }
+            
+            if (this.errors.length > 0) {
+                console.log('❌ Validation failed with errors:', this.errors);
+                e.preventDefault();
+                return false;
+            }
+            
+            console.log('✅ Validation passed! Submitting form...');
+            
+            // Manually submit the form
+            e.target.submit();
+            
+            // Prevent the default Alpine handler
+            return false;
+        },
+        
+        // Reset form
         resetForm() {
             this.form = {
                 urgencyLevel: '',
