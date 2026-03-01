@@ -17,73 +17,72 @@ class ActivityRecommendationService
         private EntityManagerInterface $em
     ) {
     }
+    /**
+     * Recommandations intelligentes basées sur météo + historique
+     */
+    public function getSmartRecommendations(Utilisateur $user, int $limit = 4): array
+    {
+        $weatherCategory = $this->weatherService->getWeatherCategory();
+        $userHistory = $this->getUserPreferences($user);
 
-   /**
- * Recommandations intelligentes basées sur météo + historique
- */
-public function getSmartRecommendations(Utilisateur $user, int $limit = 4): array
-{
-    $weatherCategory = $this->weatherService->getWeatherCategory();
-    $userHistory = $this->getUserPreferences($user);
-    
-    $qb = $this->activiteRepo->createQueryBuilder('a')
-        ->where('a.estActive = :active')
-        ->setParameter('active', true);
+        $qb = $this->activiteRepo->createQueryBuilder('a')
+            ->where('a.estActive = :active')
+            ->setParameter('active', true);
 
-    // Filtrer selon la météo
-    if ($weatherCategory === 'outdoor') {
-        // Activités extérieures en priorité
-        $qb->andWhere('a.categorie IN (:outdoorCategories) OR a.typeActivite IN (:outdoorTypes)')
-           ->setParameter('outdoorCategories', ['Énergisante', 'Activité physique'])
-           ->setParameter('outdoorTypes', ['Marche', 'Yoga', 'Activité physique']);
-    } elseif ($weatherCategory === 'indoor') {
-        // Activités intérieures en priorité
-        $qb->andWhere('a.categorie IN (:indoorCategories) OR a.typeActivite IN (:indoorTypes)')
-           ->setParameter('indoorCategories', ['Relaxation', 'Développement personnel'])
-           ->setParameter('indoorTypes', ['Méditation', 'Respiration', 'Écriture thérapeutique']);
+        // Filtrer selon la météo
+        if ($weatherCategory === 'outdoor') {
+            // Activités extérieures en priorité
+            $qb->andWhere('a.categorie IN (:outdoorCategories) OR a.typeActivite IN (:outdoorTypes)')
+                ->setParameter('outdoorCategories', ['Énergisante', 'Activité physique'])
+                ->setParameter('outdoorTypes', ['Marche', 'Yoga', 'Activité physique']);
+        } elseif ($weatherCategory === 'indoor') {
+            // Activités intérieures en priorité
+            $qb->andWhere('a.categorie IN (:indoorCategories) OR a.typeActivite IN (:indoorTypes)')
+                ->setParameter('indoorCategories', ['Relaxation', 'Développement personnel'])
+                ->setParameter('indoorTypes', ['Méditation', 'Respiration', 'Écriture thérapeutique']);
+        }
+
+        // CORRECTION : Exclure les activités déjà faites aujourd'hui
+        $today = new \DateTime('today');
+        $tomorrow = new \DateTime('tomorrow');
+
+        $todaySessions = $this->sessionRepo->createQueryBuilder('s')
+            ->select('IDENTITY(s.activite)')
+            ->where('s.utilisateur = :user')
+            ->andWhere('s.dateDebut >= :today')
+            ->andWhere('s.dateDebut < :tomorrow')
+            ->setParameter('user', $user)
+            ->setParameter('today', $today)
+            ->setParameter('tomorrow', $tomorrow)
+            ->getQuery()
+            ->getResult();
+
+        $todayActivityIds = array_column($todaySessions, 1);
+        if (!empty($todayActivityIds)) {
+            $qb->andWhere('a.id NOT IN (:todayIds)')
+                ->setParameter('todayIds', $todayActivityIds);
+        }
+
+        // Prioriser les activités qui ont bien fonctionné pour l'utilisateur
+        if (!empty($userHistory['preferred_types'])) {
+            $qb->orderBy('CASE WHEN a.typeActivite IN (:preferredTypes) THEN 0 ELSE 1 END', 'ASC')
+                ->setParameter('preferredTypes', $userHistory['preferred_types']);
+        }
+
+        $qb->addOrderBy('a.dateCreation', 'DESC')
+            ->setMaxResults($limit);
+
+        $activities = $qb->getQuery()->getResult();
+
+        // Calculer un score de recommandation pour chaque activité
+        return array_map(function ($activity) use ($user, $userHistory) {
+            return [
+                'activity' => $activity,
+                'score' => $this->calculateRecommendationScore($activity, $user, $userHistory),
+                'reason' => $this->getRecommendationReason($activity, $userHistory),
+            ];
+        }, $activities);
     }
-
-    // CORRECTION : Exclure les activités déjà faites aujourd'hui
-    $today = new \DateTime('today');
-    $tomorrow = new \DateTime('tomorrow');
-    
-    $todaySessions = $this->sessionRepo->createQueryBuilder('s')
-        ->select('IDENTITY(s.activite)')
-        ->where('s.utilisateur = :user')
-        ->andWhere('s.dateDebut >= :today')
-        ->andWhere('s.dateDebut < :tomorrow')
-        ->setParameter('user', $user)
-        ->setParameter('today', $today)
-        ->setParameter('tomorrow', $tomorrow)
-        ->getQuery()
-        ->getResult();
-
-    $todayActivityIds = array_column($todaySessions, 1);
-    if (!empty($todayActivityIds)) {
-        $qb->andWhere('a.id NOT IN (:todayIds)')
-           ->setParameter('todayIds', $todayActivityIds);
-    }
-
-    // Prioriser les activités qui ont bien fonctionné pour l'utilisateur
-    if (!empty($userHistory['preferred_types'])) {
-        $qb->orderBy('CASE WHEN a.typeActivite IN (:preferredTypes) THEN 0 ELSE 1 END', 'ASC')
-           ->setParameter('preferredTypes', $userHistory['preferred_types']);
-    }
-
-    $qb->addOrderBy('a.dateCreation', 'DESC')
-       ->setMaxResults($limit);
-
-    $activities = $qb->getQuery()->getResult();
-
-    // Calculer un score de recommandation pour chaque activité
-    return array_map(function ($activity) use ($user, $userHistory) {
-        return [
-            'activity' => $activity,
-            'score' => $this->calculateRecommendationScore($activity, $user, $userHistory),
-            'reason' => $this->getRecommendationReason($activity, $userHistory),
-        ];
-    }, $activities);
-}
 
     /**
      * Analyse les préférences de l'utilisateur basées sur son historique
@@ -127,7 +126,7 @@ public function getSmartRecommendations(Utilisateur $user, int $limit = 4): arra
             }
 
             // Moment de la journée
-            $hour = (int)$session->getDateDebut()->format('H');
+            $hour = (int) $session->getDateDebut()->format('H');
             if ($hour < 12) {
                 $timeSlots['morning']++;
             } elseif ($hour < 18) {
@@ -219,49 +218,49 @@ public function getSmartRecommendations(Utilisateur $user, int $limit = 4): arra
         return "Suggéré pour votre bien-être";
     }
 
-/**
- * Recommandation de l'activité du moment basée sur l'heure
- */
-public function getActivityOfTheMoment(Utilisateur $user): ?array
-{
-    $hour = (int)date('H');
-    $typeActivite = null;
+    /**
+     * Recommandation de l'activité du moment basée sur l'heure
+     */
+    public function getActivityOfTheMoment(Utilisateur $user): ?array
+    {
+        $hour = (int) date('H');
+        $typeActivite = null;
 
-    // Morning: Énergisant
-    if ($hour >= 6 && $hour < 12) {
-        $typeActivite = ['Yoga', 'Respiration', 'Activité physique'];
+        // Morning: Énergisant
+        if ($hour >= 6 && $hour < 12) {
+            $typeActivite = ['Yoga', 'Respiration', 'Activité physique'];
+        }
+        // Afternoon: Équilibrant
+        elseif ($hour >= 12 && $hour < 18) {
+            $typeActivite = ['Méditation', 'Marche'];
+        }
+        // Evening: Relaxant
+        else {
+            $typeActivite = ['Méditation', 'Respiration', 'Écriture thérapeutique'];
+        }
+
+        // CORRECTION : Récupérer toutes les activités puis en sélectionner une au hasard en PHP
+        $activities = $this->activiteRepo->createQueryBuilder('a')
+            ->where('a.estActive = :active')
+            ->andWhere('a.typeActivite IN (:types)')
+            ->setParameter('active', true)
+            ->setParameter('types', $typeActivite)
+            ->getQuery()
+            ->getResult();
+
+        if (empty($activities)) {
+            return null;
+        }
+
+        // Sélectionner une activité aléatoire en PHP
+        $randomKey = array_rand($activities);
+        $activity = $activities[$randomKey];
+
+        return [
+            'activity' => $activity,
+            'reason' => $this->getMomentReason($hour),
+        ];
     }
-    // Afternoon: Équilibrant
-    elseif ($hour >= 12 && $hour < 18) {
-        $typeActivite = ['Méditation', 'Marche'];
-    }
-    // Evening: Relaxant
-    else {
-        $typeActivite = ['Méditation', 'Respiration', 'Écriture thérapeutique'];
-    }
-
-    // CORRECTION : Récupérer toutes les activités puis en sélectionner une au hasard en PHP
-    $activities = $this->activiteRepo->createQueryBuilder('a')
-        ->where('a.estActive = :active')
-        ->andWhere('a.typeActivite IN (:types)')
-        ->setParameter('active', true)
-        ->setParameter('types', $typeActivite)
-        ->getQuery()
-        ->getResult();
-
-    if (empty($activities)) {
-        return null;
-    }
-
-    // Sélectionner une activité aléatoire en PHP
-    $randomKey = array_rand($activities);
-    $activity = $activities[$randomKey];
-
-    return [
-        'activity' => $activity,
-        'reason' => $this->getMomentReason($hour),
-    ];
-}
 
     private function getMomentReason(int $hour): string
     {

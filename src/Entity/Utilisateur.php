@@ -24,7 +24,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int $id;
 
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
@@ -49,7 +49,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $telephone = null;
 
     #[ORM\Column(length: 20)]
-    private ?string $statut = 'actif';
+    private string $statut = 'actif';
 
     #[ORM\Column]
     private ?\DateTimeImmutable $dateCreation = null;
@@ -57,7 +57,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     // ========================================
     // 🆕 NOUVEAUX CHAMPS OAUTH (ajoutés)
     // ========================================
-    
+
     #[ORM\Column(name: 'google_id', length: 255, nullable: true)]
     private ?string $googleId = null;
 
@@ -70,25 +70,25 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     // ========================================
     // Relations existantes (non modifiées)
     // ========================================
-    
+
     #[ORM\OneToOne(mappedBy: 'utilisateur', cascade: ['persist', 'remove'])]
     private ?ConfidentialiteUtilisateur $confidentialite = null;
-    
+
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: JournalEmotionnel::class, orphanRemoval: true)]
     private Collection $journaux;
-    
+
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Publication::class)]
     private Collection $publications;
-    
+
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Commentaire::class)]
     private Collection $userCom;
-    
+
     #[ORM\OneToMany(mappedBy: 'creePar', targetEntity: ActiviteBienEtre::class)]
     private Collection $activitesCrees;
-    
+
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: SessionActivite::class)]
     private Collection $sessionsActivites;
-    
+
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: TendanceEmotionnelle::class)]
     private Collection $usertend;
 
@@ -279,7 +279,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->confidentialite !== $confidentialite) {
             $this->confidentialite = $confidentialite;
-            
+
             if ($confidentialite !== null && $confidentialite->getUtilisateur() !== $this) {
                 $confidentialite->setUtilisateur($this);
             }

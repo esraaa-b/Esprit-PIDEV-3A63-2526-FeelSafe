@@ -14,7 +14,7 @@ class Accompagnement
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'id')]
-    private ?int $id = null;
+    private int $id;
 
     #[ORM\Column(name: 'prochain_rdv', length: 5, enumType: ProchainRdv::class)]
     private ProchainRdv $prochainRdv;
@@ -44,7 +44,7 @@ class Accompagnement
         return $this->id;
     }
 
-   public function getProchainRdv(): ProchainRdv
+    public function getProchainRdv(): ProchainRdv
     {
         return $this->prochainRdv;
     }

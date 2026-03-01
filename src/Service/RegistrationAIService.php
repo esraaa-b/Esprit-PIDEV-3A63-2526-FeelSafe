@@ -7,13 +7,18 @@ use Psr\Log\LoggerInterface;
 
 class RegistrationAIService
 {
+    /** @phpstan-ignore-next-line */
     private const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-    
+
     public function __construct(
+        /** @phpstan-ignore-next-line */
         private HttpClientInterface $httpClient,
         private LoggerInterface $logger,
+        /** @phpstan-ignore-next-line */
         private string $openrouterApiKey
-    ) {}
+    ) { 
+        $this->logger->debug('RegistrationAIService initialized');
+    }
 
     /**
      * ✅ Valider un nom/prénom avec règles strictes LOCALES (pas d'IA)
@@ -62,7 +67,7 @@ class RegistrationAIService
         // 5. ✅ NOUVEAU: Vérifier que ce n'est pas juste des consonnes aléatoires
         $voyelles = preg_match_all('/[aeiouyAEIOUYàéèêëïîôùûüÿ]/i', $name);
         $consonnes = preg_match_all('/[bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ]/i', $name);
-        
+
         // Un nom réel doit avoir au moins 1 voyelle
         if ($voyelles === 0 && strlen($name) > 3) {
             return [
@@ -73,14 +78,30 @@ class RegistrationAIService
 
         // 6. ✅ NOUVEAU: Liste noire de noms fake communs
         $blacklist = [
-            'aaa', 'aaaa', 'aaaaa', 'aaaaaa', 'aaaaaaa',
-            'bbb', 'bbbb', 'bbbbb',
-            'ccc', 'cccc', 'ccccc',
-            'test', 'testing', 'fake', 'random',
-            'qwerty', 'azerty', 'asdfgh', 'zxcvbn',
-            'jhgfds', 'fdsa', 'gfds',
+            'aaa',
+            'aaaa',
+            'aaaaa',
+            'aaaaaa',
+            'aaaaaaa',
+            'bbb',
+            'bbbb',
+            'bbbbb',
+            'ccc',
+            'cccc',
+            'ccccc',
+            'test',
+            'testing',
+            'fake',
+            'random',
+            'qwerty',
+            'azerty',
+            'asdfgh',
+            'zxcvbn',
+            'jhgfds',
+            'fdsa',
+            'gfds',
         ];
-        
+
         if (in_array(strtolower($name), $blacklist)) {
             return [
                 'valid' => false,
@@ -110,18 +131,34 @@ class RegistrationAIService
 
         // Liste étendue des domaines d'emails temporaires
         $tempDomains = [
-            'tempmail.com', '10minutemail.com', 'guerrillamail.com',
-            'mailinator.com', 'throwaway.email', 'fakeinbox.com',
-            'temp-mail.org', 'getnada.com', 'trashmail.com',
-            'yopmail.com', 'sharklasers.com', 'guerrillamail.info',
-            'pokemail.net', 'spam4.me', 'maildrop.cc',
-            'tempinbox.com', 'mintemail.com', 'emailondeck.com',
-            'jetable.org', 'trashmail.ws', 'mailnesia.com',
-            'throwawaymail.com', 'mytemp.email', 'tempail.com',
+            'tempmail.com',
+            '10minutemail.com',
+            'guerrillamail.com',
+            'mailinator.com',
+            'throwaway.email',
+            'fakeinbox.com',
+            'temp-mail.org',
+            'getnada.com',
+            'trashmail.com',
+            'yopmail.com',
+            'sharklasers.com',
+            'guerrillamail.info',
+            'pokemail.net',
+            'spam4.me',
+            'maildrop.cc',
+            'tempinbox.com',
+            'mintemail.com',
+            'emailondeck.com',
+            'jetable.org',
+            'trashmail.ws',
+            'mailnesia.com',
+            'throwawaymail.com',
+            'mytemp.email',
+            'tempail.com',
         ];
-        
+
         $domain = substr(strrchr($email, "@"), 1);
-        
+
         if (in_array(strtolower($domain), $tempDomains)) {
             return [
                 'valid' => false,
@@ -151,40 +188,43 @@ class RegistrationAIService
     {
         $score = 0;
         $suggestions = [];
-        
+
         // Longueur
-        if (strlen($password) >= 8) $score += 25;
-        if (strlen($password) >= 12) $score += 10;
-        if (strlen($password) >= 16) $score += 10;
-        
+        if (strlen($password) >= 8)
+            $score += 25;
+        if (strlen($password) >= 12)
+            $score += 10;
+        if (strlen($password) >= 16)
+            $score += 10;
+
         // Minuscules
         if (preg_match('/[a-z]/', $password)) {
             $score += 15;
         } else {
             $suggestions[] = 'Ajoutez des lettres minuscules';
         }
-        
+
         // Majuscules
         if (preg_match('/[A-Z]/', $password)) {
             $score += 15;
         } else {
             $suggestions[] = 'Ajoutez des lettres majuscules';
         }
-        
+
         // Chiffres
         if (preg_match('/\d/', $password)) {
             $score += 15;
         } else {
             $suggestions[] = 'Ajoutez des chiffres';
         }
-        
+
         // Caractères spéciaux
         if (preg_match('/[^a-zA-Z0-9]/', $password)) {
             $score += 20;
         } else {
             $suggestions[] = 'Ajoutez des caractères spéciaux (!@#$%^&*)';
         }
-        
+
         // Pénalités pour patterns faibles
         if (preg_match('/(.)\1{2,}/', $password)) {
             $score -= 10; // Caractères répétés
@@ -192,9 +232,9 @@ class RegistrationAIService
         if (preg_match('/123|234|345|456|567|678|789|abc|bcd|qwe|wer|ert/i', $password)) {
             $score -= 15; // Séquences communes
         }
-        
+
         $score = max(0, min(100, $score)); // Limiter entre 0 et 100
-        
+
         // Déterminer le niveau
         if ($score < 40) {
             $level = 'Très faible';
@@ -212,7 +252,7 @@ class RegistrationAIService
             $level = 'Très fort';
             $color = '#16a34a'; // green-600
         }
-        
+
         return [
             'score' => $score,
             'level' => $level,

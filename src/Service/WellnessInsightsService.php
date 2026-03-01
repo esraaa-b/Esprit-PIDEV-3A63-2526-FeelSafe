@@ -31,11 +31,13 @@ class WellnessInsightsService
             ->getResult();
 
         if (empty($sessions)) {
-            return [[
-                'icon' => '🌟',
-                'message' => 'Commencez votre première session pour voir vos insights personnalisés !',
-                'type' => 'neutral'
-            ]];
+            return [
+                [
+                    'icon' => '🌟',
+                    'message' => 'Commencez votre première session pour voir vos insights personnalisés !',
+                    'type' => 'neutral'
+                ]
+            ];
         }
 
         // Insight 1 : Streak actuel
@@ -103,7 +105,7 @@ class WellnessInsightsService
 
         $streak = 0;
         $currentDate = new \DateTime('today');
-        
+
         // Grouper les sessions par date
         $sessionsByDate = [];
         foreach ($sessions as $session) {
@@ -117,11 +119,11 @@ class WellnessInsightsService
         // Calculer le streak
         while (true) {
             $dateKey = $currentDate->format('Y-m-d');
-            
+
             if (!isset($sessionsByDate[$dateKey])) {
                 break;
             }
-            
+
             // Vérifier s'il y a au moins une session complétée ce jour
             $hasCompleted = false;
             foreach ($sessionsByDate[$dateKey] as $session) {
@@ -130,11 +132,11 @@ class WellnessInsightsService
                     break;
                 }
             }
-            
+
             if (!$hasCompleted) {
                 break;
             }
-            
+
             $streak++;
             $currentDate->modify('-1 day');
         }
@@ -208,8 +210,8 @@ class WellnessInsightsService
         ];
 
         foreach ($sessions as $session) {
-            $hour = (int)$session->getDateDebut()->format('H');
-            
+            $hour = (int) $session->getDateDebut()->format('H');
+
             if ($hour >= 6 && $hour < 12) {
                 $timeSlots['morning']['count']++;
             } elseif ($hour >= 12 && $hour < 18) {
@@ -222,7 +224,7 @@ class WellnessInsightsService
         // Trouver le créneau le plus utilisé
         $maxSlot = null;
         $maxCount = 0;
-        
+
         foreach ($timeSlots as $key => $slot) {
             if ($slot['count'] > $maxCount) {
                 $maxCount = $slot['count'];
@@ -289,14 +291,14 @@ class WellnessInsightsService
     /**
      * Analyser la performance hebdomadaire
      */
-    private function analyzeWeeklyPerformance(array $sessions): ?array
+    private function analyzeWeeklyPerformance(array $sessions): array
     {
         $weekStart = new \DateTime('monday this week');
-        $weekSessions = array_filter($sessions, function($session) use ($weekStart) {
+        $weekSessions = array_filter($sessions, function ($session) use ($weekStart) {
             return $session->getDateDebut() >= $weekStart;
         });
 
-        $completedCount = count(array_filter($weekSessions, function($session) {
+        $completedCount = count(array_filter($weekSessions, function ($session) {
             return $session->getStatutSession()->value === 'completee';
         }));
 

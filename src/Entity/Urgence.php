@@ -14,7 +14,7 @@ class Urgence
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int $id;
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $typeUrgence = null;

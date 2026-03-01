@@ -65,7 +65,7 @@ class TendanceGenerator
             $trend->setAnnee($year);
             $trend->setEmotion($emotion);
             $trend->setTotaleOccurrences($count);
-            $trend->setPourcentage(round(($count / $total) * 100, 2));
+            $trend->setPourcentage((string) round(($count / $total) * 100, 2));
             $trend->setDateCalcul(new \DateTime());
 
             $this->em->persist($trend);

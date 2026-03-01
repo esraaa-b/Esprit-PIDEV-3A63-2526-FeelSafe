@@ -91,8 +91,10 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
-        ]
-    },
+        ],
+        "phpstan": "phpstan analyse src --level=5",
+        "phpstan-fix": "phpstan-fix src/ --level=5"
+        },
     "conflict": {
         "symfony/symfony": "*"
     },
@@ -103,6 +105,8 @@
         }
     },
     "require-dev": {
+        "kenaths/phpstan-fixer": "^1.71",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^9.5",
         "symfony/browser-kit": "6.4.*",
         "symfony/css-selector": "6.4.*",

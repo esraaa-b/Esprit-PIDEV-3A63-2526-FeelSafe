@@ -12,7 +12,7 @@ class TranslationCache
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private int $id;
 
     #[ORM\Column(length: 64)]
     private ?string $sourceTextHash = null;
