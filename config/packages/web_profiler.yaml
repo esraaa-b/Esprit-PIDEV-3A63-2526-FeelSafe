@@ -1,12 +1,12 @@
 when@dev:
     web_profiler:
-        toolbar: false
+        toolbar: true
         intercept_redirects: false
 
     framework:
         profiler:
-            enabled: false
-            collect: false
+            enabled: true
+            collect: true
 
 when@test:
     framework:

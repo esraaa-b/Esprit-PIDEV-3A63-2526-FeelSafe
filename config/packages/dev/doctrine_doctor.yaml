@@ -1,0 +1,12 @@
+doctrine_doctor:
+  enabled: true
+  profiler: true
+  analyzers:
+    n_plus_one:
+      enabled: true
+      threshold: 5
+    slow_query:
+      enabled: true
+      threshold: 100
+    missing_index:
+      enabled: true

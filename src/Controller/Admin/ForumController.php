@@ -185,39 +185,60 @@ class ForumController extends AbstractController
     #[Route('/stats', name: 'admin_forum_stats', methods: ['GET'])]
     public function stats(EntityManagerInterface $em): Response
     {
-        $publications = $em->getRepository(Publication::class)->findAll();
-        $commentaires = $em->getRepository(Commentaire::class)->findAll();
-
+        // ===== CORRECTION : Utiliser des COUNT au lieu de findAll() =====
+        
+        // Compter les publications et commentaires sans les charger
+        $totalPublications = $em->createQuery('SELECT COUNT(p) FROM App\Entity\Publication p')
+            ->getSingleScalarResult();
+        
+        $totalCommentaires = $em->createQuery('SELECT COUNT(c) FROM App\Entity\Commentaire c')
+            ->getSingleScalarResult();
+        
+        // Récupérer les statistiques mensuelles avec des requêtes GROUP BY
+        $pubStats = $em->createQuery('
+            SELECT MONTH(p.datePublication) as month, COUNT(p) as count 
+            FROM App\Entity\Publication p 
+            GROUP BY month
+        ')->getResult();
+        
+        $comStats = $em->createQuery('
+            SELECT MONTH(c.dateCommentaire) as month, COUNT(c) as count 
+            FROM App\Entity\Commentaire c 
+            GROUP BY month
+        ')->getResult();
+        
+        // Initialiser les compteurs
         $pubCounts = array_fill(0, 12, 0);
         $comCounts = array_fill(0, 12, 0);
-
-        foreach ($publications as $p) {
-            if ($p->getDatePublication()) {
-                $month = (int) $p->getDatePublication()->format('n') - 1;
-                $pubCounts[$month]++;
-            }
+        
+        // Remplir avec les résultats
+        foreach ($pubStats as $stat) {
+            $month = (int) $stat['month'] - 1;
+            $pubCounts[$month] = (int) $stat['count'];
         }
-
-        foreach ($commentaires as $c) {
-            if ($c->getDateCommentaire()) {
-                $month = (int) $c->getDateCommentaire()->format('n') - 1;
-                $comCounts[$month]++;
-            }
+        
+        foreach ($comStats as $stat) {
+            $month = (int) $stat['month'] - 1;
+            $comCounts[$month] = (int) $stat['count'];
         }
+        
+        // Moyenne des commentaires par publication
+        $moyenneCommentaires = $totalPublications > 0 
+            ? round($totalCommentaires / $totalPublications, 1) 
+            : 0;
 
-        $totalPublications = count($publications);
-        $totalCommentaires = count($commentaires);
-        $moyenneCommentaires = $totalPublications > 0 ? round($totalCommentaires / $totalPublications, 1) : 0;
-
-        $topPublication = null;
-        $maxCommentaires = 0;
-        foreach ($publications as $p) {
-            $nbCommentaires = count($p->getPubCom());
-            if ($nbCommentaires > $maxCommentaires) {
-                $maxCommentaires = $nbCommentaires;
-                $topPublication = $p;
-            }
-        }
+        // Trouver la publication avec le plus de commentaires (sans tout charger)
+        $topPublication = $em->createQuery('
+            SELECT p, COUNT(c) as HIDDEN commentCount 
+            FROM App\Entity\Publication p
+            LEFT JOIN p.pubCom c
+            GROUP BY p
+            ORDER BY commentCount DESC
+        ')->setMaxResults(1)->getOneOrNullResult();
+        
+        $maxCommentaires = $topPublication 
+            ? count($topPublication->getPubCom()) 
+            : 0;
 
         $months = [];
         for ($i = 1; $i <= 12; $i++) {

@@ -102,10 +102,13 @@ class EmergencyController extends AbstractController
             ['createdAt' => 'DESC']
         );
 
+        $hasEmergencies = count($userEmergencies) > 0;
+
         return $this->render('dashboard/emergency/index.html.twig', [
             'emergencies' => $userEmergencies,
+            'hasEmergencies' => $hasEmergencies,  // 👈 AJOUTEZ CETTE LIGNE
         ]);
-    }
+            }
 
     /**
      * Always returns authenticated user

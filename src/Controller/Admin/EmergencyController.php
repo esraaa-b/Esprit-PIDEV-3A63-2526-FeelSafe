@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Knp\Component\Pager\PaginatorInterface; // 👈 AJOUTER
 
 #[Route('/admin/emergency')]
 class EmergencyController extends AbstractController
@@ -19,7 +20,8 @@ class EmergencyController extends AbstractController
     public function index(
         Request $request,
         EntityManagerInterface $entityManager,
-        UrgenceRepository $urgenceRepository
+        UrgenceRepository $urgenceRepository,
+        PaginatorInterface $paginator // 👈 AJOUTER
     ): Response {
 
         // Handle Admin-Created Emergency Form Submission
@@ -69,15 +71,31 @@ class EmergencyController extends AbstractController
             return $this->redirectToRoute('admin_emergency');
         }
 
-        // Get all emergencies
-        $emergencies = $urgenceRepository->findAll();
+        // ===== NOUVEAU : Requête avec pagination au lieu de findAll() =====
+        $query = $urgenceRepository->createQueryBuilder('u')
+            ->orderBy('u.createdAt', 'DESC')
+            ->getQuery();
+
+        $emergencies = $paginator->paginate(
+            $query,
+            $request->query->getInt('page', 1), // Page courante, défaut 1
+            20 // Éléments par page
+        );
 
         // Get all users for the dropdown and health tracker
         $users = $entityManager->getRepository(Utilisateur::class)->findAll();
 
+        // ===== AJOUT : Statistiques avec DTO =====
+        $statsType = $urgenceRepository->countDistinctTypeUrgence();
+        $statsStatus = $urgenceRepository->countDistinctStatus();
+
         return $this->render('admin/emergency/index.html.twig', [
             'emergencies' => $emergencies,
             'users' => $users,
+            'stats_type_distinct' => $statsType->getDistinctCount(),
+            'stats_type_total' => $statsType->getTotalCount(),
+            'stats_status_distinct' => $statsStatus->getDistinctCount(),
+            'stats_status_total' => $statsStatus->getTotalCount(),
         ]);
     }
 
