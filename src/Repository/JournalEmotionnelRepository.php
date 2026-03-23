@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\JournalEmotionnel;
+use App\Entity\Utilisateur;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,28 +17,45 @@ class JournalEmotionnelRepository extends ServiceEntityRepository
         parent::__construct($registry, JournalEmotionnel::class);
     }
 
-    //    /**
-    //     * @return JournalEmotionnel[] Returns an array of JournalEmotionnel objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('j')
-    //            ->andWhere('j.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('j.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Fetch journals for a user within a date range.
+     * Uses JOIN FETCH on utilisateur to avoid N+1 queries.
+     *
+     * @return JournalEmotionnel[]
+     */
+    public function findByUserAndDateRange(
+        Utilisateur $user,
+        \DateTimeInterface $start,
+        \DateTimeInterface $end
+    ): array {
+        return $this->createQueryBuilder('j')
+            ->addSelect('u')
+            ->join('j.utilisateur', 'u')
+            ->where('j.utilisateur = :user')
+            ->andWhere('j.dateCreation >= :start')
+            ->andWhere('j.dateCreation < :end')
+            ->setParameter('user', $user)
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->orderBy('j.dateCreation', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?JournalEmotionnel
-    //    {
-    //        return $this->createQueryBuilder('j')
-    //            ->andWhere('j.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Fetch recent journals for a user with a LIMIT.
+     * Avoids ORDER BY without LIMIT Doctrine Doctor warning.
+     *
+     * @return JournalEmotionnel[]
+     */
+    public function findRecentByUser(Utilisateur $user, int $limit = 50): array
+    {
+        return $this->createQueryBuilder('j')
+            ->where('j.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->orderBy('j.dateCreation', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

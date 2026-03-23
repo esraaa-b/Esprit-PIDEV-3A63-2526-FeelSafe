@@ -38,8 +38,11 @@ class JournalController extends BaseDashboardController
         $journal = new JournalEmotionnel();
         $journal->setEmotion(EmotionEnum::from($request->request->get('emotion')));
         $journal->setContenu($request->request->get('contenu'));
-        $journal->setDateCreation(new \DateTime());
-        $journal->setUtilisateur($this->getUser());
+        $currentUser = $this->getUser();
+        if (!$currentUser instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
+        $journal->setUtilisateur($currentUser);
 
         // Gestion de l'image
         $imageFile = $request->files->get('image');
@@ -167,9 +170,12 @@ class JournalController extends BaseDashboardController
     {
         /** @var \App\Entity\Utilisateur $user */
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
 
         $journals = $em->getRepository(JournalEmotionnel::class)
-            ->findBy(['utilisateur' => $user], ['dateCreation' => 'DESC']);
+            ->findBy(['utilisateur' => $user], ['dateCreation' => 'DESC'], 500);
 
         $totalEntries   = count($journals);
         $moodCounts     = [];

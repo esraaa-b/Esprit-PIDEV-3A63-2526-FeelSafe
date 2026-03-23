@@ -59,12 +59,12 @@
             transition: all 0.2s;
         }
         .btn-admin:hover { background-color: #1d4ed8; color: white; transform: translateY(-1px); }
-        
+       
         .btn-admin-outline {
             background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main);
         }
         .btn-admin-outline:hover { background-color: #f3f4f6; }
-        
+       
         /* Icon buttons for actions (eye, pencil, trash) */
         .btn-icon {
             display: inline-flex;
@@ -124,6 +124,14 @@
         <a href="{{ path('app_publication_new') }}" class="btn-admin">
             ➕ Nouvelle publication
         </a>
+        <a href="{{ path('app_publication_export_pdf', {
+            'search_id': app.request.query.get('search_id'),
+            'search_titre': app.request.query.get('search_titre'),
+            'sort_by': sort_by|default('datePublication'),
+            'sort_order': sort_order|default('DESC')
+        }) }}" class="btn-admin" style="background:#059669;">
+            ⬇️ Exporter PDF
+        </a>
     </div>
 </div>
 
@@ -143,7 +151,7 @@
             <div class="card-subtitle">
                 {{ publications|length }} publication(s)
                 {% if sort_by is defined %}
-                    - Trié par 
+                    - Trié par
                     {% if sort_by == 'datePublication' %}
                         date ({{ sort_order == 'DESC' ? 'plus récentes en premier' : 'plus anciennes en premier' }})
                     {% elseif sort_by == 'titre' %}
@@ -166,7 +174,7 @@
                         'sort_by': 'id',
                         'sort_order': (sort_by|default('datePublication') == 'id' and sort_order|default('DESC') == 'ASC') ? 'DESC' : 'ASC'
                     }) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 5px;">
-                        ID 
+                        ID
                         {% if sort_by|default('datePublication') == 'id' %}
                             <span>{{ sort_order|default('DESC') == 'ASC' ? '↑' : '↓' }}</span>
                         {% endif %}

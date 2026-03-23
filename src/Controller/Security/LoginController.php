@@ -17,7 +17,7 @@ class LoginController extends AbstractController
             $user = $this->getUser();
 
             // Si l'utilisateur a le rôle admin, aller vers la page admin principale
-            if (method_exists($user, 'getRoles') && in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+            if (in_array('ROLE_ADMIN', $user->getRoles(), true)) {
                 return $this->redirectToRoute('admin_home');
             }
 

@@ -2,36 +2,32 @@
 
 namespace App\Service;
 
-use App\Entity\JournalEmotionnel;
 use App\Entity\TendanceEmotionnelle;
 use App\Entity\Utilisateur;
+use App\Repository\JournalEmotionnelRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class TendanceGenerator
 {
     public function __construct(
-        private EntityManagerInterface $em
+        private EntityManagerInterface $em,
+        private JournalEmotionnelRepository $journalRepo
     ) {}
 
-    public function generateForMonth(Utilisateur $user, int $month, int $year): void
+    /**
+     * @param bool $flush  Set to false when the caller will flush() itself,
+     *                     to avoid a second flush and the "Flush in Loop" warning.
+     */
+    public function generateForMonth(Utilisateur $user, int $month, int $year, bool $flush = true): void
     {
-        $repo = $this->em->getRepository(JournalEmotionnel::class);
+        // 1. Calculate date range for the month
+        $startDate = new \DateTimeImmutable("$year-$month-01 00:00:00");
+        $endDate   = $startDate->modify('first day of next month');
 
-        // 1️⃣ Calculate date range for the month
-        $startDate = new \DateTime("$year-$month-01 00:00:00");
-        $endDate = (clone $startDate)->modify('last day of this month')->setTime(23, 59, 59);
+        // 2. Load journals using JOIN FETCH → single query, no N+1
+        $journals = $this->journalRepo->findByUserAndDateRange($user, $startDate, $endDate);
 
-        // 2️⃣ Get journals of the month using BETWEEN
-        $journals = $repo->createQueryBuilder('j')
-            ->where('j.utilisateur = :user')
-            ->andWhere('j.dateCreation BETWEEN :start AND :end')
-            ->setParameter('user', $user)
-            ->setParameter('start', $startDate)
-            ->setParameter('end', $endDate)
-            ->getQuery()
-            ->getResult();
-
-        // 3️⃣ Remove old tendances (recalculate clean)
+        // 3. Remove old tendances (recalculate clean)
         $this->em->createQueryBuilder()
             ->delete(TendanceEmotionnelle::class, 't')
             ->where('t.utilisateur = :user')
@@ -43,21 +39,20 @@ class TendanceGenerator
             ->getQuery()
             ->execute();
 
-        // 4️⃣ If no journals left, we're done (old tendances are deleted)
+        // 4. If no journals, nothing to compute
         if (empty($journals)) {
-            return; // Pas de nouvelles tendances à créer
+            return;
         }
 
-        // 5️⃣ Calculate stats
+        // 5. Calculate stats
         $total = count($journals);
         $stats = [];
-
         foreach ($journals as $journal) {
             $emotion = $journal->getEmotion()->value;
             $stats[$emotion] = ($stats[$emotion] ?? 0) + 1;
         }
 
-        // 6️⃣ Store tendances
+        // 6. Persist all tendances (never inside loop)
         foreach ($stats as $emotion => $count) {
             $trend = new TendanceEmotionnelle();
             $trend->setUtilisateur($user);
@@ -65,12 +60,13 @@ class TendanceGenerator
             $trend->setAnnee($year);
             $trend->setEmotion($emotion);
             $trend->setTotaleOccurrences($count);
-            $trend->setPourcentage(round(($count / $total) * 100, 2));
-            $trend->setDateCalcul(new \DateTime());
-
+            $trend->setPourcentage((string) round(($count / $total) * 100, 2));
             $this->em->persist($trend);
         }
 
-        $this->em->flush();
+        // 7. Single flush — skipped when caller handles it to avoid double-flush
+        if ($flush) {
+            $this->em->flush();
+        }
     }
 }

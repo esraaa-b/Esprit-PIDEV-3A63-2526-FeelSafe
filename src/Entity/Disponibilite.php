@@ -13,27 +13,39 @@ class Disponibilite
     #[ORM\Column]
     private ?int $id = null;
 
+    // ✅ Fix: non-nullable relation
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Utilisateur $professionnel = null;
+    private Utilisateur $professionnel;
 
-    #[ORM\Column(type: 'date')]
-    private ?\DateTimeInterface $date = null;
+    // ✅ Fix: non-nullable, initialized in constructor
+    #[ORM\Column(type: 'date_immutable')]
+    private \DateTimeImmutable $date;
 
-    #[ORM\Column(type: 'time')]
-    private ?\DateTimeInterface $heureDebut = null;
+    #[ORM\Column(type: 'time_immutable')]
+    private \DateTimeImmutable $heureDebut;
 
-    #[ORM\Column(type: 'time')]
-    private ?\DateTimeInterface $heureFin = null;
+    #[ORM\Column(type: 'time_immutable')]
+    private \DateTimeImmutable $heureFin;
+
+    public function __construct()
+    {
+        $this->date = new \DateTimeImmutable();
+        $this->heureDebut = new \DateTimeImmutable();
+        $this->heureFin = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int { return $this->id; }
-    public function getProfessionnel(): ?Utilisateur { return $this->professionnel; }
-    public function setProfessionnel(Utilisateur $u): static { $this->professionnel = $u; return $this; }
-    public function getDate(): ?\DateTimeInterface { return $this->date; }
-    public function setDate(\DateTimeInterface $d): static { $this->date = $d; return $this; }
-    public function getHeureDebut(): ?\DateTimeInterface { return $this->heureDebut; }
-    public function setHeureDebut(\DateTimeInterface $t): static { $this->heureDebut = $t; return $this; }
-    public function getHeureFin(): ?\DateTimeInterface { return $this->heureFin; }
-    public function setHeureFin(\DateTimeInterface $t): static { $this->heureFin = $t; return $this; }
-}
 
+    public function getProfessionnel(): Utilisateur { return $this->professionnel; }
+    public function setProfessionnel(Utilisateur $professionnel): static { $this->professionnel = $professionnel; return $this; }
+
+    public function getDate(): \DateTimeImmutable { return $this->date; }
+    public function setDate(\DateTimeImmutable $date): static { $this->date = $date; return $this; }
+
+    public function getHeureDebut(): \DateTimeImmutable { return $this->heureDebut; }
+    public function setHeureDebut(\DateTimeImmutable $heureDebut): static { $this->heureDebut = $heureDebut; return $this; }
+
+    public function getHeureFin(): \DateTimeImmutable { return $this->heureFin; }
+    public function setHeureFin(\DateTimeImmutable $heureFin): static { $this->heureFin = $heureFin; return $this; }
+}

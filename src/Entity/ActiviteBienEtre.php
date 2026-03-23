@@ -17,11 +17,12 @@ class ActiviteBienEtre
     #[ORM\Column]
     private ?int $id = null;
 
+    // ✅ Fix: non-nullable strings
     #[ORM\Column(length: 200)]
-    private ?string $nomActivite = null;
+    private string $nomActivite;
 
     #[ORM\Column(length: 100)]
-    private ?string $typeActivite = null;
+    private string $typeActivite;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
@@ -32,6 +33,7 @@ class ActiviteBienEtre
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $categorie = null;
 
+    // ✅ Fix: enumType already correct, nullable is acceptable here
     #[ORM\Column(length: 20, enumType: NiveauDifficulte::class, nullable: true)]
     private ?NiveauDifficulte $niveauDifficulte = null;
 
@@ -50,180 +52,68 @@ class ActiviteBienEtre
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $instructionsDetaillees = null;
 
-    #[ORM\Column]
-    private ?\DateTime $dateCreation = null;
+    // ✅ Fix: DateTimeImmutable, non-nullable
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $dateCreation;
 
     #[ORM\ManyToOne(inversedBy: 'activitesCrees')]
     #[ORM\JoinColumn(nullable: true)]
     private ?Utilisateur $creePar = null;
 
-    /**
-     * @var Collection<int, SessionActivite>
-     */
     #[ORM\OneToMany(targetEntity: SessionActivite::class, mappedBy: 'activite')]
     private Collection $sessions;
 
     public function __construct()
     {
         $this->sessions = new ArrayCollection();
-        $this->dateCreation = new \DateTime();
+        // ✅ Fix: initialized in constructor
+        $this->dateCreation = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getNomActivite(): ?string
-    {
-        return $this->nomActivite;
-    }
+    public function getNomActivite(): string { return $this->nomActivite; }
+    public function setNomActivite(string $nomActivite): static { $this->nomActivite = $nomActivite; return $this; }
 
-    public function setNomActivite(string $nomActivite): static
-    {
-        $this->nomActivite = $nomActivite;
-        return $this;
-    }
+    public function getTypeActivite(): string { return $this->typeActivite; }
+    public function setTypeActivite(string $typeActivite): static { $this->typeActivite = $typeActivite; return $this; }
 
-    public function getTypeActivite(): ?string
-    {
-        return $this->typeActivite;
-    }
+    public function getDescription(): ?string { return $this->description; }
+    public function setDescription(?string $description): static { $this->description = $description; return $this; }
 
-    public function setTypeActivite(string $typeActivite): static
-    {
-        $this->typeActivite = $typeActivite;
-        return $this;
-    }
+    public function getDureeSuggeree(): ?int { return $this->dureeSuggeree; }
+    public function setDureeSuggeree(?int $dureeSuggeree): static { $this->dureeSuggeree = $dureeSuggeree; return $this; }
 
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
+    public function getCategorie(): ?string { return $this->categorie; }
+    public function setCategorie(?string $categorie): static { $this->categorie = $categorie; return $this; }
 
-    public function setDescription(?string $description): static
-    {
-        $this->description = $description;
-        return $this;
-    }
+    public function getNiveauDifficulte(): ?NiveauDifficulte { return $this->niveauDifficulte; }
+    public function setNiveauDifficulte(?NiveauDifficulte $niveauDifficulte): static { $this->niveauDifficulte = $niveauDifficulte; return $this; }
 
-    public function getDureeSuggeree(): ?int
-    {
-        return $this->dureeSuggeree;
-    }
+    public function getObjectifEmotionnel(): ?string { return $this->objectifEmotionnel; }
+    public function setObjectifEmotionnel(?string $objectifEmotionnel): static { $this->objectifEmotionnel = $objectifEmotionnel; return $this; }
 
-    public function setDureeSuggeree(?int $dureeSuggeree): static
-    {
-        $this->dureeSuggeree = $dureeSuggeree;
-        return $this;
-    }
+    public function isEstPredefinie(): ?bool { return $this->estPredefinie; }
+    public function setEstPredefinie(?bool $estPredefinie): static { $this->estPredefinie = $estPredefinie; return $this; }
 
-    public function getCategorie(): ?string
-    {
-        return $this->categorie;
-    }
+    public function isEstActive(): ?bool { return $this->estActive; }
+    public function setEstActive(?bool $estActive): static { $this->estActive = $estActive; return $this; }
 
-    public function setCategorie(?string $categorie): static
-    {
-        $this->categorie = $categorie;
-        return $this;
-    }
+    public function getImageUrl(): ?string { return $this->imageUrl; }
+    public function setImageUrl(?string $imageUrl): static { $this->imageUrl = $imageUrl; return $this; }
 
-    public function getNiveauDifficulte(): ?NiveauDifficulte
-    {
-        return $this->niveauDifficulte;
-    }
+    public function getInstructionsDetaillees(): ?string { return $this->instructionsDetaillees; }
+    public function setInstructionsDetaillees(?string $instructionsDetaillees): static { $this->instructionsDetaillees = $instructionsDetaillees; return $this; }
 
-    public function setNiveauDifficulte(?NiveauDifficulte $niveauDifficulte): static
-    {
-        $this->niveauDifficulte = $niveauDifficulte;
-        return $this;
-    }
+    public function getDateCreation(): \DateTimeImmutable { return $this->dateCreation; }
 
-    public function getObjectifEmotionnel(): ?string
-    {
-        return $this->objectifEmotionnel;
-    }
+    // ✅ Fix: private setter
+    private function setDateCreation(\DateTimeImmutable $dateCreation): static { $this->dateCreation = $dateCreation; return $this; }
 
-    public function setObjectifEmotionnel(?string $objectifEmotionnel): static
-    {
-        $this->objectifEmotionnel = $objectifEmotionnel;
-        return $this;
-    }
+    public function getCreePar(): ?Utilisateur { return $this->creePar; }
+    public function setCreePar(?Utilisateur $creePar): static { $this->creePar = $creePar; return $this; }
 
-    public function isEstPredefinie(): ?bool
-    {
-        return $this->estPredefinie;
-    }
-
-    public function setEstPredefinie(?bool $estPredefinie): static
-    {
-        $this->estPredefinie = $estPredefinie;
-        return $this;
-    }
-
-    public function isEstActive(): ?bool
-    {
-        return $this->estActive;
-    }
-
-    public function setEstActive(?bool $estActive): static
-    {
-        $this->estActive = $estActive;
-        return $this;
-    }
-
-    public function getImageUrl(): ?string
-    {
-        return $this->imageUrl;
-    }
-
-    public function setImageUrl(?string $imageUrl): static
-    {
-        $this->imageUrl = $imageUrl;
-        return $this;
-    }
-
-    public function getInstructionsDetaillees(): ?string
-    {
-        return $this->instructionsDetaillees;
-    }
-
-    public function setInstructionsDetaillees(?string $instructionsDetaillees): static
-    {
-        $this->instructionsDetaillees = $instructionsDetaillees;
-        return $this;
-    }
-
-    public function getDateCreation(): ?\DateTime
-    {
-        return $this->dateCreation;
-    }
-
-    public function setDateCreation(\DateTime $dateCreation): static
-    {
-        $this->dateCreation = $dateCreation;
-        return $this;
-    }
-
-    public function getCreePar(): ?Utilisateur
-    {
-        return $this->creePar;
-    }
-
-    public function setCreePar(?Utilisateur $creePar): static
-    {
-        $this->creePar = $creePar;
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, SessionActivite>
-     */
-    public function getSessions(): Collection
-    {
-        return $this->sessions;
-    }
+    public function getSessions(): Collection { return $this->sessions; }
 
     public function addSession(SessionActivite $session): static
     {
@@ -235,12 +125,8 @@ class ActiviteBienEtre
     }
 
     public function removeSession(SessionActivite $session): static
-    {
-        if ($this->sessions->removeElement($session)) {
-            if ($session->getActivite() === $this) {
-                $session->setActivite(null);
-            }
-        }
-        return $this;
-    }
+{
+    $this->sessions->removeElement($session);
+    return $this;
+}
 }

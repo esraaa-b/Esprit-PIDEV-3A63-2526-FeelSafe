@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Repository\UtilisateurRepository;
 
 #[Route('/admin/emergency')]
 class EmergencyController extends AbstractController
@@ -18,9 +19,10 @@ class EmergencyController extends AbstractController
     #[Route('', name: 'admin_emergency', methods: ['GET', 'POST'])]
     public function index(
         Request $request,
-        EntityManagerInterface $entityManager,
-        UrgenceRepository $urgenceRepository
-    ): Response {
+    EntityManagerInterface $entityManager,
+    UrgenceRepository $urgenceRepository,
+    UtilisateurRepository $utilisateurRepository  // inject directly
+): Response {
 
         // Handle Admin-Created Emergency Form Submission
         if ($request->isMethod('POST') && $request->request->has('admin_create_emergency')) {
@@ -54,7 +56,6 @@ class EmergencyController extends AbstractController
                 $urgence->setLocation($location ?: 'Non spécifié');
                 $urgence->setSeverityLevel($severityMap[$urgencyLevel] ?? 3);
                 $urgence->setStatus('Pending');
-                $urgence->setCreatedAt(new \DateTime());
                 $urgence->setUser($user);
 
                 $entityManager->persist($urgence);
@@ -69,11 +70,9 @@ class EmergencyController extends AbstractController
             return $this->redirectToRoute('admin_emergency');
         }
 
-        // Get all emergencies
-        $emergencies = $urgenceRepository->findAll();
+            $emergencies = $urgenceRepository->findAllOrderedByDate();
+            $users = $utilisateurRepository->findAllForDropdown();
 
-        // Get all users for the dropdown and health tracker
-        $users = $entityManager->getRepository(Utilisateur::class)->findAll();
 
         return $this->render('admin/emergency/index.html.twig', [
             'emergencies' => $emergencies,

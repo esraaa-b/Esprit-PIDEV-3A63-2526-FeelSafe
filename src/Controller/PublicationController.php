@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Entity\Utilisateur;
+use Nucleos\DompdfBundle\Factory\DompdfFactoryInterface;
 
 #[Route('/publication')]
 final class PublicationController extends AbstractController
@@ -40,7 +41,7 @@ final class PublicationController extends AbstractController
 
         $validSortFields = ['id', 'titre', 'datePublication'];
         if (!in_array($sortBy, $validSortFields)) $sortBy = 'datePublication';
-        
+       
         $validSortOrders = ['ASC', 'DESC'];
         if (!in_array(strtoupper($sortOrder), $validSortOrders)) $sortOrder = 'DESC';
 
@@ -53,21 +54,75 @@ final class PublicationController extends AbstractController
         ]);
     }
 
+    #[Route('/export-pdf', name: 'app_publication_export_pdf', methods: ['GET'])]
+    public function exportPdf(Request $request, PublicationRepository $publicationRepository, DompdfFactoryInterface $dompdfFactory): Response
+    {
+        $searchId = $request->query->get('search_id');
+        $searchTitre = $request->query->get('search_titre');
+        $sortBy = $request->query->get('sort_by', 'datePublication');
+        $sortOrder = $request->query->get('sort_order', 'DESC');
+
+        $queryBuilder = $publicationRepository->createQueryBuilder('p')
+            ->where('p.isDeleted = :isDeleted')
+            ->setParameter('isDeleted', false);
+
+        if ($searchId) {
+            $queryBuilder->andWhere('p.id = :id')->setParameter('id', $searchId);
+        }
+        if ($searchTitre) {
+            $queryBuilder->andWhere('p.titre LIKE :titre')->setParameter('titre', '%' . $searchTitre . '%');
+        }
+
+        $validSortFields = ['id', 'titre', 'datePublication'];
+        if (!in_array($sortBy, $validSortFields)) {
+            $sortBy = 'datePublication';
+        }
+
+        $validSortOrders = ['ASC', 'DESC'];
+        if (!in_array(strtoupper($sortOrder), $validSortOrders)) {
+            $sortOrder = 'DESC';
+        }
+
+        $queryBuilder->orderBy('p.' . $sortBy, $sortOrder);
+        $publications = $queryBuilder->getQuery()->getResult();
+
+        $html = $this->renderView('publication/pdf_export.html.twig', [
+            'publications' => $publications,
+            'generatedAt' => new \DateTime(),
+            'sort_by' => $sortBy,
+            'sort_order' => $sortOrder,
+        ]);
+
+        $dompdf = $dompdfFactory->create();
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'publications-' . (new \DateTime())->format('Y-m-d') . '.pdf';
+
+        return new Response(
+            $dompdf->output(),
+            200,
+            [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]
+        );
+    }
+
     #[Route('/new', name: 'app_publication_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager, SluggerInterface $slugger): Response
     {
         $publication = new Publication();
-        
+       
         // 1. Pré-remplissage des données obligatoires non présentes dans le formulaire
         $user = $entityManager->getRepository(Utilisateur::class)->find(1);
         if (!$user) {
             $this->addFlash('error', 'Erreur critique : L\'utilisateur par défaut (ID 1) n est pas dans la base de données.');
             return $this->redirectToRoute('app_publication_index');
         }
-        
+       
         $publication->setUser($user);
-        $publication->setDatePublication(new \DateTime());
-
         $form = $this->createForm(PublicationType::class, $publication, [
             'include_pinned' => false,
         ]);
@@ -137,7 +192,7 @@ final class PublicationController extends AbstractController
 
         return $this->redirectToRoute('app_publication_show', ['id' => $publicationId]);
     }
-    
+   
     #[Route('/{id}/edit', name: 'app_publication_edit', methods: ['GET', 'POST'])]
     public function edit(
         Request $request,
@@ -178,13 +233,13 @@ final class PublicationController extends AbstractController
             }
 
             // Notification à l'auteur
-            if ($publication->getUser()) {
-                $publication->setNotificationMessage("Votre publication '" . $publication->getTitre() . "' a été modifiée par un administrateur.");
-                $publication->setNotificationRead(false);
-                $publication->setNotificationDate(new \DateTime());
-            }
+            if ($publication->getUser()) {  // toujours true car non-nullable
+            $publication->setNotificationMessage("Votre publication '" . $publication->getTitre() . "' a été modifiée par un administrateur.");
+            $publication->setNotificationRead(false);
+            $publication->setNotificationDate(new \DateTimeImmutable());
+        }
 
-            $entityManager->flush();
+        $entityManager->flush();
 
             return $this->redirectToRoute('app_publication_index', [], Response::HTTP_SEE_OTHER);
         }

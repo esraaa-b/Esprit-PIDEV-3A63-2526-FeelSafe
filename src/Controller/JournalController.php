@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\JournalEmotionnel;
+use App\Entity\Utilisateur;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,6 +25,9 @@ class JournalController extends AbstractController
     public function index(EntityManagerInterface $em, TendanceGenerator $generator): Response
     {
         $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         $journals = $em->getRepository(JournalEmotionnel::class)
             ->findBy(
                 ['utilisateur' => $user],
@@ -57,6 +61,7 @@ class JournalController extends AbstractController
             ->setParameter('user', $user)
             ->setParameter('weekAgo', $weekAgo)
             ->orderBy('j.dateCreation', 'DESC')
+            ->setMaxResults(7)
             ->getQuery()
             ->getResult();
         
@@ -281,7 +286,7 @@ $calendarDataJson = json_encode($calendarData, JSON_HEX_TAG | JSON_HEX_APOS | JS
         }
 
         $user = $this->getUser();
-        if (!$user) {
+        if (!$user instanceof Utilisateur) {
             throw $this->createAccessDeniedException();
         }
 
@@ -295,9 +300,8 @@ $calendarDataJson = json_encode($calendarData, JSON_HEX_TAG | JSON_HEX_APOS | JS
         }
         $journal->setEmotion(EmotionEnum::from($emotion));
         $journal->setUtilisateur($user);
-        $journal->setDateCreation(new \DateTime());
 
-        // Contenu, image, audio
+// Contenu, image, audio
         $content = trim((string) $request->request->get('contenu'));
         $imageFile = $request->files->get('image');
         $audioFile = $request->files->get('audio');
@@ -448,11 +452,14 @@ $calendarDataJson = json_encode($calendarData, JSON_HEX_TAG | JSON_HEX_APOS | JS
 
         $em->flush();
         $now = new \DateTime();
-        $generator->generateForMonth(
-            $this->getUser(),
-            (int)$now->format('m'),
-            (int)$now->format('Y')
-        );
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof \App\Entity\Utilisateur) {
+            $generator->generateForMonth(
+                $currentUser,
+                (int)$now->format('m'),
+                (int)$now->format('Y')
+            );
+        }
 
 
         $this->addFlash('success', 'Entrée modifiée avec succès !');
@@ -488,11 +495,14 @@ $calendarDataJson = json_encode($calendarData, JSON_HEX_TAG | JSON_HEX_APOS | JS
         $em->remove($journal);
         $em->flush();
         $now = new \DateTime();
-        $generator->generateForMonth(
-            $this->getUser(),
-            (int)$now->format('m'),
-            (int)$now->format('Y')
-        );
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof \App\Entity\Utilisateur) {
+            $generator->generateForMonth(
+                $currentUser,
+                (int)$now->format('m'),
+                (int)$now->format('Y')
+            );
+        }
 
 
         $this->addFlash('success', 'Entrée supprimée avec succès !');
@@ -502,6 +512,9 @@ $calendarDataJson = json_encode($calendarData, JSON_HEX_TAG | JSON_HEX_APOS | JS
 public function generate(TendanceGenerator $generator): Response
 {
     $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
     $now = new \DateTime();
 
 $generator->generateForMonth(
@@ -518,6 +531,9 @@ $generator->generateForMonth(
 public function calculate(TendanceGenerator $generator): Response
 {
     $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
     $now = new \DateTime();
 
     $generator->generateForMonth(
@@ -533,6 +549,9 @@ public function calculate(TendanceGenerator $generator): Response
 public function reset(Request $request, EntityManagerInterface $em): Response
 {
     $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
     $now = new \DateTime();
     $month = (int)$now->format('m');
     $year = (int)$now->format('Y');
@@ -569,6 +588,9 @@ public function reset(Request $request, EntityManagerInterface $em): Response
 public function resetJson(Request $request, EntityManagerInterface $em): Response
 {
     $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
     $now = new \DateTime();
     $month = (int)$now->format('m');
     $year = (int)$now->format('Y');
@@ -622,6 +644,9 @@ public function resetJson(Request $request, EntityManagerInterface $em): Respons
 public function calculateJson(Request $request, TendanceGenerator $generator, EntityManagerInterface $em): Response
 {
     $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
     $now = new \DateTime();
     $month = (int)$now->format('m');
     $year = (int)$now->format('Y');

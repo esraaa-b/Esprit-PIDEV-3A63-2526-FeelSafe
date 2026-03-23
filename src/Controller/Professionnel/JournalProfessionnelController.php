@@ -27,6 +27,9 @@ class JournalProfessionnelController extends BaseDashboardController
     public function listPatients(EntityManagerInterface $em): Response
     {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         if (!$this->checkIsProfessionnel($user)) {
             throw new AccessDeniedException('Accès non autorisé. Vous devez être professionnel.');
@@ -78,6 +81,9 @@ class JournalProfessionnelController extends BaseDashboardController
     public function patientJournals(Utilisateur $patient, EntityManagerInterface $em): Response
     {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         if (!$this->checkIsProfessionnel($user)) {
             throw new AccessDeniedException('Accès non autorisé. Vous devez être professionnel.');
@@ -125,6 +131,9 @@ class JournalProfessionnelController extends BaseDashboardController
     public function viewJournal(JournalEmotionnel $journal): Response
     {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         if (!$this->checkIsProfessionnel($user)) {
             throw new AccessDeniedException('Accès non autorisé. Vous devez être professionnel.');
@@ -140,6 +149,9 @@ class JournalProfessionnelController extends BaseDashboardController
     public function searchPatients(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         if (!$this->checkIsProfessionnel($user)) {
             return $this->json(['error' => 'Accès non autorisé'], 403);

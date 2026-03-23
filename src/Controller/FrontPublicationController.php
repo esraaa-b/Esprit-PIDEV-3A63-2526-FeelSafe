@@ -12,7 +12,6 @@ use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Publication;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Entity\Utilisateur;
@@ -22,8 +21,8 @@ use App\Repository\TranslationCacheRepository;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class FrontPublicationController extends AbstractController
-{   
-    #[Route('/dashboard/forum', name: 'app_dashboard_forum')] 
+{
+    #[Route('/dashboard/forum', name: 'app_dashboard_forum')]
     #[Route('/front/publication', name: 'app_front_publication')]
     public function index(PublicationRepository $publicationRepository, Request $request): Response
     {
@@ -31,10 +30,8 @@ final class FrontPublicationController extends AbstractController
         $tag = $request->query->get('tag');
 
         if ($tag) {
-            // Recherche contextuelle par sujet (Anxiété, Stress, etc.)
             $publications = $publicationRepository->findByTopic($tag);
         } elseif ($search) {
-            // Recherche par mot-clé global dans titre, contenu et commentaires
             $publications = $publicationRepository->createQueryBuilder('p')
                 ->leftJoin('p.pubCom', 'c')
                 ->where('p.titre LIKE :search')
@@ -48,7 +45,6 @@ final class FrontPublicationController extends AbstractController
                 ->getQuery()
                 ->getResult();
         } else {
-            // Toutes les publications non supprimées, triées par épinglage puis date
             $publications = $publicationRepository->findBy(
                 ['isDeleted' => false],
                 ['pinnedAt' => 'DESC', 'datePublication' => 'DESC']
@@ -98,7 +94,6 @@ final class FrontPublicationController extends AbstractController
         ]);
     }
 
-
     #[Route('/front/publication/new', name: 'app_front_publication_new', methods: ['GET', 'POST'])]
     public function new(
         Request $request,
@@ -106,8 +101,7 @@ final class FrontPublicationController extends AbstractController
         SluggerInterface $slugger
     ): Response {
         $publication = new Publication();
-        
-        // Simuler utilisateur connecté (id=1) - INDISPENSABLE avant isValid()
+
         $user = $entityManager->getRepository(Utilisateur::class)->find(1);
         $publication->setUser($user);
 
@@ -121,10 +115,9 @@ final class FrontPublicationController extends AbstractController
                 $form->get('contenu')->addError(new \Symfony\Component\Form\FormError('Le contenu doit contenir au moins 10 caractères.'));
                 return $this->render('front_publication/new.html.twig', ['form' => $form->createView()]);
             }
-            
-            $publication->setDatePublication(new \DateTime());
 
-            // IMAGE Handling
+            $publication->setDatePublication(new \DateTimeImmutable());
+
             $imageFile = $form->get('image')->getData();
             if ($imageFile) {
                 $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
@@ -142,9 +135,8 @@ final class FrontPublicationController extends AbstractController
                 }
             }
 
-            // Gestion de l'épinglage
             if ($form->get('isPinned')->getData()) {
-                $publication->setPinnedAt(new \DateTime());
+                $publication->setPinnedAt(new \DateTimeImmutable());
             }
 
             $entityManager->persist($publication);
@@ -157,37 +149,25 @@ final class FrontPublicationController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+
     #[Route('/front/publication/{id}/delete', name: 'app_front_publication_delete', methods: ['POST'])]
-
-public function delete(?Publication $publication, EntityManagerInterface $em): Response
-
-{
-
-    // Si l'ID dans l'URL ne correspond à aucune publication
-
-    if (!$publication) {
-
-        $this->addFlash('error', 'Désolé, cette publication n\'existe pas ou a déjà été supprimée.');
-
-        return $this->redirectToRoute('app_front_publication');
-
-    }
-    $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
-    if ($publication->getUser() !== $fakeUser) {
-
-        $this->addFlash('error', 'Action non autorisée.');
-
+    public function delete(?Publication $publication, EntityManagerInterface $em): Response
+    {
+        if (!$publication) {
+            $this->addFlash('error', 'Désolé, cette publication n\'existe pas ou a déjà été supprimée.');
+            return $this->redirectToRoute('app_front_publication');
+        }
+        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
+        if ($publication->getUser() !== $fakeUser) {
+            $this->addFlash('error', 'Action non autorisée.');
+            return $this->redirectToRoute('app_front_publication');
+        }
+        $em->remove($publication);
+        $em->flush();
+        $this->addFlash('success', 'Publication supprimée !');
         return $this->redirectToRoute('app_front_publication');
     }
-    $em->remove($publication);
 
-    $em->flush();
-
-    $this->addFlash('success', 'Publication supprimée !');
-
-    return $this->redirectToRoute('app_front_publication');
-
-}
     #[Route('/front/publication/{id}/edit', name: 'app_front_publication_edit', methods: ['GET', 'POST'])]
     public function edit(?Publication $publication, Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
     {
@@ -215,7 +195,7 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
 
             $imageFile = $form->get('image')->getData();
             if ($imageFile) {
-                $newFilename = $slugger->slug(pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME)) 
+                $newFilename = $slugger->slug(pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME))
                                . '-' . uniqid() . '.' . $imageFile->guessExtension();
                 try {
                     $imageFile->move($this->getParameter('uploads_directory'), $newFilename);
@@ -225,10 +205,9 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
                 }
             }
 
-            // Gestion de l'épinglage
             if ($form->get('isPinned')->getData()) {
                 if ($publication->getPinnedAt() === null) {
-                    $publication->setPinnedAt(new \DateTime());
+                    $publication->setPinnedAt(new \DateTimeImmutable());
                 }
             } else {
                 $publication->setPinnedAt(null);
@@ -244,49 +223,40 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
             'form' => $form->createView(),
         ]);
     }
-#[Route('/front/publication/{id}/like', name: 'app_front_publication_like', methods: ['POST'])]
+
+    #[Route('/front/publication/{id}/like', name: 'app_front_publication_like', methods: ['POST'])]
     public function like(Publication $publication, Request $request, EntityManagerInterface $em): Response
-{
-    // Exemple simple : incrémenter le compteur
-    $publication->setLikesCount($publication->getLikesCount() + 1);
+    {
+        $publication->setLikesCount($publication->getLikesCount() + 1);
 
-    // Simulation de l'utilisateur qui like (ex: id=2)
-    $liker = $em->getRepository(Utilisateur::class)->find(2);
-    if (!$liker) $liker = $em->getRepository(Utilisateur::class)->find(1);
+        $liker = $em->getRepository(Utilisateur::class)->find(2);
+        if (!$liker) $liker = $em->getRepository(Utilisateur::class)->find(1);
 
-    // Notification pour l'auteur de la publication
-    if ($publication->getUser()) {
         $publication->setNotificationMessage("Votre publication a reçu un nouveau Like !");
         $publication->setNotificationRead(false);
-        $publication->setNotificationDate(new \DateTime());
+        $publication->setNotificationDate(new \DateTimeImmutable());
+
+        $em->flush();
+
+        return $this->redirect($request->headers->get('referer'));
     }
 
-    $em->flush();
-
-    // Redirection vers la page précédente (détail ou liste)
-    return $this->redirect($request->headers->get('referer'));
-}
-
-#[Route('/front/publication/{id}/dislike', name: 'app_front_publication_dislike', methods: ['POST'])]
+    #[Route('/front/publication/{id}/dislike', name: 'app_front_publication_dislike', methods: ['POST'])]
     public function dislike(Publication $publication, Request $request, EntityManagerInterface $em): Response
-{
-    $publication->setDislikesCount($publication->getDislikesCount() + 1);
+    {
+        $publication->setDislikesCount($publication->getDislikesCount() + 1);
 
-    // Simulation de l'utilisateur qui dislike (ex: id=2)
-    $disliker = $em->getRepository(Utilisateur::class)->find(2);
-    if (!$disliker) $disliker = $em->getRepository(Utilisateur::class)->find(1);
+        $disliker = $em->getRepository(Utilisateur::class)->find(2);
+        if (!$disliker) $disliker = $em->getRepository(Utilisateur::class)->find(1);
 
-    // Notification pour l'auteur de la publication
-    if ($publication->getUser()) {
         $publication->setNotificationMessage("Votre publication a reçu un nouveau Dislike.");
         $publication->setNotificationRead(false);
-        $publication->setNotificationDate(new \DateTime());
+        $publication->setNotificationDate(new \DateTimeImmutable());
+
+        $em->flush();
+
+        return $this->redirect($request->headers->get('referer'));
     }
-
-    $em->flush();
-
-    return $this->redirect($request->headers->get('referer'));
-}
 
     public function badge(PublicationRepository $repository): Response
     {
@@ -313,7 +283,7 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
             return $this->redirectToRoute('app_front_publication');
         }
 
-        $publication->setPinnedAt(new \DateTime());
+        $publication->setPinnedAt(new \DateTimeImmutable());
         $em->flush();
 
         $this->addFlash('success', 'Publication épinglée !');
@@ -344,7 +314,7 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
             $publication->setNotificationRead(true);
         }
         $em->flush();
-        
+
         return $this->json(['success' => true]);
     }
 
@@ -362,7 +332,7 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
                 'headers' => [
                     'Authorization' => 'Bearer ' . $apiKey,
                     'Content-Type' => 'application/json',
-                    'HTTP-Referer' => 'http://localhost:8000', // Requis par OpenRouter
+                    'HTTP-Referer' => 'http://localhost:8000',
                     'X-Title' => 'FeelSafe Forum',
                 ],
                 'json' => [
@@ -444,7 +414,6 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
         }
     }
 
-
     #[Route('/front/publication/analyze-image', name: 'app_front_publication_analyze_image', methods: ['POST'])]
     public function analyzeImage(Request $request, HttpClientInterface $client): Response
     {
@@ -500,7 +469,6 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
             return $this->json(['error' => 'Erreur analyse: ' . $e->getMessage()], 500);
         }
     }
-
 
     #[Route('/front/publication/translate', name: 'app_front_publication_translate', methods: ['POST'])]
     public function translate(Request $request, HttpClientInterface $client, TranslationCacheRepository $cacheRepo, EntityManagerInterface $em): Response
@@ -604,7 +572,7 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
             $publication->setIsReported(true);
             $publication->setReportReason($reason);
             $publication->setReportDescription($description);
-            $publication->setReportedAt(new \DateTime());
+            $publication->setReportedAt(new \DateTimeImmutable());
         } elseif ($type === 'comment') {
             $commentaire = $em->getRepository(Commentaire::class)->find($id);
             if (!$commentaire) {
@@ -613,7 +581,7 @@ public function delete(?Publication $publication, EntityManagerInterface $em): R
             $commentaire->setIsReported(true);
             $commentaire->setReportReason($reason);
             $commentaire->setReportDescription($description);
-            $commentaire->setReportedAt(new \DateTime());
+            $commentaire->setReportedAt(new \DateTimeImmutable());
         } else {
             return $this->json(['error' => 'Type invalide (publication ou comment).'], 400);
         }

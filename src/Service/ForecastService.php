@@ -25,7 +25,8 @@ class ForecastService
             ->andWhere('r.dateRdv BETWEEN :start AND :end')
             ->setParameter('pro', $pro)
             ->setParameter('start', new \DateTime($start->format('Y-m-d')))
-            ->setParameter('end', new \DateTime($today->format('Y-m-d')));
+            ->setParameter('end', new \DateTime($today->format('Y-m-d')))
+            ->setMaxResults(1000);
 
         $rdvs = $qb->getQuery()->getResult();
 
@@ -44,9 +45,6 @@ class ForecastService
                 continue;
             }
             $date = $rdv->getDateRdv();
-            if (!$date) {
-                continue;
-            }
             $weekday = (int) $date->format('N'); // 1..7
             $weeksAgo = max(0, (int) floor((($today->getTimestamp() - $date->getTimestamp()) / 86400) / 7));
             $w = exp(-$lambda * $weeksAgo);
@@ -86,20 +84,15 @@ class ForecastService
             ->andWhere('r.dateRdv BETWEEN :start AND :end')
             ->setParameter('user', $user)
             ->setParameter('start', new \DateTime($start->format('Y-m-d')))
-            ->setParameter('end', new \DateTime($now->format('Y-m-d')));
+            ->setParameter('end', new \DateTime($now->format('Y-m-d')))
+            ->setMaxResults(1000);
 
         $rdvs = $qb->getQuery()->getResult();
 
         $slotScores = [];
         foreach ($rdvs as $rdv) {
-            if (!$rdv instanceof RendezVous) {
-                continue;
-            }
             $date = $rdv->getDateRdv();
             $time = $rdv->getHeureRdv();
-            if (!$date || !$time) {
-                continue;
-            }
             $weekday = (int) $date->format('N'); // 1..7
             $hour = $time->format('H:i');
             $slotKey = $weekday . '|' . $hour;

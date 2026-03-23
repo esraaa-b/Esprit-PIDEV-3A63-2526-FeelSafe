@@ -127,4 +127,60 @@ class UtilisateurRepository extends ServiceEntityRepository
             'inactifs' => $this->count(['statut' => 'inactif']),
         ];
     }
+    // src/Repository/UtilisateurRepository.php
+
+public function findAllForDropdown(): array
+{
+    return $this->createQueryBuilder('u')
+        ->select('u.id, u.nom, u.prenom, u.email')
+        ->orderBy('u.nom', 'ASC')
+        ->setMaxResults(500) // dropdowns don't need more
+        ->getQuery()
+        ->getArrayResult(); // returns plain arrays, much lighter than full entities
+}
+// src/Repository/UtilisateurRepository.php
+
+public function getStatsByRole(): array
+{
+    $results = $this->createQueryBuilder('u')
+        ->select('u.role, COUNT(u.id) as total')
+        ->groupBy('u.role')
+        ->getQuery()
+        ->getArrayResult();
+
+    $stats = [
+        'total_users' => 0,
+        'total_clients' => 0,
+        'total_professionnels' => 0,
+        'total_admins' => 0,
+    ];
+
+    foreach ($results as $row) {
+        $stats['total_users'] += $row['total'];
+        // $row['role'] is a PHP array (Doctrine deserializes the JSON roles column)
+        $roles = is_array($row['role']) ? $row['role'] : (array) $row['role'];
+        if (in_array('ROLE_ADMIN', $roles, true)) $stats['total_admins'] += $row['total'];
+        elseif (in_array('ROLE_PROFESSIONNEL', $roles, true)) $stats['total_professionnels'] += $row['total'];
+        elseif (in_array('ROLE_CLIENT', $roles, true)) $stats['total_clients'] += $row['total'];
+    }
+
+    return $stats;
+}
+
+public function findAllPaginated(int $limit = 100, int $offset = 0): array
+{
+    return $this->createQueryBuilder('u')
+        ->orderBy('u.dateCreation', 'DESC')
+        ->setMaxResults($limit)
+        ->setFirstResult($offset)
+        ->getQuery()
+        ->getResult();
+}
+// Add to UtilisateurRepository:
+public function findAllIds(): array
+{
+    return $this->createQueryBuilder('u')
+        ->getQuery()
+        ->getResult();
+}
 }

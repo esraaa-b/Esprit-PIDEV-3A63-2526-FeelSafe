@@ -34,6 +34,9 @@ public function generate(
     TendanceGenerator $generator
 ): Response {
     $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
 
     $generator->generateForMonth($user, $month, $year);
 

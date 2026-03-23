@@ -14,114 +14,58 @@ class TendanceEmotionnelle
     #[ORM\Column]
     private ?int $id = null;
 
+    // ✅ Fix: non-nullable primitives
     #[ORM\Column(type: Types::SMALLINT)]
-    private ?int $mois = null;
+    private int $mois;
 
     #[ORM\Column]
-    private ?int $annee = null;
+    private int $annee;
 
     #[ORM\Column(length: 20)]
-    private ?string $emotion = null;
+    private string $emotion;
 
     #[ORM\Column]
-    private ?int $totaleOccurrences = null;
+    private int $totaleOccurrences;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
-    private ?string $pourcentage = null;
+    private string $pourcentage;
 
-    #[ORM\Column]
-    private ?\DateTime $dateCalcul = null;
+    // ✅ Fix: DateTimeImmutable, non-nullable
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $dateCalcul;
 
+    // ✅ Fix: non-nullable relation
     #[ORM\ManyToOne(inversedBy: 'usertend')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Utilisateur $utilisateur = null;
+    private Utilisateur $utilisateur;
 
-    public function getId(): ?int
+    public function __construct()
     {
-        return $this->id;
+        $this->dateCalcul = new \DateTimeImmutable();
     }
 
-    public function getMois(): ?int
-    {
-        return $this->mois;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function setMois(int $mois): static
-    {
-        $this->mois = $mois;
+    public function getMois(): int { return $this->mois; }
+    public function setMois(int $mois): static { $this->mois = $mois; return $this; }
 
-        return $this;
-    }
+    public function getAnnee(): int { return $this->annee; }
+    public function setAnnee(int $annee): static { $this->annee = $annee; return $this; }
 
-    public function getAnnee(): ?int
-    {
-        return $this->annee;
-    }
+    public function getEmotion(): string { return $this->emotion; }
+    public function setEmotion(string $emotion): static { $this->emotion = $emotion; return $this; }
 
-    public function setAnnee(int $annee): static
-    {
-        $this->annee = $annee;
+    public function getTotaleOccurrences(): int { return $this->totaleOccurrences; }
+    public function setTotaleOccurrences(int $totaleOccurrences): static { $this->totaleOccurrences = $totaleOccurrences; return $this; }
 
-        return $this;
-    }
+    public function getPourcentage(): string { return $this->pourcentage; }
+    public function setPourcentage(string $pourcentage): static { $this->pourcentage = $pourcentage; return $this; }
 
-    public function getEmotion(): ?string
-    {
-        return $this->emotion;
-    }
+    public function getDateCalcul(): \DateTimeImmutable { return $this->dateCalcul; }
 
-    public function setEmotion(string $emation): static
-    {
-        $this->emotion = $emation;
+    // ✅ Fix: private setter
+    private function setDateCalcul(\DateTimeImmutable $dateCalcul): static { $this->dateCalcul = $dateCalcul; return $this; }
 
-        return $this;
-    }
-
-    public function getTotaleOccurrences(): ?int
-    {
-        return $this->totaleOccurrences;
-    }
-
-    public function setTotaleOccurrences(int $totaleOccurrences): static
-    {
-        $this->totaleOccurrences = $totaleOccurrences;
-
-        return $this;
-    }
-
-    public function getPourcentage(): ?string
-    {
-        return $this->pourcentage;
-    }
-
-    public function setPourcentage(string $pourcentage): static
-    {
-        $this->pourcentage = $pourcentage;
-
-        return $this;
-    }
-
-    public function getDateCalcul(): ?\DateTime
-    {
-        return $this->dateCalcul;
-    }
-
-    public function setDateCalcul(\DateTime $dateCalcul): static
-    {
-        $this->dateCalcul = $dateCalcul;
-
-        return $this;
-    }
-
-    public function getUtilisateur(): ?Utilisateur
-    {
-        return $this->utilisateur;
-    }
-
-    public function setUtilisateur(?Utilisateur $utilisateur): static
-    {
-        $this->utilisateur = $utilisateur;
-
-        return $this;
-    }
+    public function getUtilisateur(): Utilisateur { return $this->utilisateur; }
+    public function setUtilisateur(Utilisateur $utilisateur): static { $this->utilisateur = $utilisateur; return $this; }
 }

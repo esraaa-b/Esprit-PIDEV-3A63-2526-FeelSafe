@@ -155,8 +155,8 @@ class RdvAccompagnementController extends AbstractController
                 $r->getId(),
                 $r->getUtilisateur()?->getPrenom().' '.$r->getUtilisateur()?->getNom(),
                 $r->getProfessionnel()?->getPrenom().' '.$r->getProfessionnel()?->getNom(),
-                $r->getDateRdv()?->format('Y-m-d'),
-                $r->getHeureRdv()?->format('H:i'),
+                $r->getDateRdv()->format('Y-m-d'),
+                $r->getHeureRdv()->format('H:i'),
                 $r->getMode()->value,
                 $r->getStatut()->value,
             ];
@@ -203,13 +203,13 @@ class RdvAccompagnementController extends AbstractController
             $rdv = new RendezVous();
             $rdv->setUtilisateur($user);
             $rdv->setProfessionnel($pro);
-            $rdv->setDateRdv(new \DateTime($data['date_rdv'] ?? 'now'));
-            $rdv->setHeureRdv(new \DateTime($data['heure_rdv'] ?? '00:00'));
+            $rdv->setDateRdv(new \DateTimeImmutable($data['date_rdv'] ?? 'now'));
+            $rdv->setHeureRdv(new \DateTimeImmutable($data['heure_rdv'] ?? '00:00'));
             $rdv->setMode(ModeRendezVous::from($data['mode'] ?? ModeRendezVous::EN_LIGNE->value));
             $rdv->setLocalisation($data['localisation'] ?: null);
             $rdv->setStatut(StatutRendezVous::from($data['statut'] ?? StatutRendezVous::PLANIFIE->value));
             $rdv->setCommentaire($data['commentaire'] ?: null);
-            $rdv->setDateCreation(new \DateTime());
+            // Remove setDateCreation() — constructor sets it automatically
             $em->persist($rdv);
             $em->flush();
             return $this->json(['success' => true, 'message' => 'RDV créé', 'id' => $rdv->getId()]);
@@ -231,8 +231,8 @@ class RdvAccompagnementController extends AbstractController
                 'id' => $rdv->getId(),
                 'utilisateur_id' => $rdv->getUtilisateur()?->getId(),
                 'professionnel_id' => $rdv->getProfessionnel()?->getId(),
-                'date_rdv' => $rdv->getDateRdv()?->format('Y-m-d'),
-                'heure_rdv' => $rdv->getHeureRdv()?->format('H:i'),
+                'date_rdv' => $rdv->getDateRdv()->format('Y-m-d'),
+                'heure_rdv' => $rdv->getHeureRdv()->format('H:i'),
                 'mode' => $rdv->getMode()->value,
                 'localisation' => $rdv->getLocalisation(),
                 'statut' => $rdv->getStatut()->value,
@@ -258,8 +258,8 @@ class RdvAccompagnementController extends AbstractController
                 $p = $em->getRepository(Utilisateur::class)->find((int)$data['professionnel_id']);
                 if ($p) $rdv->setProfessionnel($p);
             }
-            if (!empty($data['date_rdv'])) $rdv->setDateRdv(new \DateTime($data['date_rdv']));
-            if (!empty($data['heure_rdv'])) $rdv->setHeureRdv(new \DateTime($data['heure_rdv']));
+            if (!empty($data['date_rdv'])) $rdv->setDateRdv(new \DateTimeImmutable($data['date_rdv']));
+            if (!empty($data['heure_rdv'])) $rdv->setHeureRdv(new \DateTimeImmutable($data['heure_rdv']));
             if (!empty($data['mode'])) $rdv->setMode(ModeRendezVous::from($data['mode']));
             $rdv->setLocalisation($data['localisation'] ?? null);
             if (!empty($data['statut'])) $rdv->setStatut(StatutRendezVous::from($data['statut']));

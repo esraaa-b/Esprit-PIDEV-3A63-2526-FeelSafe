@@ -21,12 +21,13 @@ class SessionActiviteRepository extends ServiceEntityRepository
     /**
      * Récupère toutes les sessions d'un utilisateur
      */
-    public function findByUtilisateur(Utilisateur $utilisateur): array
+    public function findByUtilisateur(Utilisateur $utilisateur, int $limit = 200): array
     {
         return $this->createQueryBuilder('s')
             ->where('s.utilisateur = :utilisateur')
             ->setParameter('utilisateur', $utilisateur)
             ->orderBy('s.dateDebut', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }
@@ -34,12 +35,13 @@ class SessionActiviteRepository extends ServiceEntityRepository
     /**
      * Récupère les sessions par statut
      */
-    public function findByStatut(StatutSession $statut): array
+    public function findByStatut(StatutSession $statut, int $limit = 200): array
     {
         return $this->createQueryBuilder('s')
             ->where('s.statutSession = :statut')
             ->setParameter('statut', $statut)
             ->orderBy('s.dateDebut', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }
@@ -47,7 +49,7 @@ class SessionActiviteRepository extends ServiceEntityRepository
     /**
      * Récupère les sessions d'un utilisateur par statut
      */
-    public function findByUtilisateurAndStatut(Utilisateur $utilisateur, StatutSession $statut): array
+    public function findByUtilisateurAndStatut(Utilisateur $utilisateur, StatutSession $statut, int $limit = 200): array
     {
         return $this->createQueryBuilder('s')
             ->where('s.utilisateur = :utilisateur')
@@ -55,6 +57,7 @@ class SessionActiviteRepository extends ServiceEntityRepository
             ->setParameter('utilisateur', $utilisateur)
             ->setParameter('statut', $statut)
             ->orderBy('s.dateDebut', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }
@@ -62,7 +65,7 @@ class SessionActiviteRepository extends ServiceEntityRepository
     /**
      * Récupère les sessions complétées avec amélioration de l'humeur
      */
-    public function findSessionsAvecAmelioration(Utilisateur $utilisateur): array
+    public function findSessionsAvecAmelioration(Utilisateur $utilisateur, int $limit = 200): array
     {
         return $this->createQueryBuilder('s')
             ->where('s.utilisateur = :utilisateur')
@@ -71,6 +74,7 @@ class SessionActiviteRepository extends ServiceEntityRepository
             ->setParameter('utilisateur', $utilisateur)
             ->setParameter('statut', StatutSession::COMPLETEE)
             ->orderBy('s.dateDebut', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }

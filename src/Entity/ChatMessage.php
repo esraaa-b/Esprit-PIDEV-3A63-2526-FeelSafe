@@ -23,7 +23,7 @@ class ChatMessage
     #[ORM\Column(type: 'text')]
     private string $content;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
@@ -35,63 +35,22 @@ class ChatMessage
         $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getConversationId(): string
-    {
-        return $this->conversationId;
-    }
+    public function getConversationId(): string { return $this->conversationId; }
+    public function setConversationId(string $conversationId): static { $this->conversationId = $conversationId; return $this; }
 
-    public function setConversationId(string $conversationId): static
-    {
-        $this->conversationId = $conversationId;
-        return $this;
-    }
+    public function getRole(): string { return $this->role; }
+    public function setRole(string $role): static { $this->role = $role; return $this; }
 
-    public function getRole(): string
-    {
-        return $this->role;
-    }
+    public function getContent(): string { return $this->content; }
+    public function setContent(string $content): static { $this->content = $content; return $this; }
 
-    public function setRole(string $role): static
-    {
-        $this->role = $role;
-        return $this;
-    }
+    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 
-    public function getContent(): string
-    {
-        return $this->content;
-    }
+    // ✅ Fix: private setter
+    private function setCreatedAt(\DateTimeImmutable $createdAt): static { $this->createdAt = $createdAt; return $this; }
 
-    public function setContent(string $content): static
-    {
-        $this->content = $content;
-        return $this;
-    }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-        return $this;
-    }
-
-    public function getUtilisateur(): ?Utilisateur
-    {
-        return $this->utilisateur;
-    }
-
-    public function setUtilisateur(?Utilisateur $utilisateur): static
-    {
-        $this->utilisateur = $utilisateur;
-        return $this;
-    }
+    public function getUtilisateur(): ?Utilisateur { return $this->utilisateur; }
+    public function setUtilisateur(?Utilisateur $utilisateur): static { $this->utilisateur = $utilisateur; return $this; }
 }

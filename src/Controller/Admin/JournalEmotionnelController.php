@@ -38,8 +38,7 @@ public function index(Request $request, EntityManagerInterface $em): Response
     $users = $qb->getQuery()->getResult();
     
     // Récupérer les journaux (si besoin)
-    $journals = $em->getRepository(JournalEmotionnel::class)->findAll();
-    
+   $journals = $em->getRepository(JournalEmotionnel::class)->findBy([], ['dateCreation' => 'DESC'], 50);    
     return $this->render('admin/journal/index.html.twig', [
         'users' => $users,
         'journals' => $journals,

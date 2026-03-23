@@ -31,119 +31,51 @@ class Urgence
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $location = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTime $createdAt = null;
+    // ✅ Fix: DateTimeImmutable, non-nullable, initialized in constructor
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $createdAt;
 
+    // ✅ Fix: non-nullable relation
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
-    private ?Utilisateur $user = null;
+    private Utilisateur $user;
 
-    /**
-     * @var Collection<int, Intervention>
-     */
     #[ORM\OneToMany(targetEntity: Intervention::class, mappedBy: 'urgence')]
     private Collection $urginter;
 
     public function __construct()
     {
         $this->urginter = new ArrayCollection();
+        // ✅ Fix: initialized in constructor
+        $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getTypeUrgence(): ?string
-    {
-        return $this->typeUrgence;
-    }
+    public function getTypeUrgence(): ?string { return $this->typeUrgence; }
+    public function setTypeUrgence(?string $typeUrgence): static { $this->typeUrgence = $typeUrgence; return $this; }
 
-    public function setTypeUrgence(?string $typeUrgence): static
-    {
-        $this->typeUrgence = $typeUrgence;
+    public function getDescription(): ?string { return $this->description; }
+    public function setDescription(?string $description): static { $this->description = $description; return $this; }
 
-        return $this;
-    }
+    public function getSeverityLevel(): ?int { return $this->severityLevel; }
+    public function setSeverityLevel(?int $severityLevel): static { $this->severityLevel = $severityLevel; return $this; }
 
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
+    public function getStatus(): ?string { return $this->status; }
+    public function setStatus(?string $status): static { $this->status = $status; return $this; }
 
-    public function setDescription(?string $description): static
-    {
-        $this->description = $description;
+    public function getLocation(): ?string { return $this->location; }
+    public function setLocation(?string $location): static { $this->location = $location; return $this; }
 
-        return $this;
-    }
+    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 
-    public function getSeverityLevel(): ?int
-    {
-        return $this->severityLevel;
-    }
+    // ✅ Fix: private setter
+    private function setCreatedAt(\DateTimeImmutable $createdAt): static { $this->createdAt = $createdAt; return $this; }
 
-    public function setSeverityLevel(?int $severityLevel): static
-    {
-        $this->severityLevel = $severityLevel;
+    public function getUser(): Utilisateur { return $this->user; }
+    public function setUser(Utilisateur $user): static { $this->user = $user; return $this; }
 
-        return $this;
-    }
-
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
-
-    public function setStatus(?string $status): static
-    {
-        $this->status = $status;
-
-        return $this;
-    }
-
-    public function getLocation(): ?string
-    {
-        return $this->location;
-    }
-
-    public function setLocation(?string $location): static
-    {
-        $this->location = $location;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUser(): ?Utilisateur
-    {
-        return $this->user;
-    }
-
-    public function setUser(?Utilisateur $user): static
-    {
-        $this->user = $user;
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Intervention>
-     */
-    public function getUrginter(): Collection
-    {
-        return $this->urginter;
-    }
+    public function getUrginter(): Collection { return $this->urginter; }
 
     public function addUrginter(Intervention $urginter): static
     {
@@ -151,19 +83,12 @@ class Urgence
             $this->urginter->add($urginter);
             $urginter->setUrgence($this);
         }
-
         return $this;
     }
-
-    public function removeUrginter(Intervention $urginter): static
-    {
-        if ($this->urginter->removeElement($urginter)) {
-            // set the owning side to null (unless already changed)
-            if ($urginter->getUrgence() === $this) {
-                $urginter->setUrgence(null);
-            }
-        }
-
-        return $this;
-    }
+    
+public function removeUrginter(Intervention $urginter): static
+{
+    $this->urginter->removeElement($urginter);
+    return $this;
+}
 }

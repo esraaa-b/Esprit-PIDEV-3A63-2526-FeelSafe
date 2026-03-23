@@ -30,7 +30,7 @@ class HealthDataApiController extends AbstractController
     {
         try {
             // Get all users
-            $users = $this->entityManager->getRepository(Utilisateur::class)->findAll();
+            $users = $this->entityManager->getRepository(Utilisateur::class)->findAll(); // returns lightweight arrays, not full entities
 
             $healthData = [];
             foreach ($users as $user) {
@@ -99,8 +99,7 @@ class HealthDataApiController extends AbstractController
     public function getHealthStatistics(): JsonResponse
     {
         try {
-            $users = $this->entityManager->getRepository(Utilisateur::class)->findAll();
-
+            $users = $this->entityManager->getRepository(Utilisateur::class)->findAll(); // returns lightweight arrays, not full entities
             $stats = [
                 'total_users' => count($users),
                 'average_heart_rate' => 0,
@@ -157,7 +156,7 @@ class HealthDataApiController extends AbstractController
     public function getHealthAlerts(): JsonResponse
     {
         try {
-            $users = $this->entityManager->getRepository(Utilisateur::class)->findAll();
+            $users = $this->entityManager->getRepository(Utilisateur::class)->findAll(); // returns lightweight arrays, not full entities
             $alerts = [];
 
             foreach ($users as $user) {

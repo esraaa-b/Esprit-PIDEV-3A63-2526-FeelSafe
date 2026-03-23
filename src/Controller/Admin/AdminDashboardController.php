@@ -25,53 +25,30 @@ class AdminDashboardController extends AbstractController
         private UserPasswordHasherInterface $passwordHasher
     ) {}
 
-    #[Route('/dashboard', name: 'admin_dashboard')]
-    public function index(): Response
-    {
-        // Récupérer tous les utilisateurs
-        $users = $this->userRepository->findAll();
+   #[Route('/dashboard', name: 'admin_dashboard')]
+public function index(): Response
+{
+    // ✅ One SQL query for stats instead of loading all users
+    $stats = $this->userRepository->getStatsByRole();
 
-        // Calculer les statistiques DYNAMIQUEMENT
-        $totalUsers = count($users);
-        $totalClients = 0;
-        $totalProfessionnels = 0;
-        $totalAdmins = 0;
+    // ✅ Paginated instead of findAll()
+    $users = $this->userRepository->findAllPaginated(100);
 
-        foreach ($users as $user) {
-            $roles = $user->getRoles();
-            
-            if (in_array('ROLE_ADMIN', $roles)) {
-                $totalAdmins++;
-            } elseif (in_array('ROLE_PROFESSIONNEL', $roles)) {
-                $totalProfessionnels++;
-            } elseif (in_array('ROLE_CLIENT', $roles)) {
-                $totalClients++;
-            }
-        }
-
-        $stats = [
-            'total_users'          => $totalUsers,
-            'total_clients'        => $totalClients,
-            'total_professionnels' => $totalProfessionnels,
-            'total_admins'         => $totalAdmins,
-        ];
-
-        // Générer les tokens CSRF pour chaque utilisateur
-        $csrfTokens = [];
-        foreach ($users as $user) {
-            $csrfTokens['edit_'   . $user->getId()] = $this->csrfTokenManager->getToken('user_edit_'   . $user->getId())->getValue();
-            $csrfTokens['delete_' . $user->getId()] = $this->csrfTokenManager->getToken('user_delete_' . $user->getId())->getValue();
-        }
-
-        $csrfTokens['admin_profile'] = $this->csrfTokenManager->getToken('admin_profile_edit')->getValue();
-        $csrfTokens['user_create'] = $this->csrfTokenManager->getToken('user_create')->getValue();
-
-        return $this->render('admin/dashboard/index.html.twig', [
-            'users'       => $users,
-            'stats'       => $stats,
-            'csrf_tokens' => $csrfTokens,
-        ]);
+    // CSRF tokens (unchanged)
+    $csrfTokens = [];
+    foreach ($users as $user) {
+        $csrfTokens['edit_'   . $user->getId()] = $this->csrfTokenManager->getToken('user_edit_'   . $user->getId())->getValue();
+        $csrfTokens['delete_' . $user->getId()] = $this->csrfTokenManager->getToken('user_delete_' . $user->getId())->getValue();
     }
+    $csrfTokens['admin_profile'] = $this->csrfTokenManager->getToken('admin_profile_edit')->getValue();
+    $csrfTokens['user_create']   = $this->csrfTokenManager->getToken('user_create')->getValue();
+
+    return $this->render('admin/dashboard/index.html.twig', [
+        'users'       => $users,
+        'stats'       => $stats,
+        'csrf_tokens' => $csrfTokens,
+    ]);
+}
 
     #[Route('/security/user/{id}/update', name: 'admin_security_user_update', methods: ['POST'])]
     public function updateUser(int $id, Request $request): Response
@@ -341,40 +318,43 @@ class AdminDashboardController extends AbstractController
         return $this->redirectToRoute('admin_dashboard');
     }
 
-    #[Route('/users/export-csv', name: 'admin_users_export_csv')]
-    public function exportCsv(): Response
-    {
-        $users = $this->userRepository->findAll();
+#[Route('/users/export-csv', name: 'admin_users_export_csv')]
+public function exportCsv(): Response
+{
+    // ✅ Use an iterator instead of loading everything into memory
+    $users = $this->userRepository->createQueryBuilder('u')
+        ->orderBy('u.dateCreation', 'DESC')
+        ->getQuery()
+        ->toIterable(); // streams results row by row, no memory spike
 
-        $csv   = [];
-        $csv[] = ['ID', 'Nom', 'Prénom', 'Email', 'Téléphone', 'Rôles', 'Statut', 'Date Inscription'];
+    $response = new Response();
+    $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+    $response->headers->set('Content-Disposition', 'attachment; filename="utilisateurs_' . date('Y-m-d_H-i-s') . '.csv"');
 
-        foreach ($users as $user) {
-            $csv[] = [
-                $user->getId(),
-                $user->getNom(),
-                $user->getPrenom(),
-                $user->getEmail(),
-                $user->getTelephone() ?? '',
-                implode(', ', $user->getRoles()),
-                $user->getStatut(),
-                $user->getDateCreation() ? $user->getDateCreation()->format('d/m/Y H:i:s') : '',
-            ];
-        }
+    $output = fopen('php://temp', 'r+');
+    fputs($output, "\xEF\xBB\xBF");
+    fputcsv($output, ['ID', 'Nom', 'Prénom', 'Email', 'Téléphone', 'Rôles', 'Statut', 'Date Inscription'], ';');
 
-        $response = new Response();
-        $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-        $response->headers->set('Content-Disposition', 'attachment; filename="utilisateurs_' . date('Y-m-d_H-i-s') . '.csv"');
+    foreach ($users as $user) {
+        fputcsv($output, [
+            $user->getId(),
+            $user->getNom(),
+            $user->getPrenom(),
+            $user->getEmail(),
+            $user->getTelephone() ?? '',
+            implode(', ', $user->getRoles()),
+            $user->getStatut(),
+            $user->getDateCreation()?->format('d/m/Y H:i:s') ?? '',
+        ], ';');
 
-        $output = fopen('php://temp', 'r+');
-        fputs($output, "\xEF\xBB\xBF");
-        foreach ($csv as $row) {
-            fputcsv($output, $row, ';');
-        }
-        rewind($output);
-        $response->setContent(stream_get_contents($output));
-        fclose($output);
-
-        return $response;
+        // Detach entity from memory after each row
+        $this->entityManager->detach($user);
     }
+
+    rewind($output);
+    $response->setContent(stream_get_contents($output));
+    fclose($output);
+
+    return $response;
+}
 }

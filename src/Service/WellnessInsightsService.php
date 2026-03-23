@@ -20,13 +20,17 @@ class WellnessInsightsService
         $insights = [];
 
         // Récupérer les sessions de l'utilisateur (30 derniers jours)
+        // JOIN FETCH activite to avoid N+1 lazy-loading in analyzePreferredActivity()
         $dateDebut = new \DateTime('-30 days');
         $sessions = $this->sessionRepo->createQueryBuilder('s')
+            ->addSelect('a')
+            ->join('s.activite', 'a')
             ->where('s.utilisateur = :user')
             ->andWhere('s.dateDebut >= :dateDebut')
             ->setParameter('user', $user)
             ->setParameter('dateDebut', $dateDebut)
             ->orderBy('s.dateDebut', 'DESC')
+            ->setMaxResults(100)
             ->getQuery()
             ->getResult();
 
@@ -289,7 +293,7 @@ class WellnessInsightsService
     /**
      * Analyser la performance hebdomadaire
      */
-    private function analyzeWeeklyPerformance(array $sessions): ?array
+    private function analyzeWeeklyPerformance(array $sessions): array
     {
         $weekStart = new \DateTime('monday this week');
         $weekSessions = array_filter($sessions, function($session) use ($weekStart) {

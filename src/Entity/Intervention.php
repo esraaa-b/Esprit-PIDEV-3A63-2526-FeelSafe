@@ -22,75 +22,36 @@ class Intervention
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $result = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTime $interventionDate = null;
+    // ✅ Fix: DateTimeImmutable, initialized in constructor
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $interventionDate;
 
+    // ✅ Fix: non-nullable relation
     #[ORM\ManyToOne(inversedBy: 'urginter')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Urgence $urgence = null;
+    private Urgence $urgence;
 
-    public function getId(): ?int
+    public function __construct()
     {
-        return $this->id;
+        $this->interventionDate = new \DateTimeImmutable();
     }
 
-    public function getInterventionType(): ?string
-    {
-        return $this->interventionType;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function setInterventionType(?string $interventionType): static
-    {
-        $this->interventionType = $interventionType;
+    public function getInterventionType(): ?string { return $this->interventionType; }
+    public function setInterventionType(?string $interventionType): static { $this->interventionType = $interventionType; return $this; }
 
-        return $this;
-    }
+    public function getNotes(): ?string { return $this->notes; }
+    public function setNotes(?string $notes): static { $this->notes = $notes; return $this; }
 
-    public function getNotes(): ?string
-    {
-        return $this->notes;
-    }
+    public function getResult(): ?string { return $this->result; }
+    public function setResult(?string $result): static { $this->result = $result; return $this; }
 
-    public function setNotes(?string $notes): static
-    {
-        $this->notes = $notes;
+    public function getInterventionDate(): \DateTimeImmutable { return $this->interventionDate; }
 
-        return $this;
-    }
+    // ✅ Fix: private setter
+    private function setInterventionDate(\DateTimeImmutable $interventionDate): static { $this->interventionDate = $interventionDate; return $this; }
 
-    public function getResult(): ?string
-    {
-        return $this->result;
-    }
-
-    public function setResult(?string $result): static
-    {
-        $this->result = $result;
-
-        return $this;
-    }
-
-    public function getInterventionDate(): ?\DateTime
-    {
-        return $this->interventionDate;
-    }
-
-    public function setInterventionDate(?\DateTime $interventionDate): static
-    {
-        $this->interventionDate = $interventionDate;
-
-        return $this;
-    }
-
-    public function getUrgence(): ?Urgence
-    {
-        return $this->urgence;
-    }
-
-    public function setUrgence(?Urgence $urgence): static
-    {
-        $this->urgence = $urgence;
-
-        return $this;
-    }
+    public function getUrgence(): Urgence { return $this->urgence; }
+    public function setUrgence(Urgence $urgence): static { $this->urgence = $urgence; return $this; }
 }

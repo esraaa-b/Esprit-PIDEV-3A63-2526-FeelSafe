@@ -23,7 +23,10 @@ class ProfessionnelDashboardController extends BaseDashboardController
         }
 
         $user = $this->getUser();
-        $userName = $user->getPrenom() ?? 'Professionnel';
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
+        $userName = $user->getPrenom() ?: 'Professionnel';
 
         $stats = [
             ['label' => 'Patients actifs',       'value' => 24,  'icon' => 'users',    'color' => 'bg-primary/10 text-primary'],

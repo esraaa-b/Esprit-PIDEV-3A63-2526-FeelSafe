@@ -41,7 +41,7 @@ class GitHubAuthenticator extends OAuth2Authenticator
                 $githubUser = $client->fetchUserFromToken($accessToken);
 
                 $email = $githubUser->getEmail();
-                $githubId = $githubUser->getId();
+                $githubId = $githubUser->getId() !== null ? (string) $githubUser->getId() : null;
 
                 // Si pas d'email public sur GitHub, on ne peut pas créer le compte
                 if (!$email) {
@@ -70,7 +70,7 @@ class GitHubAuthenticator extends OAuth2Authenticator
                         $name = $githubUser->getName() ?? $githubUser->getNickname() ?? 'GitHub User';
                         $nameParts = explode(' ', $name, 2);
                         
-                        $user->setPrenom($nameParts[0] ?? 'GitHub');
+                        $user->setPrenom($nameParts[0]);
                         $user->setNom($nameParts[1] ?? 'User');
                         
                         // Avatar GitHub

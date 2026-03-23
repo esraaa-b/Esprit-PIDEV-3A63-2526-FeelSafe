@@ -29,6 +29,6 @@ class JournalEmotionnelVoter extends Voter
         /** @var JournalEmotionnel $journal */
         $journal = $subject;
 
-        return $journal->getUtilisateur()?->getId() === $user->getId();
+        return $journal->getUtilisateur() !== null && $journal->getUtilisateur()->getId() === $user->getId();
     }
 }

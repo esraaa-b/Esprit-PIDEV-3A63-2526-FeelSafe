@@ -3,7 +3,7 @@
      x-data="{ scrolled: false }"
      x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 50)"
      :class="scrolled ? 'bg-white/95 dark:bg-gray-100/95 backdrop-blur-md shadow-lg' : 'bg-transparent'">
-    
+   
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 md:h-20">
             <!-- Logo -->
@@ -19,12 +19,12 @@
             <!-- Desktop Navigation -->
             <div class="hidden lg:flex items-center gap-8">
                 {% set current_route = app.request.get('_route') %}
-                {% set isForumContext = 
+                {% set isForumContext =
                     (current_route is defined and current_route starts with 'app_front_publication')
                     or (app.request.pathInfo starts with '/front/publication')
                     or (app.request.pathInfo starts with '/dashboard/forum')
                 %}
-                
+               
                 <a href="/client/dashboard" class="text-muted-foreground hover:text-primary transition-colors {{ current_route == 'dashboard' ? 'text-primary font-medium' : '' }}">
                     Tableau de bord
                 </a>
@@ -73,14 +73,14 @@
                     </button>
 
                     <!-- Dropdown -->
-                    <div x-show="open" 
+                    <div x-show="open"
                          @click.away="open = false"
                          x-transition:enter="transition ease-out duration-100"
                          x-transition:enter-start="opacity-0 scale-95"
                          x-transition:enter-end="opacity-100 scale-100"
                          class="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50"
                          style="display: none;">
-                        
+                       
                         <a href="{{ path('app_profile') }}" @click="open = false" class="block px-4 py-2 text-sm text-foreground hover:bg-secondary">
                             Profil
                         </a>

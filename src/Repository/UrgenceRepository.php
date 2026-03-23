@@ -40,4 +40,32 @@ class UrgenceRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+    // src/Repository/UrgenceRepository.php
+
+public function findAllOrderedByDate(): array
+{
+    return $this->createQueryBuilder('u')
+        ->orderBy('u.createdAt', 'DESC')
+        ->setMaxResults(200) // hard safety cap
+        ->getQuery()
+        ->getResult();
+}
+
+public function countByStatus(): array
+{
+    return $this->createQueryBuilder('u')
+        ->select('u.status, COUNT(u.id) as total')
+        ->groupBy('u.status')
+        ->getQuery()
+        ->getArrayResult();
+}
+
+public function countByTypeUrgence(): array
+{
+    return $this->createQueryBuilder('u')
+        ->select('u.typeUrgence, COUNT(u.id) as total')
+        ->groupBy('u.typeUrgence')
+        ->getQuery()
+        ->getArrayResult();
+}
 }

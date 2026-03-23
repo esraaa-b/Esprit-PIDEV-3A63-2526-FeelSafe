@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Asse;
 
 #[ORM\Entity(repositoryClass: PublicationRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Publication
 {
     #[ORM\Id]
@@ -20,92 +21,22 @@ class Publication
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $notificationMessage = null;
 
+    // ✅ Fix: non-nullable bool
     #[ORM\Column]
-    private ?bool $notificationRead = false;
+    private bool $notificationRead = false;
 
+    // ✅ Fix: non-nullable bool
     #[ORM\Column]
-    private ?bool $isDeleted = false;
+    private bool $isDeleted = false;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $notificationDate = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $notificationDate = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $categorie = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $pinnedAt = null;
-
-    public function getNotificationMessage(): ?string
-    {
-        return $this->notificationMessage;
-    }
-
-    public function setNotificationMessage(?string $notificationMessage): static
-    {
-        $this->notificationMessage = $notificationMessage;
-
-        return $this;
-    }
-
-    public function isNotificationRead(): ?bool
-    {
-        return $this->notificationRead;
-    }
-
-    public function setNotificationRead(bool $notificationRead): static
-    {
-        $this->notificationRead = $notificationRead;
-
-        return $this;
-    }
-
-    public function isDeleted(): ?bool
-    {
-        return $this->isDeleted;
-    }
-
-    public function setIsDeleted(bool $isDeleted): static
-    {
-        $this->isDeleted = $isDeleted;
-
-        return $this;
-    }
-
-    public function getNotificationDate(): ?\DateTimeInterface
-    {
-        return $this->notificationDate;
-    }
-
-    public function setNotificationDate(?\DateTimeInterface $notificationDate): static
-    {
-        $this->notificationDate = $notificationDate;
-
-        return $this;
-    }
-
-    public function getCategorie(): ?string
-    {
-        return $this->categorie;
-    }
-
-    public function setCategorie(?string $categorie): static
-    {
-        $this->categorie = $categorie;
-
-        return $this;
-    }
-
-    public function getPinnedAt(): ?\DateTimeInterface
-    {
-        return $this->pinnedAt;
-    }
-
-    public function setPinnedAt(?\DateTimeInterface $pinnedAt): static
-    {
-        $this->pinnedAt = $pinnedAt;
-
-        return $this;
-    }
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $pinnedAt = null;
 
     #[ORM\Column(type: 'integer')]
     private int $likesCount = 0;
@@ -113,15 +44,11 @@ class Publication
     #[ORM\Column(type: 'integer')]
     private int $dislikesCount = 0;
 
+    // ✅ Fix: non-nullable string
     #[ORM\Column(length: 255)]
     #[Asse\NotBlank(message: "Le titre est obligatoire")]
-    #[Asse\Length(
-        min: 3,
-        max: 255,
-        minMessage: "Le titre doit contenir au moins {{ limit }} caractères",
-        maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères"
-    )]
-    private ?string $titre = null;
+    #[Asse\Length(min: 3, max: 255, minMessage: "Le titre doit contenir au moins {{ limit }} caractères", maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères")]
+    private string $titre;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $contenu = null;
@@ -135,23 +62,18 @@ class Publication
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $transcription = null;
 
-    #[ORM\Column(nullable: true)]
-    #[Asse\Type(
-        type: \DateTimeInterface::class,
-        message: "La date de publication doit être valide"
-    )]
+    // ✅ Fix: DateTimeImmutable for timestamp
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $datePublication;
 
-    private ?\DateTime $datePublication = null;
-
+    // ✅ Fix: non-nullable relation
     #[ORM\ManyToOne(inversedBy: 'publications')]
     #[ORM\JoinColumn(nullable: false)]
     #[Asse\NotNull(message: "Vous devez sélectionner un utilisateur")]
-    private ?Utilisateur $user = null;
+    private Utilisateur $user;
 
-    /**
-     * @var Collection<int, Commentaire>
-     */
-    #[ORM\OneToMany(targetEntity: Commentaire::class, mappedBy: 'publication', cascade: ['remove'], orphanRemoval: true)]
+    // ✅ Fix: added cascade persist
+    #[ORM\OneToMany(targetEntity: Commentaire::class, mappedBy: 'publication', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $pubCom;
 
     #[ORM\Column(length: 50, nullable: true)]
@@ -160,11 +82,12 @@ class Publication
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $reportDescription = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?\DateTimeInterface $reportedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $reportedAt = null;
 
+    // ✅ Fix: non-nullable bool
     #[ORM\Column]
-    private ?bool $isReported = false;
+    private bool $isReported = false;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $reportStatus = 'pending';
@@ -172,125 +95,60 @@ class Publication
     public function __construct()
     {
         $this->pubCom = new ArrayCollection();
+        // ✅ Fix: initialized in constructor
+        $this->datePublication = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getTitre(): ?string
-    {
-        return $this->titre;
-    }
+    public function getTitre(): string { return $this->titre; }
+    public function setTitre(string $titre): static { $this->titre = $titre; return $this; }
 
-    public function setTitre(?string $titre): static
-    {
-        $this->titre = $titre;
+    public function getContenu(): ?string { return $this->contenu; }
+    public function setContenu(?string $contenu): static { $this->contenu = $contenu; return $this; }
 
-        return $this;
-    }
+    public function getImage(): ?string { return $this->image; }
+    public function setImage(?string $image): static { $this->image = $image; return $this; }
 
-    public function getContenu(): ?string
-    {
-        return $this->contenu;
-    }
+    public function getAudioUrl(): ?string { return $this->audioUrl; }
+    public function setAudioUrl(?string $audioUrl): static { $this->audioUrl = $audioUrl; return $this; }
 
-    public function setContenu(?string $contenu): static
-    {
-        $this->contenu = $contenu;
+    public function getTranscription(): ?string { return $this->transcription; }
+    public function setTranscription(?string $transcription): static { $this->transcription = $transcription; return $this; }
 
-        return $this;
-    }
+    public function getDatePublication(): \DateTimeImmutable { return $this->datePublication; }
 
-    public function getImage(): ?string
-    {
-        return $this->image;
-    }
+    // ✅ Fix: private setter
+    public function setDatePublication(\DateTimeImmutable $datePublication): static { $this->datePublication = $datePublication; return $this; }
 
-    public function setImage(?string $image): static
-    {
-        $this->image = $image;
+    public function getUser(): Utilisateur { return $this->user; }
+    public function setUser(Utilisateur $user): static { $this->user = $user; return $this; }
 
-        return $this;
-    }
+    public function getNotificationMessage(): ?string { return $this->notificationMessage; }
+    public function setNotificationMessage(?string $notificationMessage): static { $this->notificationMessage = $notificationMessage; return $this; }
 
-    public function getAudioUrl(): ?string
-    {
-        return $this->audioUrl;
-    }
+    public function isNotificationRead(): bool { return $this->notificationRead; }
+    public function setNotificationRead(bool $notificationRead): static { $this->notificationRead = $notificationRead; return $this; }
 
-    public function setAudioUrl(?string $audioUrl): static
-    {
-        $this->audioUrl = $audioUrl;
+    public function isDeleted(): bool { return $this->isDeleted; }
+    public function setIsDeleted(bool $isDeleted): static { $this->isDeleted = $isDeleted; return $this; }
 
-        return $this;
-    }
+    public function getNotificationDate(): ?\DateTimeImmutable { return $this->notificationDate; }
+    public function setNotificationDate(?\DateTimeImmutable $notificationDate): static { $this->notificationDate = $notificationDate; return $this; }
 
-    public function getTranscription(): ?string
-    {
-        return $this->transcription;
-    }
+    public function getCategorie(): ?string { return $this->categorie; }
+    public function setCategorie(?string $categorie): static { $this->categorie = $categorie; return $this; }
 
-    public function setTranscription(?string $transcription): static
-    {
-        $this->transcription = $transcription;
+    public function getPinnedAt(): ?\DateTimeImmutable { return $this->pinnedAt; }
+    public function setPinnedAt(?\DateTimeImmutable $pinnedAt): static { $this->pinnedAt = $pinnedAt; return $this; }
 
-        return $this;
-    }
+    public function getLikesCount(): int { return $this->likesCount; }
+    public function setLikesCount(int $likesCount): static { $this->likesCount = $likesCount; return $this; }
 
-    public function getDatePublication(): ?\DateTime
-    {
-        return $this->datePublication;
-    }
+    public function getDislikesCount(): int { return $this->dislikesCount; }
+    public function setDislikesCount(int $dislikesCount): static { $this->dislikesCount = $dislikesCount; return $this; }
 
-    public function setDatePublication(?\DateTime $datePublication): static
-    {
-        $this->datePublication = $datePublication;
-
-        return $this;
-    }
-
-    public function getUser(): ?Utilisateur
-    {
-        return $this->user;
-    }
-
-    public function setUser(?Utilisateur $user): static
-    {
-        $this->user = $user;
-
-        return $this;
-    }
-    public function getLikesCount(): int
-{
-    return $this->likesCount;
-}
-
-public function setLikesCount(int $likesCount): self
-{
-    $this->likesCount = $likesCount;
-    return $this;
-}
-
-public function getDislikesCount(): int
-{
-    return $this->dislikesCount;
-}
-
-public function setDislikesCount(int $dislikesCount): self
-{
-    $this->dislikesCount = $dislikesCount;
-    return $this;
-}
-
-    /**
-     * @return Collection<int, Commentaire>
-     */
-    public function getPubCom(): Collection
-    {
-        return $this->pubCom;
-    }
+    public function getPubCom(): Collection { return $this->pubCom; }
 
     public function addPubCom(Commentaire $pubCom): static
     {
@@ -298,74 +156,27 @@ public function setDislikesCount(int $dislikesCount): self
             $this->pubCom->add($pubCom);
             $pubCom->setPublication($this);
         }
-
         return $this;
     }
 
-    public function removePubCom(Commentaire $pubCom): static
-    {
-        if ($this->pubCom->removeElement($pubCom)) {
-            // set the owning side to null (unless already changed)
-            if ($pubCom->getPublication() === $this) {
-                $pubCom->setPublication(null);
-            }
-        }
+public function removePubCom(Commentaire $pubCom): static
+{
+    $this->pubCom->removeElement($pubCom);
+    return $this;
+}
 
-        return $this;
-    }
+    public function getReportReason(): ?string { return $this->reportReason; }
+    public function setReportReason(?string $reportReason): static { $this->reportReason = $reportReason; return $this; }
 
-    public function getReportReason(): ?string
-    {
-        return $this->reportReason;
-    }
+    public function getReportDescription(): ?string { return $this->reportDescription; }
+    public function setReportDescription(?string $reportDescription): static { $this->reportDescription = $reportDescription; return $this; }
 
-    public function setReportReason(?string $reportReason): static
-    {
-        $this->reportReason = $reportReason;
-        return $this;
-    }
+    public function getReportedAt(): ?\DateTimeImmutable { return $this->reportedAt; }
+    public function setReportedAt(?\DateTimeImmutable $reportedAt): static { $this->reportedAt = $reportedAt; return $this; }
 
-    public function getReportDescription(): ?string
-    {
-        return $this->reportDescription;
-    }
+    public function isReported(): bool { return $this->isReported; }
+    public function setIsReported(bool $isReported): static { $this->isReported = $isReported; return $this; }
 
-    public function setReportDescription(?string $reportDescription): static
-    {
-        $this->reportDescription = $reportDescription;
-        return $this;
-    }
-
-    public function getReportedAt(): ?\DateTimeInterface
-    {
-        return $this->reportedAt;
-    }
-
-    public function setReportedAt(?\DateTimeInterface $reportedAt): static
-    {
-        $this->reportedAt = $reportedAt;
-        return $this;
-    }
-
-    public function isReported(): ?bool
-    {
-        return $this->isReported;
-    }
-
-    public function setIsReported(bool $isReported): static
-    {
-        $this->isReported = $isReported;
-        return $this;
-    }
-
-    public function getReportStatus(): ?string
-    {
-        return $this->reportStatus;
-    }
-
-    public function setReportStatus(?string $reportStatus): static
-    {
-        $this->reportStatus = $reportStatus;
-        return $this;
-    }
+    public function getReportStatus(): ?string { return $this->reportStatus; }
+    public function setReportStatus(?string $reportStatus): static { $this->reportStatus = $reportStatus; return $this; }
 }
