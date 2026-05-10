@@ -6,6 +6,7 @@ use App\Entity\Utilisateur;
 use App\Entity\ConfidentialiteUtilisateur;
 use App\Form\RegistrationFormType;
 use App\Service\RegistrationAIService;
+use App\Service\WelcomeEmailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,12 +15,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class RegisterController extends AbstractController
 {
     public function __construct(
-        private RegistrationAIService $aiService
+        private RegistrationAIService $aiService,
+        private WelcomeEmailService   $welcomeEmailService
     ) {}
 
     #[Route('/register', name: 'app_register')]
@@ -27,8 +28,7 @@ class RegisterController extends AbstractController
         Request $request,
         UserPasswordHasherInterface $passwordHasher,
         EntityManagerInterface $entityManager,
-        LoggerInterface $logger,
-        ParameterBagInterface $params 
+        LoggerInterface $logger
     ): Response {
         $user = new Utilisateur();
 
@@ -41,81 +41,49 @@ class RegisterController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $logger->info('🚀 Début inscription', [
-                    'email' => $user->getEmail(),
+                    'email'  => $user->getEmail(),
                     'prenom' => $user->getPrenom(),
-                    'nom' => $user->getNom()
+                    'nom'    => $user->getNom()
                 ]);
 
-                // ✅ VALIDATION IA: Prénom (avec fallback en cas d'erreur)
+                // ✅ Validation IA : Prénom
                 try {
                     $prenomValidation = $this->aiService->validateName($user->getPrenom(), 'prénom');
                     if (!$prenomValidation['valid']) {
-                        $logger->warning('❌ Validation IA prénom échouée', ['reason' => $prenomValidation['reason']]);
-                        $this->addFlash('error', 'Prénom invalide: ' . $prenomValidation['reason']);
+                        $this->addFlash('error', 'Prénom invalide : ' . $prenomValidation['reason']);
                         return $this->redirectToRoute('app_register');
                     }
-                    $logger->info('✅ Validation IA prénom OK');
                 } catch (\Exception $e) {
-                    // Si l'IA échoue, on continue quand même (fallback)
-                    $logger->warning('⚠️ Erreur validation IA prénom, on continue', ['error' => $e->getMessage()]);
+                    $logger->warning('⚠️ Validation IA prénom ignorée', ['error' => $e->getMessage()]);
                 }
 
-                // ✅ VALIDATION IA: Nom (avec fallback en cas d'erreur)
+                // ✅ Validation IA : Nom
                 try {
                     $nomValidation = $this->aiService->validateName($user->getNom(), 'nom');
                     if (!$nomValidation['valid']) {
-                        $logger->warning('❌ Validation IA nom échouée', ['reason' => $nomValidation['reason']]);
-                        $this->addFlash('error', 'Nom invalide: ' . $nomValidation['reason']);
+                        $this->addFlash('error', 'Nom invalide : ' . $nomValidation['reason']);
                         return $this->redirectToRoute('app_register');
                     }
-                    $logger->info('✅ Validation IA nom OK');
                 } catch (\Exception $e) {
-                    $logger->warning('⚠️ Erreur validation IA nom, on continue', ['error' => $e->getMessage()]);
+                    $logger->warning('⚠️ Validation IA nom ignorée', ['error' => $e->getMessage()]);
                 }
 
-                // ✅ VALIDATION IA: Email (avec fallback en cas d'erreur)
+                // ✅ Validation IA : Email
                 try {
                     $emailValidation = $this->aiService->validateEmail($user->getEmail());
                     if (!$emailValidation['valid']) {
-                        $logger->warning('❌ Validation IA email échouée', ['reason' => $emailValidation['reason']]);
                         $this->addFlash('error', $emailValidation['reason']);
                         return $this->redirectToRoute('app_register');
                     }
-                    $logger->info('✅ Validation IA email OK');
                 } catch (\Exception $e) {
-                    $logger->warning('⚠️ Erreur validation IA email, on continue', ['error' => $e->getMessage()]);
+                    $logger->warning('⚠️ Validation IA email ignorée', ['error' => $e->getMessage()]);
                 }
 
+                // Rôle choisi
                 $roleChoisi = $form->get('role')->getData();
-                $logger->info('📋 Rôle choisi: ' . $roleChoisi);
+                $logger->info('📋 Rôle choisi : ' . $roleChoisi);
 
-                // Vérification ADMIN
-                if ($roleChoisi === 'ROLE_ADMIN') {
-                    $codeSecret = $request->request->get('code_admin_secret');
-                    
-                    try {
-                        $CODE_SECRET_ADMIN = $params->get('admin.secret.code');
-                    } catch (\Exception $e) {
-                        $CODE_SECRET_ADMIN = $_ENV['ADMIN_SECRET_CODE'] ?? 'FEELSAFE';
-                        $logger->warning('⚠️ Paramètre admin.secret.code non trouvé, utilisation de la valeur par défaut');
-                    }
-
-                    if ($codeSecret !== $CODE_SECRET_ADMIN) {
-                        $this->addFlash('error', '🔒 Code administrateur incorrect.');
-                        
-                        $logger->warning('🚫 Tentative Admin invalide', [
-                            'email' => $user->getEmail(),
-                            'ip' => $request->getClientIp(),
-                            'code_fourni' => $codeSecret ? 'oui' : 'non'
-                        ]);
-
-                        return $this->redirectToRoute('app_register');
-                    }
-                    $logger->info('✅ Code admin validé');
-                }
-
-                // Hash password
-                $logger->info('🔐 Hash du mot de passe...');
+                // Hash mot de passe
                 $hashedPassword = $passwordHasher->hashPassword(
                     $user,
                     $form->get('plainPassword')->getData()
@@ -125,60 +93,48 @@ class RegisterController extends AbstractController
                 $user->setRoles([$roleChoisi]);
                 $user->setStatut('actif');
 
-                $logger->info('👤 Configuration utilisateur OK');
-
-                // Création Confidentialité
-                $logger->info('🔒 Création paramètres confidentialité...');
+                // Confidentialité
                 $confidentialite = new ConfidentialiteUtilisateur();
                 $confidentialite->setUtilisateur($user);
                 $confidentialite->setVisibiliteProfil($form->get('visibiliteProfil')->getData());
                 $confidentialite->setPartageDonnees($form->get('partageDonnees')->getData() ?? false);
                 $confidentialite->setNotificationsEmail($form->get('notificationsEmail')->getData() ?? true);
-
                 $user->setConfidentialite($confidentialite);
 
+                // Persister
                 $logger->info('💾 Sauvegarde en base de données...');
                 $entityManager->persist($user);
                 $entityManager->flush();
+                $logger->info('✅ Inscription réussie !', ['user_id' => $user->getId()]);
 
-                $logger->info('✅ Inscription réussie!', ['user_id' => $user->getId()]);
+                // ✉️ Envoyer l'email de bienvenue généré par GROQ
+                $this->welcomeEmailService->sendWelcomeEmail($user, $roleChoisi);
 
-                $this->addFlash('success', '✅ Compte créé avec succès! Votre profil a été validé par IA.');
-
+                $this->addFlash('success', '✅ Compte créé avec succès ! Un email de bienvenue vous a été envoyé.');
                 return $this->redirectToRoute('app_login');
 
             } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
-                $logger->error('❌ Email déjà utilisé', [
-                    'email' => $user->getEmail(),
-                    'error' => $e->getMessage()
-                ]);
+                $logger->error('❌ Email déjà utilisé', ['email' => $user->getEmail()]);
                 $this->addFlash('error', '📧 Cet email est déjà utilisé.');
-                
+
             } catch (\Doctrine\DBAL\Exception $e) {
-                $logger->error('❌ Erreur base de données', [
-                    'message' => $e->getMessage(),
-                    'code' => $e->getCode(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                
-                // Message plus spécifique selon l'erreur
+                $logger->error('❌ Erreur base de données', ['message' => $e->getMessage()]);
                 if (str_contains($e->getMessage(), 'foreign key constraint')) {
-                    $this->addFlash('error', '⚠️ Erreur de configuration de la base de données. Contactez l\'administrateur.');
+                    $this->addFlash('error', '⚠️ Erreur de configuration. Contactez l\'administrateur.');
                 } else {
-                    $this->addFlash('error', '💥 Erreur lors de la sauvegarde: ' . $e->getMessage());
+                    $this->addFlash('error', '💥 Erreur lors de la sauvegarde : ' . $e->getMessage());
                 }
-                
+
             } catch (\Exception $e) {
                 $logger->error('❌ Erreur générale inscription', [
                     'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString()
+                    'file'    => $e->getFile(),
+                    'line'    => $e->getLine(),
                 ]);
-
-                $this->addFlash('error', '💥 Une erreur est survenue lors de l\'inscription: ' . $e->getMessage());
+                $this->addFlash('error', '💥 Une erreur est survenue : ' . $e->getMessage());
             }
-        } else if ($form->isSubmitted() && !$form->isValid()) {
+
+        } elseif ($form->isSubmitted() && !$form->isValid()) {
             $logger->warning('⚠️ Formulaire invalide', [
                 'errors' => (string) $form->getErrors(true, false)
             ]);
@@ -190,40 +146,24 @@ class RegisterController extends AbstractController
     }
 
     /**
-     * ✅ API AJAX pour analyser le mot de passe en temps réel
+     * API AJAX — Analyse de la force du mot de passe
      */
     #[Route('/api/check-password-strength', name: 'api_check_password_strength', methods: ['POST'])]
     public function checkPasswordStrength(Request $request, LoggerInterface $logger): JsonResponse
     {
         try {
-            $data = json_decode($request->getContent(), true);
+            $data     = json_decode($request->getContent(), true);
             $password = $data['password'] ?? '';
 
             if (empty($password)) {
-                return new JsonResponse([
-                    'score' => 0,
-                    'level' => 'Vide',
-                    'color' => 'gray',
-                    'suggestions' => ['Entrez un mot de passe']
-                ]);
+                return new JsonResponse(['score' => 0, 'level' => 'Vide', 'color' => 'gray', 'suggestions' => ['Entrez un mot de passe']]);
             }
 
-            $analysis = $this->aiService->analyzePasswordStrength($password);
+            return new JsonResponse($this->aiService->analyzePasswordStrength($password));
 
-            return new JsonResponse($analysis);
-            
         } catch (\Exception $e) {
-            $logger->error('Erreur API password strength', [
-                'message' => $e->getMessage()
-            ]);
-            
-            // Retourner une réponse par défaut en cas d'erreur
-            return new JsonResponse([
-                'score' => 50,
-                'level' => 'Moyen',
-                'color' => 'orange',
-                'suggestions' => ['Vérification en cours...']
-            ]);
+            $logger->error('Erreur API password strength', ['message' => $e->getMessage()]);
+            return new JsonResponse(['score' => 50, 'level' => 'Moyen', 'color' => 'orange', 'suggestions' => []]);
         }
     }
 }

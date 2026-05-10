@@ -1,4 +1,4 @@
-<!-- dashboard_navbar.html.twig -->
+<!-- dashboard_navbar.html.twig — avec traduction |trans -->
 <nav class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
      x-data="{ scrolled: false }"
      x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 50)"
@@ -6,17 +6,18 @@
    
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 md:h-20">
-            <!-- Logo -->
+
+            {# Logo #}
             <div class="flex items-center gap-2">
                 <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
                     <svg class="w-6 h-6 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                 </div>
-                <span class="text-xl font-bold text-foreground">FeelSafe</span>
+                <span class="text-xl font-bold text-foreground">{{ 'app.name'|trans }}</span>
             </div>
 
-            <!-- Desktop Navigation -->
+            {# Navigation desktop #}
             <div class="hidden lg:flex items-center gap-8">
                 {% set current_route = app.request.get('_route') %}
                 {% set isForumContext =
@@ -24,38 +25,45 @@
                     or (app.request.pathInfo starts with '/front/publication')
                     or (app.request.pathInfo starts with '/dashboard/forum')
                 %}
-               
+
                 <a href="/client/dashboard" class="text-muted-foreground hover:text-primary transition-colors {{ current_route == 'dashboard' ? 'text-primary font-medium' : '' }}">
-                    Tableau de bord
+                    {{ 'nav.dashboard'|trans }}
                 </a>
                 <a href="/dashboard/security" class="text-muted-foreground hover:text-primary transition-colors">
-                    Sécurité & Profil
+                    {{ 'nav.security'|trans }}
                 </a>
                 <a href="/dashboard/journal" class="text-muted-foreground hover:text-primary transition-colors">
-                    Journal
+                    {{ 'nav.journal'|trans }}
                 </a>
                 <a href="/dashboard/support" class="text-muted-foreground hover:text-primary transition-colors">
-                    Accompagnement
+                    {{ 'nav.support'|trans }}
                 </a>
                 <a href="/dashboard/wellness" class="text-muted-foreground hover:text-primary transition-colors">
-                    Bien-être
+                    {{ 'nav.wellness'|trans }}
                 </a>
                 <a href="/dashboard/emergency" class="text-muted-foreground hover:text-primary transition-colors">
-                    Urgence
+                    {{ 'nav.emergency'|trans }}
                 </a>
                 <a href="/dashboard/forum" class="text-muted-foreground hover:text-primary transition-colors {{ isForumContext ? 'text-primary font-medium' : '' }}">
-                    Forum
+                    {{ 'nav.forum'|trans }}
                 </a>
             </div>
 
-            <!-- Right side -->
+            {# Côté droit : langue + notifs + user menu #}
             <div class="flex items-center gap-3">
-                <!-- Notifications -->
+
+                {# ✅ Bouton langue FR ↔ AR #}
+                <a href="{{ path('app_locale_switch', {locale: app.request.locale == 'ar' ? 'fr' : 'ar'}) }}"
+                   class="px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-full hover:bg-gray-100 transition-colors text-gray-600">
+                    🌐 {{ 'app.lang_switch'|trans }}
+                </a>
+
+                {# Notifications #}
                 <div class="relative">
                     {{ render(controller('App\\Controller\\FrontPublicationController::badge')) }}
                 </div>
 
-                <!-- User menu -->
+                {# Menu utilisateur #}
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="flex items-center gap-2 p-2 hover:bg-secondary rounded-lg transition-colors">
                         <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
@@ -72,31 +80,29 @@
                         </svg>
                     </button>
 
-                    <!-- Dropdown -->
-                    <div x-show="open"
-                         @click.away="open = false"
+                    <div x-show="open" @click.away="open = false"
                          x-transition:enter="transition ease-out duration-100"
                          x-transition:enter-start="opacity-0 scale-95"
                          x-transition:enter-end="opacity-100 scale-100"
                          class="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50"
                          style="display: none;">
-                       
                         <a href="{{ path('app_profile') }}" @click="open = false" class="block px-4 py-2 text-sm text-foreground hover:bg-secondary">
-                            Profil
+                            {{ 'nav.profile'|trans }}
                         </a>
                         <a href="{{ path('app_security') }}" @click="open = false" class="block px-4 py-2 text-sm text-foreground hover:bg-secondary">
-                            Sécurité
+                            {{ 'profile.security'|trans }}
                         </a>
                         <a href="{{ path('app_settings') }}" @click="open = false" class="block px-4 py-2 text-sm text-foreground hover:bg-secondary">
-                            Paramètres
+                            {{ 'nav.settings'|trans }}
                         </a>
                         <hr class="my-1 border-border">
                         <a href="{{ path('app_logout') }}" @click="open = false" class="block px-4 py-2 text-sm text-destructive hover:bg-secondary">
-                            Déconnexion
+                            {{ 'nav.logout'|trans }}
                         </a>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </nav>

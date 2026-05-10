@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Georgia, Arial, sans-serif; background-color: #f3f4f6; }
+        .wrapper { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.10); }
+
+        /* ── HEADER selon rôle ── */
+        .header-admin        { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); }
+        .header-pro          { background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); }
+        .header-client       { background: linear-gradient(135deg, #16a34a 0%, #059669 100%); }
+
+        .header { padding: 44px 30px 36px; text-align: center; position: relative; overflow: hidden; }
+        .header::before {
+            content: '';
+            position: absolute; top: -60px; right: -60px;
+            width: 200px; height: 200px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        .header::after {
+            content: '';
+            position: absolute; bottom: -40px; left: -40px;
+            width: 140px; height: 140px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .header-icon { font-size: 48px; margin-bottom: 12px; display: block; }
+        .header .logo { font-size: 28px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; }
+        .header .tagline { color: rgba(255,255,255,0.80); font-size: 13px; margin-top: 6px; }
+        .role-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.18);
+            color: #ffffff;
+            padding: 5px 18px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 14px;
+            border: 1px solid rgba(255,255,255,0.30);
+            backdrop-filter: blur(4px);
+        }
+
+        /* ── BODY ── */
+        .body { padding: 40px 36px; }
+
+        .greeting { font-size: 24px; font-weight: 800; margin-bottom: 14px; }
+        .greeting-admin  { color: #1e3a5f; }
+        .greeting-pro    { color: #5b21b6; }
+        .greeting-client { color: #15803d; }
+
+        .welcome-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        .badge-admin  { background: #dbeafe; color: #1e40af; }
+        .badge-pro    { background: #ede9fe; color: #6d28d9; }
+        .badge-client { background: #dcfce7; color: #15803d; }
+
+        .main-message { font-size: 15px; color: #374151; line-height: 1.8; margin-bottom: 28px; }
+
+        /* ── TIPS BOX selon rôle ── */
+        .tips-box { border-radius: 12px; padding: 24px; margin-bottom: 28px; }
+        .tips-box-admin  { background: #eff6ff; border: 1px solid #bfdbfe; }
+        .tips-box-pro    { background: #f5f3ff; border: 1px solid #ddd6fe; }
+        .tips-box-client { background: #f0fdf4; border: 1px solid #bbf7d0; }
+
+        .tips-box h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.7px; }
+        .tips-title-admin  { color: #1e40af; }
+        .tips-title-pro    { color: #6d28d9; }
+        .tips-title-client { color: #15803d; }
+
+        .tips-box ul { list-style: none; }
+        .tips-box ul li {
+            font-size: 14px;
+            color: #374151;
+            padding: 9px 0 9px 30px;
+            position: relative;
+            border-bottom: 1px dashed rgba(0,0,0,0.07);
+            line-height: 1.5;
+        }
+        .tips-box ul li:last-child { border-bottom: none; }
+        .tip-icon { position: absolute; left: 0; top: 9px; font-size: 15px; }
+
+        /* ── CTA selon rôle ── */
+        .cta-wrapper { text-align: center; margin: 32px 0 24px; }
+        .cta-button {
+            display: inline-block;
+            padding: 15px 44px;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.3px;
+            transition: opacity 0.2s;
+        }
+        .cta-admin  { background: linear-gradient(135deg, #1e3a5f, #2563eb); }
+        .cta-pro    { background: linear-gradient(135deg, #5b21b6, #7c3aed); }
+        .cta-client { background: linear-gradient(135deg, #16a34a, #059669); }
+
+        /* ── STATS BAR ── */
+        .stats-bar { display: flex; gap: 0; margin: 0 0 28px; border-radius: 10px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .stat-item { flex: 1; padding: 14px 10px; text-align: center; background: #f9fafb; border-right: 1px solid #e5e7eb; }
+        .stat-item:last-child { border-right: none; }
+        .stat-num { font-size: 20px; font-weight: 800; }
+        .stat-num-admin  { color: #2563eb; }
+        .stat-num-pro    { color: #7c3aed; }
+        .stat-num-client { color: #16a34a; }
+        .stat-label { font-size: 11px; color: #9ca3af; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── CLOSING ── */
+        .closing { font-size: 14px; color: #6b7280; line-height: 1.7; border-top: 1px solid #f3f4f6; padding-top: 20px; }
+
+        /* ── FOOTER ── */
+        .footer { background: #f9fafb; padding: 22px 30px; text-align: center; border-top: 1px solid #e5e7eb; }
+        .footer-logo { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+        .footer-logo-admin  { color: #2563eb; }
+        .footer-logo-pro    { color: #7c3aed; }
+        .footer-logo-client { color: #16a34a; }
+        .footer p { color: #9ca3af; font-size: 11px; margin: 3px 0; }
+    </style>
+</head>
+<body>
+
+{% set isAdmin = (roleLabel == 'Administrateur') %}
+{% set isPro   = (roleLabel == 'Professionnel de santé') %}
+
+{% if isAdmin %}
+    {% set colorClass = 'admin' %}
+    {% set headerIcon = '🛡️' %}
+    {% set tipsIcon   = '⚙️' %}
+    {% set statNum1   = '∞' %}{% set statLabel1 = 'Utilisateurs' %}
+    {% set statNum2   = '100%' %}{% set statLabel2 = 'Contrôle' %}
+    {% set statNum3   = '24/7' %}{% set statLabel3 = 'Monitoring' %}
+{% elseif isPro %}
+    {% set colorClass = 'pro' %}
+    {% set headerIcon = '💼' %}
+    {% set tipsIcon   = '🩺' %}
+    {% set statNum1   = '0' %}{% set statLabel1 = 'Patients' %}
+    {% set statNum2   = '100%' %}{% set statLabel2 = 'Sécurisé' %}
+    {% set statNum3   = 'Pro' %}{% set statLabel3 = 'Accès' %}
+{% else %}
+    {% set colorClass = 'client' %}
+    {% set headerIcon = '💚' %}
+    {% set tipsIcon   = '✨' %}
+    {% set statNum1   = '0' %}{% set statLabel1 = 'Journaux' %}
+    {% set statNum2   = '∞' %}{% set statLabel2 = 'Activités' %}
+    {% set statNum3   = '24/7' %}{% set statLabel3 = 'Support' %}
+{% endif %}
+
+<div class="wrapper">
+
+    <!-- En-tête -->
+    <div class="header header-{{ colorClass }}">
+        <span class="header-icon">{{ headerIcon }}</span>
+        <div class="logo">FeelSafe</div>
+        <div class="tagline">Votre espace de bien-être mental</div>
+        <div class="role-badge">{{ roleLabel }}</div>
+    </div>
+
+    <!-- Corps -->
+    <div class="body">
+
+        <!-- Badge de bienvenue -->
+        <div class="welcome-badge badge-{{ colorClass }}">
+            {% if isAdmin %}🛡️ Accès Administrateur activé
+            {% elseif isPro %}💼 Espace Professionnel activé
+            {% else %}🌱 Compte créé avec succès
+            {% endif %}
+        </div>
+
+        <!-- Salutation -->
+        <p class="greeting greeting-{{ colorClass }}">{{ greeting }}</p>
+
+        <!-- Message principal -->
+        <p class="main-message">{{ mainMessage }}</p>
+
+        <!-- Stats bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-num stat-num-{{ colorClass }}">{{ statNum1 }}</div>
+                <div class="stat-label">{{ statLabel1 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num stat-num-{{ colorClass }}">{{ statNum2 }}</div>
+                <div class="stat-label">{{ statLabel2 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num stat-num-{{ colorClass }}">{{ statNum3 }}</div>
+                <div class="stat-label">{{ statLabel3 }}</div>
+            </div>
+        </div>
+
+        <!-- Conseils -->
+        <div class="tips-box tips-box-{{ colorClass }}">
+            <h3 class="tips-title-{{ colorClass }}">
+                {{ tipsIcon }}
+                {% if isAdmin %}Vos responsabilités clés
+                {% elseif isPro %}Pour bien démarrer
+                {% else %}Vos premiers pas
+                {% endif %}
+            </h3>
+            <ul>
+                {% for tip in tips %}
+                    <li>
+                        <span class="tip-icon">
+                            {% if isAdmin %}🔹
+                            {% elseif isPro %}🔷
+                            {% else %}✅
+                            {% endif %}
+                        </span>
+                        {{ tip }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Bouton CTA -->
+        <div class="cta-wrapper">
+            <a href="#" class="cta-button cta-{{ colorClass }}">
+                {% if isAdmin %}Accéder au panneau d'administration →
+                {% elseif isPro %}Accéder à mon espace professionnel →
+                {% else %}Commencer mon parcours →
+                {% endif %}
+            </a>
+        </div>
+
+        <!-- Clôture -->
+        <div class="closing">
+            <p>{{ closing }}</p>
+        </div>
+    </div>
+
+    <!-- Pied de page -->
+    <div class="footer">
+        <div class="footer-logo footer-logo-{{ colorClass }}">💚 FeelSafe</div>
+        <p>© {{ "now"|date("Y") }} FeelSafe — Votre espace de bien-être mental</p>
+        <p>Cet email a été généré automatiquement, merci de ne pas y répondre.</p>
+    </div>
+
+</div>
+</body>
+</html>

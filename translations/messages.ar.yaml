@@ -1,0 +1,237 @@
+# ══════════════════════════════════════════════════════════════════
+#  FeelSafe — Traductions ARABES
+#  Fichier : translations/messages.ar.yaml
+# ══════════════════════════════════════════════════════════════════
+
+# ── Général
+app:
+  name: فيل سيف
+  tagline: مساحتك للصحة النفسية بأمان تام
+  back: رجوع
+  cancel: إلغاء
+  save: حفظ
+  confirm: تأكيد
+  close: إغلاق
+  send: إرسال
+  delete: حذف
+  edit: تعديل
+  publish: نشر
+  refresh: تحديث
+  loading: جارٍ التحميل...
+  lang_switch: FR
+  yes: نعم
+  no: لا
+
+# ── Navigation
+nav:
+  dashboard: لوحة التحكم
+  journal: المفكرة العاطفية
+  support: المرافقة
+  wellness: الرفاهية
+  emergency: طوارئ
+  forum: المجتمع
+  security: الأمان والملف الشخصي
+  profile: ملفي الشخصي
+  logout: تسجيل الخروج
+  settings: الإعدادات
+
+# ── Auth — Login
+login:
+  title: تسجيل الدخول
+  subtitle: أدخل بيانات اعتمادك للوصول إلى مساحتك
+  email: عنوان البريد الإلكتروني
+  email_placeholder: بريدك@الإلكتروني.com
+  password: كلمة المرور
+  password_placeholder: "••••••••"
+  remember: تذكرني
+  submit: تسجيل الدخول
+  forgot: نسيت كلمة المرور؟
+  no_account: ليس لديك حساب؟
+  create_account: إنشاء حساب
+  or_continue: أو تابع مع
+  google: تابع مع Google
+  github: تابع مع GitHub
+  banner_title: مساحتك للصحة النفسية بأمان تام
+  banner_text: انضم إلى مجتمع داعم وتعامل مع صحتك النفسية بأدوات مخصصة لاحتياجاتك.
+  feature_privacy: سرية مضمونة
+  feature_support: مرافقة شخصية
+  feature_community: مجتمع داعم
+  feature_ai: تحقق ذكي بالذكاء الاصطناعي
+
+# ── Auth — Inscription
+register:
+  title: إنشاء حساب
+  subtitle: املأ النموذج للبدء
+  firstname: الاسم الأول
+  firstname_placeholder: اسمك الأول
+  lastname: اللقب
+  lastname_placeholder: لقبك
+  email: عنوان البريد الإلكتروني
+  email_placeholder: بريدك@الإلكتروني.com
+  phone: الهاتف
+  phone_placeholder: "+216 XX XXX XXX"
+  password: كلمة المرور
+  password_hint: 8 أحرف على الأقل مع حرف كبير وصغير ورقم
+  confirm_password: تأكيد كلمة المرور
+  role: أنا
+  role_client: عميل
+  role_pro: مهني
+  role_admin: مشرف
+  language: لغة الواجهة
+  visibility: إمكانية رؤية الملف الشخصي
+  dark_mode: تفعيل الوضع المظلم
+  dark_mode_hint: واجهة داكنة لتقليل إجهاد العينين
+  notifications: أريد استقبال إشعارات بالبريد الإلكتروني
+  data_sharing: أوافق على مشاركة بياناتي المجهولة للبحث العلمي
+  submit: إنشاء حسابي
+  already_account: هل لديك حساب بالفعل؟
+  login_link: تسجيل الدخول
+  banner_title: انضم إلى مجتمعنا الداعم
+  banner_text: أنشئ حسابك وابدأ رحلتك نحو صحة نفسية أفضل.
+  feature_secure: بيانات آمنة 100%
+  feature_multilang: واجهة متعددة اللغات
+  feature_dark: الوضع المظلم متاح
+  success: "تم إنشاء الحساب بنجاح! مرحباً بك في فيل سيف."
+
+# ── Auth — Mot de passe oublié
+forgot:
+  title: نسيت كلمة المرور
+  subtitle: أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور
+  email: عنوان البريد الإلكتروني
+  submit: إعادة تعيين كلمة المرور
+  back_login: العودة إلى تسجيل الدخول
+  check_inbox: تحقق من بريدك الإلكتروني
+  sent_message: تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني.
+
+# ── Auth — Réinitialisation
+reset:
+  title: كلمة مرور جديدة
+  subtitle: اختر كلمة مرور جديدة آمنة
+  new_password: كلمة المرور الجديدة
+  confirm_password: تأكيد كلمة المرور
+  password_hint: "8+ أحرف، حرف كبير، حرف صغير، رقم"
+  submit: حفظ كلمة المرور الجديدة
+
+# ── Dashboard Client
+dashboard:
+  welcome: "مرحباً، %name% !"
+  your_modules: وحداتك
+  emotions_overview: مشاعرك في لمحة
+  mood_avg: متوسط المزاج
+  mood_positive: مزاج إيجابي
+  wellness_score: نقاط العافية
+  emotion_distribution: توزيع المشاعر
+  recent_activity: النشاط الأخير
+  access: الوصول ←
+  book_appointment: حجز موعد
+  request_help: طلب المساعدة
+  go_journal: الوصول إلى المفكرة
+
+# ── Journal émotionnel
+journal:
+  title: المفكرة العاطفية
+  new_entry: "+ تدوينة جديدة"
+  calendar: التقويم
+  all: الكل
+  analyze: تحليل
+  listen: استماع
+  stop: إيقاف
+  mood_label: كيف تشعر؟
+  describe: صف يومك...
+  add_image: إضافة صورة
+  add_audio: إضافة صوت
+  save: حفظ
+  stats_title: الإحصائيات العاطفية
+  calc_trends: حساب الاتجاهات
+  trends_30: الاتجاهات خلال 30 يوماً
+  dominant_emotion: المشاعر المهيمنة
+  calendar_emotional: التقويم العاطفي
+  no_entries: لا توجد تدوينات لهذه الفترة
+  last_entry: آخر تدوينة
+  active_days: الأيام النشطة
+  best_streak: أفضل سلسلة
+  moods:
+    very_good: ممتاز
+    good: جيد
+    neutral: محايد
+    bad: ليس جيداً
+    very_bad: سيء جداً
+
+# ── Urgences
+emergency:
+  title: طوارئ
+  report: الإبلاغ عن حالة طوارئ
+  new: حالة طوارئ جديدة
+  manage: إدارة الطوارئ
+  manage_interventions: إدارة التدخلات
+  gravity: الخطورة
+  description: الوصف
+  type: النوع
+  status: الحالة
+  datetime: التاريخ/الوقت
+  pending: قيد الانتظار
+  active: نشطة
+  resolved: محلولة
+  critical: الطوارئ الحرجة
+  untreated: الطوارئ غير المعالجة
+  help_24: فريقنا متاح 24 ساعة لمرافقتك
+
+# ── Profil & Sécurité
+profile:
+  title: ملفي الشخصي
+  personal_info: المعلومات الشخصية
+  preferences: التفضيلات
+  security: الأمان
+  firstname: الاسم الأول
+  lastname: اللقب
+  email: البريد الإلكتروني
+  phone: الهاتف
+  dark_mode: الوضع المظلم
+  notifications: الإشعارات
+  language: لغة عرض التطبيق
+  visibility: إمكانية رؤية الملف
+  data_sharing: مشاركة البيانات
+  save_prefs: حفظ التفضيلات
+  update_password: تحديث كلمة المرور
+  old_password: كلمة المرور القديمة
+  new_password: كلمة المرور الجديدة
+  confirm_password: تأكيد كلمة المرور
+
+# ── Forum / Communauté
+forum:
+  title: المجتمع
+  new_post: منشور جديد
+  publish: نشر
+  comment: تعليق
+  reply: رد
+  no_posts: لا توجد منشورات بعد
+
+# ── Admin
+admin:
+  users_title: إدارة المستخدمين
+  search: البحث عن مستخدم...
+  all_roles: جميع الأدوار
+  total_users: إجمالي المستخدمين
+  clients: العملاء
+  professionals: المهنيون
+  admins: المشرفون
+  active: نشط
+  inactive: غير نشط
+
+# ── Erreurs
+error:
+  required: هذا الحقل إلزامي.
+  email_invalid: صيغة البريد الإلكتروني غير صحيحة.
+  email_exists: هذا البريد الإلكتروني مستخدم بالفعل.
+  password_short: يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.
+  password_mismatch: كلمتا المرور غير متطابقتين.
+  password_uppercase: يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل.
+  password_lowercase: يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل.
+  password_digit: يجب أن تحتوي كلمة المرور على رقم واحد على الأقل.
+  firstname_invalid: هذا الاسم الأول لا يبدو حقيقياً.
+  lastname_invalid: هذا اللقب لا يبدو حقيقياً.
+  phone_invalid: "صيغة غير صحيحة. استخدم: +216 XX XXX XXX"
+
+# ── Pro
+pro:
+  journal_patients: مفكرات المرضى

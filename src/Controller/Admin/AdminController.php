@@ -1,4 +1,8 @@
 <?php
+// =======================================================
+// CHEMIN : src/Controller/Admin/AdminController.php
+// ⚠️  SUPPRIMER AdminDashboardController.php si il existe !
+// =======================================================
 
 namespace App\Controller\Admin;
 
@@ -6,197 +10,205 @@ use App\Entity\Utilisateur;
 use App\Repository\UtilisateurRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin')]
 #[IsGranted('ROLE_ADMIN')]
 class AdminController extends AbstractController
 {
+    public function __construct(
+        private CsrfTokenManagerInterface   $csrfTokenManager,
+        private UserPasswordHasherInterface  $passwordHasher
+    ) {}
+
+    // DASHBOARD
     #[Route('', name: 'admin_home')]
-    #[Route('/', name: 'admin_dashboard')]
-    public function index(UtilisateurRepository $userRepository): Response
+    #[Route('/dashboard', name: 'admin_dashboard')]
+    public function index(UtilisateurRepository $repo): Response
     {
-        $users = $userRepository->findAll();
-        
-        $totalUsers = count($users);
-        $totalClients = 0;
-        $totalProfessionnels = 0;
-        $totalAdmins = 0;
-
-        foreach ($users as $user) {
-            $roles = $user->getRoles();
-            
-            if (in_array('ROLE_ADMIN', $roles)) {
-                $totalAdmins++;
-            } elseif (in_array('ROLE_PROFESSIONNEL', $roles)) {
-                $totalProfessionnels++;
-            } else {
-                $totalClients++;
-            }
+        $users = $repo->findAll();
+        $totalClients = $totalPros = $totalAdmins = 0;
+        foreach ($users as $u) {
+            $r = $u->getRoles();
+            if (in_array('ROLE_ADMIN', $r)) $totalAdmins++;
+            elseif (in_array('ROLE_PROFESSIONNEL', $r)) $totalPros++;
+            else $totalClients++;
         }
-
         $stats = [
-            'total_users' => $totalUsers,
-            'total_clients' => $totalClients,
-            'total_professionnels' => $totalProfessionnels,
-            'total_admins' => $totalAdmins,
+            'total_users'          => count($users),
+            'total_clients'        => $totalClients,
+            'total_professionnels' => $totalPros,
+            'total_admins'         => $totalAdmins,
         ];
-
+        $csrf = [];
+        foreach ($users as $u) {
+            $csrf['edit_'   . $u->getId()] = $this->csrfTokenManager->getToken('user_edit_'   . $u->getId())->getValue();
+            $csrf['delete_' . $u->getId()] = $this->csrfTokenManager->getToken('user_delete_' . $u->getId())->getValue();
+        }
+        $csrf['user_create']   = $this->csrfTokenManager->getToken('user_create')->getValue();
+        $csrf['admin_profile'] = $this->csrfTokenManager->getToken('admin_profile_edit')->getValue();
         return $this->render('admin/dashboard/index.html.twig', [
-            'users' => $users,
-            'stats' => $stats,
+            'users' => $users, 'stats' => $stats, 'csrf_tokens' => $csrf,
         ]);
     }
 
-    #[Route('/user/{id}/edit', name: 'admin_user_edit', methods: ['POST'])]
-    public function editUser(
-        Request $request,
-        Utilisateur $user,
-        EntityManagerInterface $entityManager
-    ): Response {
-        try {
-            $token = $request->request->get('_token');
-            if (!$this->isCsrfTokenValid('user_edit_' . $user->getId(), $token)) {
-                $this->addFlash('error', '❌ Token de sécurité invalide.');
-                return $this->redirectToRoute('admin_dashboard');
-            }
-
-            $prenom = trim($request->request->get('prenom'));
-            $nom = trim($request->request->get('nom'));
-            $email = trim($request->request->get('email'));
-            $telephone = trim($request->request->get('telephone'));
-            $statut = $request->request->get('statut');
-            $roles = $request->request->all('roles');
-
-            if (empty($prenom) || empty($nom) || empty($email)) {
-                $this->addFlash('error', '❌ Le prénom, nom et email sont obligatoires.');
-                return $this->redirectToRoute('admin_dashboard');
-            }
-
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $this->addFlash('error', '❌ L\'adresse email n\'est pas valide.');
-                return $this->redirectToRoute('admin_dashboard');
-            }
-
-            $user->setPrenom($prenom);
-            $user->setNom($nom);
-            $user->setEmail($email);
-            $user->setTelephone($telephone ?: null);
-            $user->setStatut($statut);
-
-            if (!empty($roles) && is_array($roles)) {
-                $user->setRoles($roles);
-            } else {
-                $user->setRoles(['ROLE_CLIENT']);
-            }
-
-            $entityManager->flush();
-
-            $this->addFlash('success', sprintf(
-                '✅ L\'utilisateur %s a été modifié avec succès !',
-                $user->getFullName()
-            ));
-
-        } catch (\Exception $e) {
-            $this->addFlash('error', '❌ Erreur : ' . $e->getMessage());
-        }
-
-        return $this->redirectToRoute('admin_dashboard');
-    }
-
-    #[Route('/user/{id}/delete', name: 'admin_user_delete', methods: ['POST'])]
-    public function deleteUser(
-        Request $request,
-        Utilisateur $user,
-        EntityManagerInterface $entityManager
-    ): Response {
-        try {
-            $token = $request->request->get('_token');
-            if (!$this->isCsrfTokenValid('user_delete_' . $user->getId(), $token)) {
-                $this->addFlash('error', '❌ Token de sécurité invalide.');
-                return $this->redirectToRoute('admin_dashboard');
-            }
-
-            /** @var Utilisateur $currentUser */
-            $currentUser = $this->getUser();
-
-            if ($user->getId() === $currentUser->getId()) {
-                $this->addFlash('error', '❌ Vous ne pouvez pas supprimer votre propre compte !');
-                return $this->redirectToRoute('admin_dashboard');
-            }
-
-            $userName = $user->getFullName();
-
-            $entityManager->remove($user);
-            $entityManager->flush();
-
-            $this->addFlash('success', sprintf(
-                '✅ L\'utilisateur %s a été supprimé avec succès.',
-                $userName
-            ));
-
-        } catch (\Exception $e) {
-            $this->addFlash('error', '❌ Erreur lors de la suppression : ' . $e->getMessage());
-        }
-
-        return $this->redirectToRoute('admin_dashboard');
-    }
-
-    #[Route('/users/export-csv', name: 'admin_users_export_csv')]
-    public function exportCsv(UtilisateurRepository $userRepository): Response
+    // CRÉER
+    #[Route('/security/user/create', name: 'admin_security_user_create', methods: ['POST'])]
+    public function createUser(Request $request, EntityManagerInterface $em): Response
     {
-        $users = $userRepository->findAll();
+        if (!$this->isCsrfTokenValid('user_create', $request->request->get('_token'))) {
+            $this->addFlash('error', '❌ Token invalide'); return $this->redirectToRoute('admin_dashboard');
+        }
+        $nom = trim($request->request->get('nom', '')); $prenom = trim($request->request->get('prenom', ''));
+        $email = trim($request->request->get('email', '')); $tel = trim($request->request->get('telephone', ''));
+        $statut = $request->request->get('statut', 'actif'); $roles = $request->request->all('roles');
+        $mdp = $request->request->get('mot_de_passe', '');
+        if (empty($nom) || empty($prenom) || empty($email)) { $this->addFlash('error', '❌ Champs obligatoires manquants'); return $this->redirectToRoute('admin_dashboard'); }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL))      { $this->addFlash('error', '❌ Email invalide'); return $this->redirectToRoute('admin_dashboard'); }
+        if (strlen($mdp) < 6)                                { $this->addFlash('error', '❌ Mot de passe min. 6 caractères'); return $this->redirectToRoute('admin_dashboard'); }
+        if (empty($roles))                                   { $this->addFlash('error', '❌ Sélectionnez un rôle'); return $this->redirectToRoute('admin_dashboard'); }
+        if ($em->getRepository(Utilisateur::class)->findOneBy(['email' => $email])) { $this->addFlash('error', '❌ Email déjà utilisé'); return $this->redirectToRoute('admin_dashboard'); }
+        try {
+            $u = new Utilisateur();
+            $u->setNom($nom); $u->setPrenom($prenom); $u->setEmail($email);
+            $u->setTelephone($tel ?: null); $u->setStatut($statut); $u->setRoles($roles);
+            $u->setMotDePasse($this->passwordHasher->hashPassword($u, $mdp));
+            $em->persist($u); $em->flush();
+            $this->addFlash('success', '✅ Utilisateur '.$u->getFullName().' créé !');
+        } catch (\Exception $e) { $this->addFlash('error', '❌ '.$e->getMessage()); }
+        return $this->redirectToRoute('admin_dashboard');
+    }
 
-        $response = new StreamedResponse(function() use ($users) {
-            $handle = fopen('php://output', 'w');
-            
-            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-            
-            fputcsv($handle, [
-                'ID',
-                'Prénom',
-                'Nom',
-                'Email',
-                'Téléphone',
-                'Rôles',
-                'Statut',
-                'Date d\'inscription'
-            ], ';');
+    // MODIFIER
+    #[Route('/security/user/{id}/update', name: 'admin_security_user_update', methods: ['POST'])]
+    public function updateUser(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        if (!$this->isCsrfTokenValid('user_edit_'.$id, $request->request->get('_token'))) {
+            $this->addFlash('error', '❌ Token invalide'); return $this->redirectToRoute('admin_dashboard');
+        }
+        $u = $em->getRepository(Utilisateur::class)->find($id);
+        if (!$u) { $this->addFlash('error', '❌ Utilisateur introuvable'); return $this->redirectToRoute('admin_dashboard'); }
+        $nom = trim($request->request->get('nom', '')); $prenom = trim($request->request->get('prenom', ''));
+        $email = trim($request->request->get('email', '')); $tel = trim($request->request->get('telephone', ''));
+        $roles = $request->request->all('roles');
+        if (empty($nom) || empty($prenom) || empty($email)) { $this->addFlash('error', '❌ Champs obligatoires manquants'); return $this->redirectToRoute('admin_dashboard'); }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL))      { $this->addFlash('error', '❌ Email invalide'); return $this->redirectToRoute('admin_dashboard'); }
+        if (empty($roles))                                   { $this->addFlash('error', '❌ Sélectionnez un rôle'); return $this->redirectToRoute('admin_dashboard'); }
+        $ex = $em->getRepository(Utilisateur::class)->findOneBy(['email' => $email]);
+        if ($ex && $ex->getId() !== $u->getId()) { $this->addFlash('error', '❌ Email déjà utilisé'); return $this->redirectToRoute('admin_dashboard'); }
+        try {
+            $u->setNom($nom); $u->setPrenom($prenom); $u->setEmail($email);
+            $u->setTelephone($tel ?: null);
+            // ⛔ Statut non modifiable manuellement — calculé via last_login
+            $u->setRoles($roles);
+            $plain = $request->request->get('mot_de_passe', '');
+            if (!empty($plain)) {
+                if (strlen($plain) < 6) { $this->addFlash('error', '❌ Mot de passe min. 6 caractères'); return $this->redirectToRoute('admin_dashboard'); }
+                $u->setMotDePasse($this->passwordHasher->hashPassword($u, $plain));
+            }
+            $em->flush();
+            $this->addFlash('success', '✅ Utilisateur '.$u->getFullName().' modifié !');
+        } catch (\Exception $e) { $this->addFlash('error', '❌ '.$e->getMessage()); }
+        return $this->redirectToRoute('admin_dashboard');
+    }
 
-            foreach ($users as $user) {
-                $roles = $user->getRoles();
-                $roleText = '';
-                
-                if (in_array('ROLE_ADMIN', $roles)) {
-                    $roleText = 'Administrateur';
-                } elseif (in_array('ROLE_PROFESSIONNEL', $roles)) {
-                    $roleText = 'Professionnel';
-                } else {
-                    $roleText = 'Client';
-                }
+    // SUPPRIMER
+    #[Route('/security/user/{id}/delete', name: 'admin_user_delete', methods: ['POST'])]
+    public function deleteUser(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        if (!$this->isCsrfTokenValid('user_delete_'.$id, $request->request->get('_token'))) {
+            $this->addFlash('error', '❌ Token invalide'); return $this->redirectToRoute('admin_dashboard');
+        }
+        $u = $em->getRepository(Utilisateur::class)->find($id);
+        if (!$u) { $this->addFlash('error', '❌ Introuvable'); return $this->redirectToRoute('admin_dashboard'); }
+        /** @var Utilisateur $me */ $me = $this->getUser();
+        if ($u->getId() === $me->getId()) { $this->addFlash('error', '❌ Vous ne pouvez pas supprimer votre propre compte'); return $this->redirectToRoute('admin_dashboard'); }
+        try {
+            $name = $u->getFullName(); $em->remove($u); $em->flush();
+            $this->addFlash('success', '✅ Utilisateur '.$name.' supprimé !');
+        } catch (\Exception $e) { $this->addFlash('error', '❌ '.$e->getMessage()); }
+        return $this->redirectToRoute('admin_dashboard');
+    }
 
-                fputcsv($handle, [
-                    $user->getId(),
-                    $user->getPrenom(),
-                    $user->getNom(),
-                    $user->getEmail(),
-                    $user->getTelephone() ?? '',
-                    $roleText,
-                    $user->getStatut(),
-                    $user->getDateCreation() ? $user->getDateCreation()->format('d/m/Y H:i') : ''
+    // PROFIL ADMIN
+    #[Route('/profile/edit', name: 'admin_profile_edit', methods: ['POST'])]
+    public function editProfile(Request $request, EntityManagerInterface $em): Response
+    {
+        if (!$this->isCsrfTokenValid('admin_profile_edit', $request->request->get('_token'))) {
+            $this->addFlash('error', '❌ Token invalide'); return $this->redirectToRoute('admin_dashboard');
+        }
+        /** @var Utilisateur $u */ $u = $this->getUser();
+        $nom = trim($request->request->get('nom', '')); $prenom = trim($request->request->get('prenom', ''));
+        $email = trim($request->request->get('email', '')); $tel = trim($request->request->get('telephone', ''));
+        if (empty($nom) || empty($prenom) || empty($email)) { $this->addFlash('error', '❌ Champs obligatoires manquants'); return $this->redirectToRoute('admin_dashboard'); }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $this->addFlash('error', '❌ Email invalide'); return $this->redirectToRoute('admin_dashboard'); }
+        $ex = $em->getRepository(Utilisateur::class)->findOneBy(['email' => $email]);
+        if ($ex && $ex->getId() !== $u->getId()) { $this->addFlash('error', '❌ Email déjà utilisé'); return $this->redirectToRoute('admin_dashboard'); }
+        try {
+            $u->setNom($nom); $u->setPrenom($prenom); $u->setEmail($email); $u->setTelephone($tel ?: null);
+            $em->flush(); $this->addFlash('success', '✅ Profil modifié !');
+        } catch (\Exception $e) { $this->addFlash('error', '❌ '.$e->getMessage()); }
+        return $this->redirectToRoute('admin_dashboard');
+    }
+
+    // EXPORT CSV
+    #[Route('/users/export-csv', name: 'admin_users_export_csv')]
+    public function exportCsv(UtilisateurRepository $repo): Response
+    {
+        $users = $repo->findAll();
+        $response = new StreamedResponse(function () use ($users) {
+            $h = fopen('php://output', 'w');
+            fprintf($h, chr(0xEF).chr(0xBB).chr(0xBF));
+            fputcsv($h, ['ID','Prénom','Nom','Email','Téléphone','Rôle','Statut','Inscription','Dernière connexion'], ';');
+            foreach ($users as $u) {
+                $r = $u->getRoles();
+                $roleText = in_array('ROLE_ADMIN',$r) ? 'Administrateur' : (in_array('ROLE_PROFESSIONNEL',$r) ? 'Professionnel' : 'Client');
+                fputcsv($h, [
+                    $u->getId(), $u->getPrenom(), $u->getNom(), $u->getEmail(),
+                    $u->getTelephone() ?? '', $roleText, $u->getStatut(),
+                    $u->getDateCreation()?->format('d/m/Y H:i') ?? '',
+                    $u->getLastLogin()?->format('d/m/Y H:i') ?? 'Jamais connecté',
                 ], ';');
             }
-
-            fclose($handle);
+            fclose($h);
         });
-
         $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-        $response->headers->set('Content-Disposition', 'attachment; filename=\"utilisateurs_' . date('Y-m-d_H-i') . '.csv\"');
-
+        $response->headers->set('Content-Disposition', 'attachment; filename="utilisateurs_'.date('Y-m-d_H-i').'.csv"');
         return $response;
+    }
+
+    // 🤖 API IA — INACTIFS
+    #[Route('/users/inactifs', name: 'admin_users_inactifs_api', methods: ['GET'])]
+    public function getInactifsApi(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $seuil  = max(1, (int) $request->query->get('jours', 7));
+        $depuis = new \DateTime("-{$seuil} days");
+        $qb     = $em->createQueryBuilder();
+        $list   = $qb->select('u')->from(Utilisateur::class, 'u')
+            ->where($qb->expr()->orX(
+                $qb->expr()->isNull('u.lastLogin'),
+                $qb->expr()->lt('u.lastLogin', ':depuis')
+            ))
+            ->setParameter('depuis', $depuis)
+            ->orderBy('u.lastLogin', 'ASC')
+            ->getQuery()->getResult();
+        $now  = new \DateTime();
+        $data = array_map(fn(Utilisateur $u): array => [
+            'id'            => $u->getId(),
+            'nom'           => $u->getFullName(),
+            'email'         => $u->getEmail(),
+            'roles'         => $u->getRoles(),
+            'statut'        => $u->getStatut(),
+            'last_login'    => $u->getLastLogin()?->format('d/m/Y H:i'),
+            'jours_inactif' => $u->getLastLogin() ? (int)$now->diff($u->getLastLogin())->days : null,
+        ], $list);
+        return new JsonResponse(['total_inactifs' => count($data), 'seuil_jours' => $seuil, 'utilisateurs' => $data]);
     }
 }
