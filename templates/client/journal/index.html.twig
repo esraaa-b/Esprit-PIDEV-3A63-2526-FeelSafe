@@ -1,6 +1,12 @@
 {% extends "dashboard/base.html.twig" %}
 
 {% block content %}
+<script id="journals-data" type="application/json">
+{{ journals|map(j => {
+    'emotion': j.emotion.value,
+    'date': j.dateCreation|date('Y-m-d')
+})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_QUOT'))|raw }}
+</script>
 <div x-data="journalApp()"
      @flash-message.window="showFlashMessage($event.detail)"
      @clear-flash.window="clearFlashMessage()">
@@ -34,6 +40,52 @@
                     </svg>
                     Nouvelle entrée
                 </button>
+            </div>
+        </div>
+
+      <div x-show="tresMalPopupOpen" x-cloak
+     class="fixed inset-0 flex items-center justify-center"
+     style="display:none; background:rgba(0,0,0,0.6); z-index:999999; isolation:isolate;"
+             @keydown.escape.window="tresMalPopupOpen = false"
+             @click.self="tresMalPopupOpen = false">
+            <div class="w-full max-w-sm rounded-2xl shadow-2xl flex-shrink-0"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95">
+                <div class="flex flex-col items-center gap-3 px-6 py-7" style="background:#1a3a5c;">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                         style="background:rgba(255,255,255,0.13);">
+                        <span style="color:#e06c7b; font-size:22px; line-height:1;">♥</span>
+                    </div>
+                    <span style="color:rgba(255,255,255,0.55); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600;">
+                        FEELSAFE VOUS ACCOMPAGNE
+                    </span>
+                    <h3 style="color:white; font-size:16px; font-weight:700; margin:0;">
+                        Nous sommes là pour vous
+                    </h3>
+                </div>
+                <div class="flex flex-col items-center gap-4 px-6 py-6 bg-card">
+                    <p class="text-center text-sm text-muted-foreground" style="line-height:1.8;">
+                        Cela fait deux jours que vous vous sentez très mal.<br>
+                        Vous n'êtes pas seul(e) — voulez-vous en parler<br>
+                        avec notre assistant IA ?
+                    </p>
+                    <button type="button"
+                            @click="tresMalPopupOpen = false; $nextTick(() => document.getElementById('ai-drawer').dispatchEvent(new CustomEvent('open-drawer')))"
+                            class="w-full py-3 rounded-xl font-bold text-sm transition-all hover:opacity-90 active:scale-95"
+                            style="background:#1a3a5c; color:white; border:1px solid #2d5a8e;">
+                        💬 &nbsp;Oui, je veux parler
+                    </button>
+                    <button type="button"
+                            @click="tresMalPopupOpen = false"
+                            class="w-full py-2.5 rounded-xl text-sm transition-colors hover:bg-secondary"
+                            style="color:#6b7280; border:1px solid #e5e7eb; background:transparent;">
+                        Non merci, peut-être plus tard
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -102,72 +154,77 @@
 
         {# ── Main layout: entries left, AI panel right ── #}
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
-        <div class="min-w-0">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm mb-4">
-                <button type="button" @click="activeMood = 'all'"
-                        :class="activeMood === 'all' ? 'bg-primary text-white border-primary' : 'border-input hover:bg-secondary'"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition">
-                    Tous
-                </button>
-                {% for mood in moodOptions %}
-                    <button type="button" @click="activeMood = '{{ mood.value }}'"
-                            :class="activeMood === '{{ mood.value }}' ? '{{ mood.color() }}' : '{{ mood.inactiveColor() }}'"
+
+            {# LEFT — journal entries #}
+            <div class="min-w-0">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm mb-4">
+                    <button type="button" @click="activeMood = 'all'"
+                            :class="activeMood === 'all' ? 'bg-primary text-white border-primary' : 'border-input hover:bg-secondary'"
                             class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition">
-                        <span>{{ mood.icon() }}</span>
-                        <span>{{ mood.label() }}</span>
+                        Tous
                     </button>
-                {% endfor %}
-            </div>
-
-            {% for entry in journals %}
-                <div x-show="activeMood === 'all' || activeMood === '{{ entry.emotion.value }}'"
-                     x-cloak
-                     class="bg-card p-4 rounded-xl border mb-4 journal-card hover-lift">
-
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-semibold text-lg">
-                            Entrée du {{ entry.dateCreation|date('d/m/Y') }} à {{ entry.dateCreation|date('H:i') }}
-                        </h3>
-                        <span class="{{ entry.emotion.color() }} px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 emotion-badge">
-                            <span>{{ entry.emotion.icon() }}</span>
-                            <span>{{ entry.emotion.label() }}</span>
-                        </span>
-                    </div>
-
-                    {% if entry.contenu %}
-                        <div class="mt-3 p-3 bg-secondary/10 rounded-lg">
-                            <p class="text-foreground whitespace-pre-wrap">{{ entry.contenu|nl2br }}</p>
-                        </div>
-                    {% endif %}
-
-                    {% if entry.image %}
-                        <div class="mt-4 flex justify-center">
-                            <img src="{{ asset('uploads/journals/images/' ~ entry.image) }}"
-                                 alt="Journal image"
-                                 class="rounded-lg max-w-md w-full object-cover border border-border hover-zoom">
-                        </div>
-                    {% endif %}
-
-                    {% if entry.audio %}
-                        <div class="mt-4">
-                            <audio controls class="w-full">
-                                <source src="{{ asset('uploads/journals/audio/' ~ entry.audio) }}" type="audio/mpeg">
-                            </audio>
-                        </div>
-                    {% endif %}
-
-                    <div class="flex items-center justify-end gap-3 mt-4 pt-3 border-t border-border">
-                        <button type="button"
-                        @click="openEditModal({{ entry.id }}, {{ entry.emotion.value|json_encode|e('html_attr') }}, {{ entry.contenu|json_encode|e('html_attr') }}, {{ (entry.image ? asset('uploads/journals/images/' ~ entry.image) : '')|json_encode|e('html_attr') }}, {{ (entry.audio ? asset('uploads/journals/audio/' ~ entry.audio) : '')|json_encode|e('html_attr') }}, {{ csrf_token('edit_journal_' ~ entry.id)|json_encode|e('html_attr') }})"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                            Modifier
+                    {% for mood in moodOptions %}
+                        <button type="button" @click="activeMood = '{{ mood.value }}'"
+                                :class="activeMood === '{{ mood.value }}' ? '{{ mood.color() }}' : '{{ mood.inactiveColor() }}'"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition">
+                            <span>{{ mood.icon() }}</span>
+                            <span>{{ mood.label() }}</span>
                         </button>
+                    {% endfor %}
+                </div>
 
-                        <div x-data="{ showDeleteModal: false }" class="inline">
-                            <button type="button" @click="showDeleteModal = true"
+                {% for entry in journals %}
+                    {# ── single journal card ── #}
+                    <div x-show="activeMood === 'all' || activeMood === '{{ entry.emotion.value }}'"
+                         x-cloak
+                         class="bg-card p-4 rounded-xl border mb-4 journal-card hover-lift">
+
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-lg">
+                                Entrée du {{ entry.dateCreation|date('d/m/Y') }} à {{ entry.dateCreation|date('H:i') }}
+                            </h3>
+                            <span class="{{ entry.emotion.color() }} px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 emotion-badge">
+                                <span>{{ entry.emotion.icon() }}</span>
+                                <span>{{ entry.emotion.label() }}</span>
+                            </span>
+                        </div>
+
+                        {% if entry.contenu %}
+                            <div class="mt-3 p-3 bg-secondary/10 rounded-lg">
+                                <p class="text-foreground whitespace-pre-wrap">{{ entry.contenu|nl2br }}</p>
+                            </div>
+                        {% endif %}
+
+                        {% if entry.image %}
+                            <div class="mt-4 flex justify-center">
+                                <img src="{{ asset('uploads/journals/images/' ~ entry.image) }}"
+                                     alt="Journal image"
+                                     class="rounded-lg max-w-md w-full object-cover border border-border hover-zoom">
+                            </div>
+                        {% endif %}
+
+                        {% if entry.audio %}
+                            <div class="mt-4">
+                                <audio controls class="w-full">
+                                    <source src="{{ asset('uploads/journals/audio/' ~ entry.audio) }}">
+                                </audio>
+                            </div>
+                        {% endif %}
+
+                        {# ── action buttons ── #}
+                        <div class="flex items-center justify-end gap-3 mt-4 pt-3 border-t border-border">
+
+                            <button type="button"
+                                    @click="openEditModal({{ entry.id }}, {{ entry.emotion.value|json_encode|e('html_attr') }}, {{ entry.contenu|json_encode|e('html_attr') }}, {{ (entry.image ? asset('uploads/journals/images/' ~ entry.image) : '')|json_encode|e('html_attr') }}, {{ (entry.audio ? asset('uploads/journals/audio/' ~ entry.audio) : '')|json_encode|e('html_attr') }}, {{ csrf_token('edit_journal_' ~ entry.id)|json_encode|e('html_attr') }})"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Modifier
+                            </button>
+
+                            <button type="button"
+                                    @click.stop="$dispatch('open-delete-modal', { id: {{ entry.id }}, token: '{{ csrf_token('delete' ~ entry.id) }}', action: '{{ path('app_journal_delete', {id: entry.id}) }}' })"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
                                     style="color:#dc2626; background:rgba(220,38,38,0.05);">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -175,70 +232,41 @@
                                 </svg>
                                 Supprimer
                             </button>
-                           <button type="button"
-                               @click="window.dispatchEvent(new CustomEvent('ai-analyse', { detail: { id: {{ entry.id }} } }))"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-                                style="color:#16a34a; background:rgba(22,163,74,0.05);">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.346A3.5 3.5 0 0114.5 20.5h-5a3.5 3.5 0 01-2.347-.9l-.347-.347z"/>
-                            </svg>
-                            Analyser
-                        </button>
 
-                            <div x-show="showDeleteModal" x-cloak
-                                 class="fixed inset-0 z-[200] flex items-center justify-center p-4"
-                                 style="background:rgba(0,0,0,0.5);"
-                                 @keydown.escape.window="showDeleteModal = false"
-                                 @click="showDeleteModal = false">
-                                <div class="bg-card rounded-lg border border-border w-full max-w-md shadow-2xl p-6" @click.stop>
-                                    <div class="flex items-start gap-4">
-                                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1">
-                                            <h3 class="text-lg font-semibold text-foreground mb-1">Confirmer la suppression</h3>
-                                            <p class="text-sm text-muted-foreground mb-4">Êtes-vous sûr de vouloir supprimer cette entrée ? Cette action est irréversible.</p>
-                                            <div class="flex justify-end gap-2">
-                                                <button type="button" @click="showDeleteModal = false"
-                                                        class="px-3 py-1.5 text-xs font-medium rounded-md border border-input hover:bg-secondary transition-colors">
-                                                    Annuler
-                                                </button>
-                                                <form method="post" action="{{ path('app_journal_delete', {id: entry.id}) }}" class="inline">
-                                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entry.id) }}">
-                                                    <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors">
-                                                        Supprimer
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            <button type="button"
+                                    @click="window.dispatchEvent(new CustomEvent('ai-analyse', { detail: { id: {{ entry.id }} } }))"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
+                                    style="color:#16a34a; background:rgba(22,163,74,0.05);">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.346A3.5 3.5 0 0114.5 20.5h-5a3.5 3.5 0 01-2.347-.9l-.347-.347z"/>
+                                </svg>
+                                Analyser
+                            </button>
+
+                        </div>{# end action buttons #}
+
+                    </div>{# end journal card #}
+
+                {% else %}
+                    <div class="text-center py-16 bg-card rounded-xl border border-border">
+                        <svg class="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
+                            <path d="M8 11h8M8 6h8"></path>
+                        </svg>
+                        <p class="text-lg font-medium text-foreground">Aucune entrée pour le moment</p>
+                        <p class="text-sm text-muted-foreground mt-1">Utilisez le bouton "Nouvelle entrée" pour commencer</p>
                     </div>
-                </div>
-            {% else %}
-                <div class="text-center py-16 bg-card rounded-xl border border-border">
-                    <svg class="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
-                        <path d="M8 11h8M8 6h8"></path>
-                    </svg>
-                    <p class="text-lg font-medium text-foreground">Aucune entrée pour le moment</p>
-                    <p class="text-sm text-muted-foreground mt-1">Utilisez le bouton "Nouvelle entrée" pour commencer</p>
-                </div>
-            {% endfor %}
-        </div>{# end entries column #}
+                {% endfor %}
 
-        {# RIGHT — AI panel sticky sidebar #}
-         <div class="sticky top-6 space-y-4">
-            {% include 'client/journal/_ai_panel.html.twig' %}
-        </div>
+            </div>{# end entries column #}
 
-        </div>{# end flex row #}
+            {# RIGHT — AI panel sticky sidebar #}
+            <div class="sticky top-6 space-y-4">
+                {% include 'client/journal/_ai_panel.html.twig' %}
+            </div>
 
+        </div>{# end grid #}
 
         {# ── Emotional stats section ── #}
         <div class="bg-card rounded-lg border border-border p-6">
@@ -251,8 +279,8 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button" @click="openCalculationModal()"
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm"
-                                style="background-color:#d1fae5; color:#065f46; border:1px solid #bbf7d0;">
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm"
+                            style="background-color:#d1fae5; color:#065f46; border:1px solid #bbf7d0;">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                         </svg>
@@ -260,9 +288,7 @@
                     </button>
                 </div>
             </div>
-
             <p class="text-muted-foreground mb-6">Vos émotions en un coup d'œil</p>
-
             <div class="flex flex-wrap gap-4 justify-between">
                 {% for mood in moodOptions %}
                     {% set moodCount = moodStats[mood.value] ?? 0 %}
@@ -296,11 +322,9 @@
                         </button>
                     </div>
                     <p class="text-muted-foreground mb-6">Prenez un moment pour exprimer comment vous vous sentez</p>
-
                     <form method="POST" action="{{ path('app_journal_new') }}" enctype="multipart/form-data">
                         <input type="hidden" name="_token" value="{{ csrf_token('create_journal') }}">
                         <input type="hidden" name="emotion" :value="selectedMood">
-
                         <div class="mb-6">
                             <p class="text-sm font-medium text-foreground mb-3">Comment vous sentez-vous ?</p>
                             <div class="flex flex-wrap gap-2">
@@ -313,11 +337,24 @@
                                 {% endfor %}
                             </div>
                         </div>
-
-                        <textarea name="contenu" x-model="newEntry"
+                        <div class="flex items-center gap-1 p-2 rounded-lg border border-input bg-secondary/30 mb-2 flex-wrap">
+                            <button type="button" @click="wrapSelection('newEntry', '**', '**', 'texte en gras')"
+                                    class="px-2.5 py-1.5 text-sm font-bold rounded border border-input bg-card hover:bg-secondary transition-colors" title="Gras">B</button>
+                            <button type="button" @click="insertAtLineStart('newEntry', '• ')"
+                                    class="px-2.5 py-1.5 text-lg rounded border border-input bg-card hover:bg-secondary transition-colors leading-none" title="Puce">•</button>
+                            <div class="w-px h-5 bg-border mx-1"></div>
+                            <button type="button" @click="insertText('newEntry', '😊')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">😊</button>
+                            <button type="button" @click="insertText('newEntry', '😢')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">😢</button>
+                            <button type="button" @click="insertText('newEntry', '💪')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">💪</button>
+                            <button type="button" @click="insertText('newEntry', '❤️')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">❤️</button>
+                            <button type="button" @click="insertText('newEntry', '😤')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">😤</button>
+                            <button type="button" @click="insertText('newEntry', '😴')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">😴</button>
+                        </div>
+                        <textarea name="contenu" x-model="newEntry" id="newEntryTextarea"
                                   placeholder="Décrivez votre journée (optionnel si vous ajoutez une image ou un audio)..."
-                                  class="w-full min-h-32 px-3 py-2 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4"></textarea>
-
+                                  class="w-full min-h-32 px-3 py-2 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-1"></textarea>
+                        <p x-show="newEntry" class="text-xs text-muted-foreground mb-3 px-1"
+                           x-text="'Aperçu : ' + newEntry.replace(/\*\*(.*?)\*\*/g, '$1')"></p>
                         <div class="space-y-3 mb-6">
                             <label class="inline-flex items-center px-3 py-1.5 text-sm rounded-lg border border-input hover:bg-secondary cursor-pointer transition-colors">
                                 <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -328,13 +365,11 @@
                                 Ajouter une image
                                 <input type="file" name="image" id="newJournalImageInput" @change="onImageUpload" class="hidden" accept="image/*">
                             </label>
-
                             <template x-if="imagePreview">
                                 <div class="max-h-44 overflow-hidden rounded-lg border">
                                     <img :src="imagePreview" alt="Aperçu" class="w-full h-full object-contain">
                                 </div>
                             </template>
-
                             <div class="flex flex-wrap gap-2">
                                 <button type="button" @click="toggleRecording()"
                                         :class="isRecording ? 'bg-red-500 text-white border-red-500' : ''"
@@ -353,7 +388,6 @@
                                     <input type="file" name="audio" id="newJournalAudioInput" @change="onAudioUpload" class="hidden" accept="audio/*">
                                 </label>
                             </div>
-
                             <template x-if="audioUrl">
                                 <div>
                                     <p class="text-sm text-muted-foreground mb-1">Aperçu audio :</p>
@@ -363,7 +397,6 @@
                                 </div>
                             </template>
                         </div>
-
                         <div class="border-t border-border pt-4 flex justify-end gap-2">
                             <button type="button" @click="resetForm()"
                                     class="px-4 py-2 rounded-lg border border-input hover:bg-secondary transition-colors">
@@ -401,7 +434,6 @@
                         <input type="hidden" name="emotion" :value="editEmotion">
                         <input type="hidden" name="remove_image" :value="removeImageFlag">
                         <input type="hidden" name="remove_audio" :value="removeAudioFlag">
-
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-foreground mb-2">Comment vous sentiez-vous ?</label>
                             <div class="flex flex-wrap gap-2">
@@ -414,14 +446,26 @@
                                 {% endfor %}
                             </div>
                         </div>
-
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-foreground mb-2">Description</label>
-                            <textarea name="contenu" x-model="editContenu" rows="4"
-                                      class="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none"></textarea>
+                            <div class="flex items-center gap-1 p-2 rounded-lg border border-input bg-secondary/30 mb-2 flex-wrap">
+                                <button type="button" @click="wrapSelection('editContenu', '**', '**', 'texte en gras')"
+                                        class="px-2.5 py-1.5 text-sm font-bold rounded border border-input bg-card hover:bg-secondary transition-colors" title="Gras">B</button>
+                                <button type="button" @click="insertAtLineStart('editContenu', '• ')"
+                                        class="px-2.5 py-1.5 text-lg rounded border border-input bg-card hover:bg-secondary transition-colors leading-none" title="Puce">•</button>
+                                <div class="w-px h-5 bg-border mx-1"></div>
+                                <button type="button" @click="insertText('editContenu', '😊')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">😊</button>
+                                <button type="button" @click="insertText('editContenu', '😢')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">😢</button>
+                                <button type="button" @click="insertText('editContenu', '💪')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">💪</button>
+                                <button type="button" @click="insertText('editContenu', '❤️')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">❤️</button>
+                                <button type="button" @click="insertText('editContenu', '😤')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">😤</button>
+                                <button type="button" @click="insertText('editContenu', '😴')" class="px-2 py-1.5 rounded hover:bg-secondary transition-colors text-base">😴</button>
+                            </div>
+                            <textarea name="contenu" x-model="editContenu" id="editContenuTextarea" rows="4"
+                                      class="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-primary/50 focus:outline-none mb-1"></textarea>
+                            <p x-show="editContenu" class="text-xs text-muted-foreground mb-3 px-1"
+                               x-text="'Aperçu : ' + editContenu.replace(/\*\*(.*?)\*\*/g, '$1')"></p>
                         </div>
-
-                        {# Image section #}
                         <div class="mb-6 border-b border-border pb-6">
                             <h3 class="text-md font-medium text-foreground mb-3">Image</h3>
                             <template x-if="editImageUrl && removeImageFlag === '0'">
@@ -452,8 +496,6 @@
                                 <input type="file" name="image" class="hidden" accept="image/*" @change="onEditImageUpload">
                             </label>
                         </div>
-
-                        {# Audio section #}
                         <div class="mb-6 border-b border-border pb-6">
                             <h3 class="text-md font-medium text-foreground mb-3">Audio</h3>
                             <template x-if="editAudioUrl && removeAudioFlag === '0'">
@@ -482,7 +524,6 @@
                                 <input type="file" name="audio" class="hidden" accept="audio/*" @change="onEditAudioUpload">
                             </label>
                         </div>
-
                         <div class="flex justify-end gap-3 pt-4">
                             <button type="button" @click="closeEditModal()"
                                     class="px-4 py-2 rounded-lg border border-input hover:bg-secondary transition-colors">Annuler</button>
@@ -551,13 +592,48 @@
             </div>
         </div>
 
+        {# ── Global delete modal — lives outside cards so no hover-lift interference ── #}
+        <div x-show="deleteModal.open" x-cloak
+             class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+             style="background:rgba(0,0,0,0.5);"
+             @open-delete-modal.window="deleteModal.open = true; deleteModal.id = $event.detail.id; deleteModal.token = $event.detail.token; deleteModal.action = $event.detail.action"
+             @keydown.escape.window="deleteModal.open = false"
+             @click.self="deleteModal.open = false">
+            <div class="bg-card rounded-lg border border-border w-full max-w-md shadow-2xl p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-foreground mb-1">Confirmer la suppression</h3>
+                        <p class="text-sm text-muted-foreground mb-4">Êtes-vous sûr de vouloir supprimer cette entrée ? Cette action est irréversible.</p>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" @click="deleteModal.open = false"
+                                    class="px-3 py-1.5 text-xs font-medium rounded-md border border-input hover:bg-secondary transition-colors">
+                                Annuler
+                            </button>
+                            <form method="post" :action="deleteModal.action" class="inline">
+                                <input type="hidden" name="_token" :value="deleteModal.token">
+                                <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors">
+                                    Supprimer
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>{# end max-w-7xl #}
 
     {% include 'client/journal/_calendar_heatmap.html.twig' %}
 
-</div>{# end x-data #}
+</div>{# end x-data journalApp #}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
 
 <script>
 function journalApp() {
@@ -574,6 +650,7 @@ function journalApp() {
         audioFile: null,
         imageFile: null,
         imagePreview: null,
+        tresMalPopupOpen: false,
 
         // Calendar
         calendarModalOpen: false,
@@ -601,23 +678,26 @@ function journalApp() {
         // Flash
         flashMessage: { show: false, text: '', type: 'success', timeout: null },
 
+        // Delete modal
+        deleteModal: { open: false, id: null, token: '', action: '' },
+
         // Charts
         calculationChartModalOpen: false,
         calculationLoading: false,
         calculationChart: null,
 
-        init() {},
+       init() {
+    this.$nextTick(() => this.checkTresMalWarning());
+},
 
         // ── Calendar ──────────────────────────────────────────────
         openCalendarModal() {
             const raw = JSON.parse(document.getElementById('calendar-data').textContent);
             this._calendarData = raw;
-
             let total = 0, active = 0;
             raw.forEach(d => { total += d.count; if (d.count > 0) active++; });
             this.calendarTotalEntries = total;
             this.calendarActiveDays  = active;
-
             const dates = raw.filter(d => d.count > 0).map(d => d.date).sort();
             let streak = 0, best = 0;
             dates.forEach((date, i) => {
@@ -628,11 +708,27 @@ function journalApp() {
             });
             this.calendarLongestStreak = best;
             this.calendarModalOpen = true;
-
             setTimeout(() => document.dispatchEvent(new CustomEvent('emotion-calendar:open', {
                 detail: { calendarData: this._calendarData }
             })), 60);
         },
+checkTresMalWarning() {
+    const storageKey = 'feelsafe_tresMal_shown';
+    const today      = new Date().toISOString().slice(0, 10);
+    const yesterday  = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    if (localStorage.getItem(storageKey) === today) return; // already shown today — stop here
+
+    const journals = JSON.parse(document.getElementById('journals-data')?.textContent || '[]');
+    const hasTodayBad     = journals.some(j => j.emotion === 'tres_mal' && j.date === today);
+    const hasYesterdayBad = journals.some(j => j.emotion === 'tres_mal' && j.date === yesterday);
+
+    if (hasTodayBad && hasYesterdayBad) {
+        localStorage.setItem(storageKey, today);
+        setTimeout(() => { this.tresMalPopupOpen = true; }, 1200);
+    }
+    // if condition not met → tresMalPopupOpen stays false, nothing shows
+},
 
         closeCalendarModal() {
             this.calendarModalOpen = false;
@@ -654,7 +750,6 @@ function journalApp() {
         openCalculationModal() {
             this.calculationChartModalOpen = true;
             this.calculationLoading = true;
-
             fetch('{{ path('app_tendance_calculate_json') }}', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
@@ -680,7 +775,6 @@ function journalApp() {
             const ctx = document.getElementById('emotionCalculationChart');
             if (!ctx) return;
             if (this.calculationChart) { this.calculationChart.destroy(); this.calculationChart = null; }
-
             const DATASETS = [
                 { key: 'tres_bien', label: '😊 Très bien', color: '#16a34a' },
                 { key: 'bien',      label: '🙂 Bien',      color: '#86efac' },
@@ -688,7 +782,6 @@ function journalApp() {
                 { key: 'pas_bien',  label: '😕 Pas bien',  color: '#fecaca' },
                 { key: 'tres_mal',  label: '😢 Très mal',  color: '#dc2626' },
             ];
-
             this.calculationChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -712,7 +805,6 @@ function journalApp() {
         handleResetSubmit(event) {
             event.preventDefault();
             this.calculationLoading = true;
-
             fetch('{{ path('app_tendance_reset_json') }}', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
@@ -727,6 +819,43 @@ function journalApp() {
             })
             .catch(() => this.showFlashMessage({ text: 'Erreur lors de la réinitialisation', type: 'error' }))
             .finally(() => { this.calculationLoading = false; });
+        },
+
+        // ── Rich text toolbar helpers ─────────────────────────────
+        wrapSelection(model, prefix, suffix, placeholder) {
+            const id = model === 'newEntry' ? 'newEntryTextarea' : 'editContenuTextarea';
+            const el = document.getElementById(id);
+            if (!el) return;
+            const start = el.selectionStart, end = el.selectionEnd;
+            const val = el.value;
+            const selected = val.slice(start, end) || placeholder;
+            const newVal = val.slice(0, start) + prefix + selected + suffix + val.slice(end);
+            this[model] = newVal;
+            this.$nextTick(() => {
+                el.focus();
+                el.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
+            });
+        },
+
+        insertAtLineStart(model, marker) {
+            const id = model === 'newEntry' ? 'newEntryTextarea' : 'editContenuTextarea';
+            const el = document.getElementById(id);
+            if (!el) return;
+            const pos = el.selectionStart;
+            const val = el.value;
+            const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
+            this[model] = val.slice(0, lineStart) + marker + val.slice(lineStart);
+            this.$nextTick(() => { el.focus(); el.setSelectionRange(pos + marker.length, pos + marker.length); });
+        },
+
+        insertText(model, text) {
+            const id = model === 'newEntry' ? 'newEntryTextarea' : 'editContenuTextarea';
+            const el = document.getElementById(id);
+            if (!el) return;
+            const pos = el.selectionStart;
+            const val = el.value;
+            this[model] = val.slice(0, pos) + text + val.slice(pos);
+            this.$nextTick(() => { el.focus(); el.setSelectionRange(pos + text.length, pos + text.length); });
         },
 
         // ── Edit modal ────────────────────────────────────────────
@@ -765,10 +894,14 @@ function journalApp() {
                     this.mediaRecorder = new MediaRecorder(stream);
                     this.audioChunks = [];
                     this.mediaRecorder.ondataavailable = e => this.audioChunks.push(e.data);
-                    this.mediaRecorder.onstop = () => {
-                        this.audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                        this.audioUrl  = URL.createObjectURL(this.audioBlob);
-                        this.audioFile = new File([this.audioBlob], 'recording.webm', { type: 'audio/webm' });
+                    this.mediaRecorder.onstop = async () => {
+                        const webmBlob  = new Blob(this.audioChunks, { type: 'audio/webm' });
+                        const arrayBuf  = await webmBlob.arrayBuffer();
+                        const audioBuf  = await new AudioContext().decodeAudioData(arrayBuf);
+                        const mp3Blob   = this._encodeMp3(audioBuf);
+                        this.audioBlob  = mp3Blob;
+                        this.audioUrl   = URL.createObjectURL(mp3Blob);
+                        this.audioFile  = new File([mp3Blob], 'recording.mp3', { type: 'audio/mpeg' });
                         const dt = new DataTransfer();
                         dt.items.add(this.audioFile);
                         const input = document.querySelector('#newJournalAudioInput');
@@ -784,6 +917,29 @@ function journalApp() {
                 this.mediaRecorder.stop();
                 this.isRecording = false;
             }
+        },
+
+        _encodeMp3(audioBuffer) {
+            const channels = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const mp3enc = new lamejs.Mp3Encoder(channels, sampleRate, 128);
+            const left   = audioBuffer.getChannelData(0);
+            const right  = channels > 1 ? audioBuffer.getChannelData(1) : left;
+            const chunk  = 1152;
+            const mp3Data = [];
+            const l16 = new Int16Array(left.length);
+            const r16 = new Int16Array(right.length);
+            for (let i = 0; i < left.length; i++) {
+                l16[i] = left[i]  * 32767.5;
+                r16[i] = right[i] * 32767.5;
+            }
+            for (let i = 0; i < l16.length; i += chunk) {
+                const mp3buf = mp3enc.encodeBuffer(l16.subarray(i, i + chunk), r16.subarray(i, i + chunk));
+                if (mp3buf.length > 0) mp3Data.push(new Int8Array(mp3buf));
+            }
+            const end = mp3enc.flush();
+            if (end.length > 0) mp3Data.push(new Int8Array(end));
+            return new Blob(mp3Data, { type: 'audio/mpeg' });
         },
 
         // ── Uploads ───────────────────────────────────────────────
@@ -836,7 +992,7 @@ document.addEventListener('DOMContentLoaded', () => {
 @keyframes scaleIn      { from { opacity:0; transform:scale(0.95); }     to { opacity:1; transform:scale(1); } }
 
 .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.hover-lift:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+.hover-lift:hover {  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
 .hover-zoom { transition: transform 0.3s ease; }
 .hover-zoom:hover { transform: scale(1.02); }
 

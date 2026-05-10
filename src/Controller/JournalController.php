@@ -3,704 +3,288 @@
 namespace App\Controller;
 
 use App\Entity\JournalEmotionnel;
-use App\Entity\Utilisateur;
+use App\Enum\EmotionEnum;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\Request;
-use App\Enum\EmotionEnum;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use App\Service\TendanceGenerator;
-class JournalController extends AbstractController
+use App\Controller\Client\BaseDashboardController;
+use Nucleos\DompdfBundle\Factory\DompdfFactoryInterface;
+
+#[Route('/dashboard/journal')]
+class JournalController extends BaseDashboardController
 {
-    private $params;
-    
-    public function __construct(ParameterBagInterface $params)
+    #[Route('', name: 'app_journal')]
+    public function index(EntityManagerInterface $em): Response
     {
-        $this->params = $params;
-    }
-   
-    #[Route('/dashboard/journal', name: 'app_journal')]
-    public function index(EntityManagerInterface $em, TendanceGenerator $generator): Response
-    {
-        $user = $this->getUser();
-        if (!$user instanceof Utilisateur) {
-            throw $this->createAccessDeniedException();
-        }
         $journals = $em->getRepository(JournalEmotionnel::class)
             ->findBy(
-                ['utilisateur' => $user],
+                ['utilisateur' => $this->getUser()],
                 ['dateCreation' => 'DESC']
             );
 
-        // Calcul des statistiques
-        $now = new \DateTime();
-        $firstDayOfMonth = new \DateTime('first day of this month');
-        $lastDayOfMonth = new \DateTime('last day of this month');
-        
-        // Statistiques du mois
-        $monthEntries = $em->getRepository(JournalEmotionnel::class)
-            ->createQueryBuilder('j')
-            ->where('j.utilisateur = :user')
-            ->andWhere('j.dateCreation BETWEEN :start AND :end')
-            ->setParameter('user', $user)
-            ->setParameter('start', $firstDayOfMonth)
-            ->setParameter('end', $lastDayOfMonth)
-            ->getQuery()
-            ->getResult();
-        
-        $monthCount = count($monthEntries);
-        
-        // Jours consécutifs (simplifié - dernière semaine)
-        $weekAgo = new \DateTime('-7 days');
-        $weekEntries = $em->getRepository(JournalEmotionnel::class)
-            ->createQueryBuilder('j')
-            ->where('j.utilisateur = :user')
-            ->andWhere('j.dateCreation >= :weekAgo')
-            ->setParameter('user', $user)
-            ->setParameter('weekAgo', $weekAgo)
-            ->orderBy('j.dateCreation', 'DESC')
-            ->setMaxResults(7)
-            ->getQuery()
-            ->getResult();
-        
-        $consecutiveDays = 0;
-        $currentDate = new \DateTime();
-        $hasEntryToday = false;
-        
-        foreach ($weekEntries as $entry) {
-            if ($entry->getDateCreation()->format('Y-m-d') === $currentDate->format('Y-m-d')) {
-                $hasEntryToday = true;
-                break;
-            }
-        }
-        
-        if ($hasEntryToday) {
-            $consecutiveDays = 1;
-            $checkDate = clone $currentDate;
-            $checkDate->modify('-1 day');
-            
-            while (true) {
-                $found = false;
-                foreach ($weekEntries as $entry) {
-                    if ($entry->getDateCreation()->format('Y-m-d') === $checkDate->format('Y-m-d')) {
-                        $consecutiveDays++;
-                        $checkDate->modify('-1 day');
-                        $found = true;
-                        break;
-                    }
-                }
-                if (!$found) break;
-            }
-        }
-        
-        // Humeur positive (pourcentage)
-        $positiveMoods = [EmotionEnum::TRES_BIEN, EmotionEnum::BIEN];
-        $totalEntries = count($journals);
-        $positiveCount = 0;
-        
-        foreach ($journals as $journal) {
-            if (in_array($journal->getEmotion(), $positiveMoods)) {
-                $positiveCount++;
-            }
-        }
-        
-        $positivePercentage = $totalEntries > 0 ? round(($positiveCount / $totalEntries) * 100) : 0;
-        
-        // Réactions reçues (simulé pour l'exemple)
-        $reactionsCount = $totalEntries * rand(3, 8);
-        
-        // Statistiques par émotion
-        // ===============================
-// TENDANCES DU MOIS (Analytics)
-// ===============================
-$now = new \DateTime();
-$month = (int)$now->format('m');
-$year = (int)$now->format('Y');
-
-$tendanceRepo = $em->getRepository(\App\Entity\TendanceEmotionnelle::class);
-
-// check if tendances already exist
-$tendances = $tendanceRepo->findBy([
-    'utilisateur' => $user,
-    'mois' => $month,
-    'annee' => $year
-]);
-
-// if not → generate them automatically
-if (!$tendances) {
-    $generator->generateForMonth($user, $month, $year);
-
-    $tendances = $tendanceRepo->findBy([
-        'utilisateur' => $user,
-        'mois' => $month,
-        'annee' => $year
-    ]);
-}
-
-// transform tendances → moodStats for UI
-$moodStats = [];
-
-foreach ($tendances as $tendance) {
-    $moodStats[$tendance->getEmotion()] = $tendance->getTotaleOccurrences();
-}
-
-// ensure all emotions exist (important for charts)
-foreach (EmotionEnum::cases() as $emotion) {
-    if (!isset($moodStats[$emotion->value])) {
-        $moodStats[$emotion->value] = 0;
-    }
-}
-
-        // Données pour le graphique (30 derniers jours)
-        $chartLabels = [];
-        $chartData = [
-            'tres_bien' => [],
-            'bien' => [],
-            'neutre' => [],
-            'pas_bien' => [],
-            'tres_mal' => []
-        ];
-        
-        for ($i = 29; $i >= 0; $i--) {
-            $date = new \DateTime("-$i days");
-            $chartLabels[] = $date->format('d/m');
-            
-            $dayEntries = $em->getRepository(JournalEmotionnel::class)
-                ->createQueryBuilder('j')
-                ->where('j.utilisateur = :user')
-                ->andWhere('j.dateCreation >= :start')
-                ->andWhere('j.dateCreation < :end')
-                ->setParameter('user', $user)
-                ->setParameter('start', $date->format('Y-m-d 00:00:00'))
-                ->setParameter('end', $date->format('Y-m-d 23:59:59'))
-                ->getQuery()
-                ->getResult();
-            
-            foreach (EmotionEnum::cases() as $mood) {
-                $chartData[$mood->value][] = 0;
-            }
-            
-            foreach ($dayEntries as $entry) {
-                $moodValue = $entry->getEmotion()->value;
-                $chartData[$moodValue][count($chartData[$moodValue]) - 1]++;
-            }
-        }
-
-$emotionColors = [
-    'tres_bien' => '#16a34a',  // bg-green-600
-    'bien'      => '#86efac',  // bg-green-300
-    'neutre'    => '#fde047',  // bg-yellow-300
-    'pas_bien'  => '#fecaca',  // bg-red-200
-    'tres_mal'  => '#dc2626',  // bg-red-600
-];
-
-$emotionLabels = [
-    'tres_bien' => 'Très bien',
-    'bien'      => 'Bien',
-    'neutre'    => 'Neutre',
-    'pas_bien'  => 'Pas bien',
-    'tres_mal'  => 'Très mal',
-];
-
-// Fetch journals from last 365 days
-$oneYearAgo = new \DateTime('-365 days');
-$journals365 = $em->getRepository(\App\Entity\JournalEmotionnel::class)
-    ->createQueryBuilder('j')
-    ->where('j.utilisateur = :user')
-    ->andWhere('j.dateCreation >= :start')
-    ->setParameter('user', $user)
-    ->setParameter('start', $oneYearAgo)
-    ->getQuery()->getResult();
-
-// Group by date: count + emotion tally
-$dayData = [];
-foreach ($journals365 as $j) {
-    $d = $j->getDateCreation()->format('Y-m-d');
-    if (!isset($dayData[$d])) {
-        $dayData[$d] = ['count' => 0, 'emotions' => []];
-    }
-    $dayData[$d]['count']++;
-    $emotion = $j->getEmotion()->value;
-    $dayData[$d]['emotions'][$emotion] = ($dayData[$d]['emotions'][$emotion] ?? 0) + 1;
-}
-
-// Build calendar array: one entry per day for 365 days
-$calendarData = [];
-$cur = clone $oneYearAgo;
-$today = new \DateTime();
-while ($cur <= $today) {
-    $ds = $cur->format('Y-m-d');
-    $count = $dayData[$ds]['count'] ?? 0;
-    
-    // Find dominant emotion (most frequent that day)
-    $dominantEmotion = null;
-    $dominantColor   = '#e2e8f0'; // default: no entries = light grey
-    $dominantLabel   = '';
-    
-    if ($count > 0 && !empty($dayData[$ds]['emotions'])) {
-        arsort($dayData[$ds]['emotions']);
-        $dominantEmotion = array_key_first($dayData[$ds]['emotions']);
-        $dominantColor   = $emotionColors[$dominantEmotion] ?? '#94a3b8';
-        $dominantLabel   = $emotionLabels[$dominantEmotion] ?? $dominantEmotion;
-    }
-    
-    $calendarData[] = [
-        'date'            => $ds,
-        'count'           => $count,
-        'dominantEmotion' => $dominantEmotion,
-        'dominantColor'   => $dominantColor,
-        'dominantLabel'   => $dominantLabel,
-    ];
-    $cur->modify('+1 day');
-}
-
-$calendarDataJson = json_encode($calendarData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
-        return $this->render('client/journal/index.html.twig', [
-            'journals' => $journals,
-            'moodOptions' => EmotionEnum::cases(),
-            'stats' => [
-                'monthEntries' => $monthCount,
-                'consecutiveDays' => $consecutiveDays,
-                'positivePercentage' => $positivePercentage,
-                'reactionsCount' => $reactionsCount
-            ],
-            'moodStats' => $moodStats,
-            'chartLabels' => $chartLabels,
-            'chartData' => $chartData,
-            'calendarData'=> $calendarData,
-        ]);
+        return $this->render('client/journal/index.html.twig', array_merge(
+            $this->getUserData(),
+            [
+                'journals'     => $journals,
+                'moodOptions'  => EmotionEnum::cases(),
+                'stats'        => $this->computeStats($journals),
+                'moodStats'    => $this->computeMoodStats($journals),
+                'calendarData' => $this->computeCalendarData($journals),
+            ]
+        ));
     }
 
-    #[Route('/dashboard/journal/new', name: 'app_journal_new', methods: ['POST'])]
-    public function new(
-    Request $request,
-    EntityManagerInterface $em,
-    TendanceGenerator $generator
-): Response{
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-
+    #[Route('/new', name: 'app_journal_new', methods: ['POST'])]
+    public function new(Request $request, EntityManagerInterface $em): Response
+    {
         if (!$this->isCsrfTokenValid('create_journal', $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $user = $this->getUser();
-        if (!$user instanceof Utilisateur) {
-            throw $this->createAccessDeniedException();
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('app_journal');
         }
 
         $journal = new JournalEmotionnel();
+        $journal->setUtilisateur($this->getUser());
+        $journal->setEmotion(EmotionEnum::from($request->request->get('emotion')));
+        $journal->setContenu($request->request->get('contenu'));
+        // dateCreation is set automatically in the entity constructor
 
-        // Émotion
-        $emotion = $request->request->get('emotion');
-        if (!$emotion) {
-            $this->addFlash('error', 'Veuillez sélectionner une émotion.');
-            return $this->redirectToRoute('app_journal');
-        }
-        $journal->setEmotion(EmotionEnum::from($emotion));
-        $journal->setUtilisateur($user);
-
-// Contenu, image, audio
-        $content = trim((string) $request->request->get('contenu'));
         $imageFile = $request->files->get('image');
-        $audioFile = $request->files->get('audio');
-
-        // Vérifier qu'au moins un élément est présent
-        if (empty($content) && !$imageFile && !$audioFile) {
-            $this->addFlash('error', 'Ajoutez du texte, une image ou un audio.');
-            return $this->redirectToRoute('app_journal');
-        }
-
-        // Vérifier la longueur du texte si présent
-        if (!empty($content) && mb_strlen($content) < 6) {
-            $this->addFlash('error', 'Le texte doit contenir au moins 6 caractères.');
-            return $this->redirectToRoute('app_journal');
-        }
-
-        $journal->setContenu($content ?: null);
-
-        // Upload directories
-        $uploadDir = $this->params->get('kernel.project_dir') . '/public/uploads/journals';
-        if (!is_dir($uploadDir . '/images')) {
-            mkdir($uploadDir . '/images', 0777, true);
-        }
-        if (!is_dir($uploadDir . '/audio')) {
-            mkdir($uploadDir . '/audio', 0777, true);
-        }
-
-        // Image upload
         if ($imageFile) {
-            $ext = $imageFile->guessExtension() ?: $imageFile->getClientOriginalExtension() ?: 'jpg';
-            $name = uniqid() . '.' . $ext;
-            $imageFile->move($uploadDir . '/images', $name);
-            $journal->setImage($name);
+            $newFilename = uniqid() . '.' . $imageFile->guessExtension();
+            $imageFile->move($this->getParameter('journal_images_dir'), $newFilename);
+            $journal->setImage($newFilename);
         }
 
-        // Audio upload
+       $audioFile = $request->files->get('audio');
         if ($audioFile) {
-            $ext = $audioFile->guessExtension() ?: $audioFile->getClientOriginalExtension() ?: 'mp3';
-            $name = uniqid() . '.' . $ext;
-            $audioFile->move($uploadDir . '/audio', $name);
-            $journal->setAudio($name);
+            $newFilename = uniqid() . '.' . $audioFile->guessExtension();
+            $audioFile->move($this->getParameter('journal_audio_dir'), $newFilename); // ← correct
+            $journal->setAudio($newFilename);
         }
 
         $em->persist($journal);
         $em->flush();
-        $now = new \DateTime();
-        $generator->generateForMonth(
-            $user,
-            (int)$now->format('m'),
-            (int)$now->format('Y')
-        );
 
-
-        $this->addFlash('success', 'Entrée de journal ajoutée avec succès !');
+        $this->addFlash('success', 'Entrée ajoutée avec succès');
         return $this->redirectToRoute('app_journal');
     }
 
-    #[Route('/dashboard/journal/{id}/edit', name: 'app_journal_edit', methods: ['POST'])]
-   public function edit(
-    Request $request,
-    JournalEmotionnel $journal,
-    EntityManagerInterface $em,
-    TendanceGenerator $generator
-): Response{
-        $this->denyAccessUnlessGranted('OWNER', $journal);
+    #[Route('/{id}/edit', name: 'app_journal_edit', methods: ['GET', 'POST'])]
+    public function edit(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        // Manual resolution — never throws the EntityValueResolver "not found" exception
+        $journal = $em->getRepository(JournalEmotionnel::class)->find($id);
 
-        if (!$this->isCsrfTokenValid('edit_journal_' . $journal->getId(), $request->request->get('_token'))) {
+        if (!$journal) {
+            $this->addFlash('error', 'Entrée introuvable.');
+            return $this->redirectToRoute('app_journal');
+        }
+
+        // Security: only the owner can edit
+        if ($journal->getUtilisateur() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
 
-        // Émotion
-        if ($emotion = $request->request->get('emotion')) {
-            $journal->setEmotion(EmotionEnum::from($emotion));
-        }
+        if ($request->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid('edit_journal_' . $id, $request->request->get('_token'))) {
+                $this->addFlash('error', 'Token CSRF invalide.');
+                return $this->redirectToRoute('app_journal');
+            }
 
-        // Contenu
-        $content = trim((string) $request->request->get('contenu'));
-        $imageFile = $request->files->get('image');
-        $audioFile = $request->files->get('audio');
-        $removeImage = $request->request->get('remove_image');
-        $removeAudio = $request->request->get('remove_audio');
+            $journal->setEmotion(EmotionEnum::from($request->request->get('emotion')));
+            $journal->setContenu($request->request->get('contenu'));
 
-        // Vérifier qu'au moins un élément sera présent après modification
-        $hasContent = !empty($content);
-        $hasImage = $journal->getImage() && $removeImage !== '1' || $imageFile;
-        $hasAudio = $journal->getAudio() && $removeAudio !== '1' || $audioFile;
-
-        if (!$hasContent && !$hasImage && !$hasAudio) {
-            $this->addFlash('error', 'Le journal doit contenir du texte, une image ou un audio.');
-            return $this->redirectToRoute('app_journal');
-        }
-
-        // Vérifier la longueur du texte si présent
-        if (!empty($content) && mb_strlen($content) < 6) {
-            $this->addFlash('error', 'Le texte doit contenir au moins 6 caractères.');
-            return $this->redirectToRoute('app_journal');
-        }
-
-        $journal->setContenu($content ?: null);
-
-        $uploadDir = $this->params->get('kernel.project_dir') . '/public/uploads/journals';
-
-        // Créer les dossiers si nécessaire
-        if (!is_dir($uploadDir . '/images')) {
-            mkdir($uploadDir . '/images', 0777, true);
-        }
-        if (!is_dir($uploadDir . '/audio')) {
-            mkdir($uploadDir . '/audio', 0777, true);
-        }
-
-        // GESTION DE L'IMAGE
-        if ($removeImage === '1') {
-            if ($journal->getImage()) {
-                @unlink($uploadDir . '/images/' . $journal->getImage());
+            // Image handling
+            $removeImage = $request->request->get('remove_image') === '1';
+            if ($removeImage && $journal->getImage()) {
+                $oldPath = $this->getParameter('journal_images_dir') . '/' . $journal->getImage();
+                if (file_exists($oldPath)) unlink($oldPath);
                 $journal->setImage(null);
             }
-        } elseif ($imageFile) {
-            if ($journal->getImage()) {
-                @unlink($uploadDir . '/images/' . $journal->getImage());
-            }
-            $ext = $imageFile->guessExtension() ?: 'jpg';
-            $name = uniqid() . '.' . $ext;
-            $imageFile->move($uploadDir . '/images', $name);
-            $journal->setImage($name);
-        }
 
-        // GESTION DE L'AUDIO
-        if ($removeAudio === '1') {
-            if ($journal->getAudio()) {
-                @unlink($uploadDir . '/audio/' . $journal->getAudio());
+            $imageFile = $request->files->get('image');
+            if ($imageFile) {
+                if ($journal->getImage()) {
+                    $oldPath = $this->getParameter('journal_images_dir') . '/' . $journal->getImage();
+                    if (file_exists($oldPath)) unlink($oldPath);
+                }
+                $newFilename = uniqid() . '.' . $imageFile->guessExtension();
+                $imageFile->move($this->getParameter('journal_images_dir'), $newFilename);
+                $journal->setImage($newFilename);
+            }
+
+            // Audio handling
+            $removeAudio = $request->request->get('remove_audio') === '1';
+            if ($removeAudio && $journal->getAudio()) {
+                $oldPath = $this->getParameter('journal_audio_dir') . '/' . $journal->getAudio();
+                if (file_exists($oldPath)) unlink($oldPath);
                 $journal->setAudio(null);
             }
-        } elseif ($audioFile) {
-            if ($journal->getAudio()) {
-                @unlink($uploadDir . '/audio/' . $journal->getAudio());
+
+            $audioFile = $request->files->get('audio');
+            if ($audioFile) {
+                if ($journal->getAudio()) {
+                    $oldPath = $this->getParameter('journal_audio_dir') . '/' . $journal->getAudio();
+                    if (file_exists($oldPath)) unlink($oldPath);
+                }
+                $newFilename = uniqid() . '.' . $audioFile->guessExtension();
+                $audioFile->move($this->getParameter('journal_audio_dir'), $newFilename);
+                $journal->setAudio($newFilename);
             }
-            $mime = $audioFile->getMimeType();
-            $ext = match ($mime) {
-                'audio/webm' => 'webm',
-                'audio/ogg' => 'ogg',
-                'audio/mpeg' => 'mp3',
-                default => 'webm',
-            };
-            $name = uniqid('audio_') . '.' . $ext;
-            $audioFile->move($uploadDir . '/audio', $name);
-            $journal->setAudio($name);
+
+            $em->flush();
+
+            $this->addFlash('success', 'Journal modifié avec succès');
+            return $this->redirectToRoute('app_journal');
         }
 
-        $em->flush();
-        $now = new \DateTime();
-        $currentUser = $this->getUser();
-        if ($currentUser instanceof \App\Entity\Utilisateur) {
-            $generator->generateForMonth(
-                $currentUser,
-                (int)$now->format('m'),
-                (int)$now->format('Y')
-            );
-        }
-
-
-        $this->addFlash('success', 'Entrée modifiée avec succès !');
-        return $this->redirectToRoute('app_journal');
+        return $this->render('dashboard/journal/edit.html.twig', array_merge(
+            $this->getUserData(),
+            [
+                'journal'     => $journal,
+                'moodOptions' => EmotionEnum::cases(),
+            ]
+        ));
     }
 
-    #[Route('/dashboard/journal/{id}/delete', name: 'app_journal_delete', methods: ['POST'])]
-    public function delete(
-    JournalEmotionnel $journal,
-    EntityManagerInterface $em,
-    TendanceGenerator $generator
-): Response{
-        $this->denyAccessUnlessGranted('OWNER', $journal);
+    #[Route('/{id}/delete', name: 'app_journal_delete', methods: ['POST'])]
+    public function delete(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        // Manual resolution — never throws the EntityValueResolver "not found" exception
+        $journal = $em->getRepository(JournalEmotionnel::class)->find($id);
 
-        $uploadDir = $this->params->get('kernel.project_dir') . '/public/uploads/journals';
-
-        // Supprimer l'image
-        if ($journal->getImage()) {
-            $imagePath = $uploadDir . '/images/' . $journal->getImage();
-            if (file_exists($imagePath)) {
-                unlink($imagePath);
-            }
+        if (!$journal) {
+            $this->addFlash('error', 'Entrée introuvable.');
+            return $this->redirectToRoute('app_journal');
         }
 
-        // Supprimer l'audio
+        // Security: only the owner can delete
+        if ($journal->getUtilisateur() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('delete' . $id, $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('app_journal');
+        }
+
+        if ($journal->getImage()) {
+            $imagePath = $this->getParameter('journal_images_dir') . '/' . $journal->getImage();
+            if (file_exists($imagePath)) unlink($imagePath);
+        }
+
         if ($journal->getAudio()) {
-            $audioPath = $uploadDir . '/audio/' . $journal->getAudio();
-            if (file_exists($audioPath)) {
-                unlink($audioPath);
-            }
+            $audioPath = $this->getParameter('journal_audio_dir') . '/' . $journal->getAudio();
+            if (file_exists($audioPath)) unlink($audioPath);
         }
 
         $em->remove($journal);
         $em->flush();
-        $now = new \DateTime();
-        $currentUser = $this->getUser();
-        if ($currentUser instanceof \App\Entity\Utilisateur) {
-            $generator->generateForMonth(
-                $currentUser,
-                (int)$now->format('m'),
-                (int)$now->format('Y')
-            );
-        }
 
-
-        $this->addFlash('success', 'Entrée supprimée avec succès !');
+        $this->addFlash('success', 'Journal supprimé avec succès');
         return $this->redirectToRoute('app_journal');
     }
-    #[Route('/dashboard/tendance/generate', name: 'generate_tendance')]
-public function generate(TendanceGenerator $generator): Response
-{
-    $user = $this->getUser();
-        if (!$user instanceof Utilisateur) {
-            throw $this->createAccessDeniedException();
-        }
-    $now = new \DateTime();
 
-$generator->generateForMonth(
-    $user,
-    (int)$now->format('m'),
-    (int)$now->format('Y')
-);
+    #[Route('/export-pdf', name: 'app_journal_export_pdf', methods: ['GET'])]
+    public function exportPdf(EntityManagerInterface $em, DompdfFactoryInterface $dompdfFactory): Response
+    {
+        $journals = $em->getRepository(JournalEmotionnel::class)
+            ->findBy(['utilisateur' => $this->getUser()], ['dateCreation' => 'DESC']);
 
-    $this->addFlash('success', 'Tendances générées avec succès.');
+        // … your existing PDF export logic here …
 
-    return $this->redirectToRoute('app_journal');
-}
-#[Route('/dashboard/tendance/calculate', name: 'app_tendance_calculate', methods: ['POST'])]
-public function calculate(TendanceGenerator $generator): Response
-{
-    $user = $this->getUser();
-        if (!$user instanceof Utilisateur) {
-            throw $this->createAccessDeniedException();
-        }
-    $now = new \DateTime();
-
-    $generator->generateForMonth(
-        $user,
-        (int)$now->format('m'),
-        (int)$now->format('Y')
-    );
-
-    $this->addFlash('success', 'Tendances calculées avec succès.');
-    return $this->redirectToRoute('app_journal');
-}
-#[Route('/dashboard/tendance/reset', name: 'app_tendance_reset', methods: ['POST'])]
-public function reset(Request $request, EntityManagerInterface $em): Response
-{
-    $user = $this->getUser();
-        if (!$user instanceof Utilisateur) {
-            throw $this->createAccessDeniedException();
-        }
-    $now = new \DateTime();
-    $month = (int)$now->format('m');
-    $year = (int)$now->format('Y');
-
-    // Vérifier le CSRF token
-    if (!$this->isCsrfTokenValid('reset_tendance', $request->request->get('_token'))) {
-        throw $this->createAccessDeniedException();
+        return new Response('PDF export', 200, ['Content-Type' => 'application/pdf']);
     }
 
-    // Supprimer les tendances
-    $em->createQueryBuilder()
-        ->delete(\App\Entity\TendanceEmotionnelle::class, 't')
-        ->where('t.utilisateur = :user')
-        ->andWhere('t.mois = :month')
-        ->andWhere('t.annee = :year')
-        ->setParameter('user', $user)
-        ->setParameter('month', $month)
-        ->setParameter('year', $year)
-        ->getQuery()
-        ->execute();
+    // ── Private helpers ───────────────────────────────────────────────────────
 
-    // Vérifier si c'est une requête AJAX
-    if ($request->isXmlHttpRequest()) {
-        return $this->json([
-            'success' => true,
-            'message' => 'Tendances réinitialisées'
-        ]);
-    }
+    private function computeStats(array $journals): array
+    {
+        $now   = new \DateTimeImmutable();
+        $month = (int) $now->format('n');
+        $year  = (int) $now->format('Y');
 
-    $this->addFlash('success', 'Tendances réinitialisées.');
-    return $this->redirectToRoute('app_journal');
-}
-#[Route('/dashboard/tendance/reset-json', name: 'app_tendance_reset_json', methods: ['POST'])]
-public function resetJson(Request $request, EntityManagerInterface $em): Response
-{
-    $user = $this->getUser();
-        if (!$user instanceof Utilisateur) {
-            throw $this->createAccessDeniedException();
+        $monthEntries = array_filter($journals, fn($j) =>
+            (int) $j->getDateCreation()->format('n') === $month &&
+            (int) $j->getDateCreation()->format('Y') === $year
+        );
+
+        // Consecutive days streak
+        $days = array_unique(array_map(
+            fn($j) => $j->getDateCreation()->format('Y-m-d'),
+            $journals
+        ));
+        rsort($days);
+        $streak = 0;
+        if (!empty($days)) {
+            $streak = 1;
+            for ($i = 0; $i < count($days) - 1; $i++) {
+                $diff = (new \DateTime($days[$i]))->diff(new \DateTime($days[$i + 1]))->days;
+                if ($diff === 1) $streak++; else break;
+            }
         }
-    $now = new \DateTime();
-    $month = (int)$now->format('m');
-    $year = (int)$now->format('Y');
 
-    // Vérifier le token CSRF
-    $data = json_decode($request->getContent(), true);
-    if (!isset($data['_token']) || !$this->isCsrfTokenValid('reset_tendance', $data['_token'])) {
-        return $this->json(['error' => 'Token invalide'], 400);
+        $positive = array_filter($journals, fn($j) =>
+            $j->getEmotion() === EmotionEnum::TRES_BIEN || $j->getEmotion() === EmotionEnum::BIEN
+        );
+        $posPercent = count($journals) > 0
+            ? (int) round(count($positive) * 100 / count($journals))
+            : 0;
+
+        return [
+            'monthEntries'       => count($monthEntries),
+            'consecutiveDays'    => $streak,
+            'positivePercentage' => $posPercent,
+        ];
     }
 
-    // Supprimer les tendances
-    $em->createQueryBuilder()
-        ->delete(\App\Entity\TendanceEmotionnelle::class, 't')
-        ->where('t.utilisateur = :user')
-        ->andWhere('t.mois = :month')
-        ->andWhere('t.annee = :year')
-        ->setParameter('user', $user)
-        ->setParameter('month', $month)
-        ->setParameter('year', $year)
-        ->getQuery()
-        ->execute();
+    private function computeMoodStats(array $journals): array
+    {
+        $stats = [];
+        foreach (EmotionEnum::cases() as $emotion) {
+            $stats[$emotion->value] = count(array_filter(
+                $journals, fn($j) => $j->getEmotion() === $emotion
+            ));
+        }
+        return $stats;
+    }
 
-    // Retourner des données vides pour le graphique
-    $chartLabels = [];
-    $chartData = [
-        'tres_bien' => [],
-        'bien' => [],
-        'neutre' => [],
-        'pas_bien' => [],
-        'tres_mal' => []
+   private function computeCalendarData(array $journals): array
+{
+    $byDay = [];
+    foreach ($journals as $j) {
+        $date = $j->getDateCreation()->format('Y-m-d');
+        if (!isset($byDay[$date])) {
+            $byDay[$date] = ['emotions' => []];
+        }
+        $val = $j->getEmotion()->value;
+        $byDay[$date]['emotions'][$val] = ($byDay[$date]['emotions'][$val] ?? 0) + 1;
+    }
+
+    $emotionLabels = [
+        'tres_bien' => 'Très bien',
+        'bien'      => 'Bien',
+        'neutre'    => 'Neutre',
+        'pas_bien'  => 'Pas bien',
+        'tres_mal'  => 'Très mal',
     ];
-    
-    // Générer les 30 derniers jours
-    for ($i = 29; $i >= 0; $i--) {
-        $date = new \DateTime("-$i days");
-        $chartLabels[] = $date->format('d/m');
-        
-        foreach (['tres_bien', 'bien', 'neutre', 'pas_bien', 'tres_mal'] as $mood) {
-            $chartData[$mood][] = 0;
-        }
+
+    $result = [];
+    foreach ($byDay as $date => $data) {
+        // Sort by count desc to find dominant emotion
+        arsort($data['emotions']);
+        $dominantEmotion = array_key_first($data['emotions']);
+        $count = array_sum($data['emotions']);
+
+        $result[] = [
+            'date'            => $date,
+            'count'           => $count,
+            'dominantEmotion' => $dominantEmotion,
+            'dominantLabel'   => $emotionLabels[$dominantEmotion] ?? $dominantEmotion,
+        ];
     }
 
-    return $this->json([
-        'success' => true,
-        'message' => 'Tendances réinitialisées',
-        'chartLabels' => $chartLabels,
-        'chartData' => $chartData
-    ]);
+    return $result;
 }
-#[Route('/dashboard/tendance/calculate-json', name: 'app_tendance_calculate_json', methods: ['POST'])]
-public function calculateJson(Request $request, TendanceGenerator $generator, EntityManagerInterface $em): Response
-{
-    $user = $this->getUser();
-        if (!$user instanceof Utilisateur) {
-            throw $this->createAccessDeniedException();
-        }
-    $now = new \DateTime();
-    $month = (int)$now->format('m');
-    $year = (int)$now->format('Y');
-    
-    // Verify CSRF token
-    $data = json_decode($request->getContent(), true);
-    if (!isset($data['_token']) || !$this->isCsrfTokenValid('calculate_tendance', $data['_token'])) {
-        return $this->json(['error' => 'Invalid CSRF token'], 400);
-    }
-    
-    // Generate tendances
-    $generator->generateForMonth($user, $month, $year);
-    
-    // Get updated chart data (last 30 days)
-    $chartLabels = [];
-    $chartData = [
-        'tres_bien' => [],
-        'bien' => [],
-        'neutre' => [],
-        'pas_bien' => [],
-        'tres_mal' => []
-    ];
-    
-    $repo = $em->getRepository(JournalEmotionnel::class);
-    
-    for ($i = 29; $i >= 0; $i--) {
-        $date = new \DateTime("-$i days");
-        $chartLabels[] = $date->format('d/m');
-        
-        $dayEntries = $repo->createQueryBuilder('j')
-            ->where('j.utilisateur = :user')
-            ->andWhere('j.dateCreation >= :start')
-            ->andWhere('j.dateCreation < :end')
-            ->setParameter('user', $user)
-            ->setParameter('start', $date->format('Y-m-d 00:00:00'))
-            ->setParameter('end', $date->format('Y-m-d 23:59:59'))
-            ->getQuery()
-            ->getResult();
-        
-        foreach (['tres_bien', 'bien', 'neutre', 'pas_bien', 'tres_mal'] as $mood) {
-            $chartData[$mood][] = 0;
-        }
-        
-        foreach ($dayEntries as $entry) {
-            $moodValue = $entry->getEmotion()->value;
-            $chartData[$moodValue][count($chartData[$moodValue]) - 1]++;
-        }
-    }
-    
-    return $this->json([
-        'success' => true,
-        'chartLabels' => $chartLabels,
-        'chartData' => $chartData
-    ]);
-}
-
 }

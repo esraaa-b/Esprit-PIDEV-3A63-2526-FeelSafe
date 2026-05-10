@@ -378,4 +378,32 @@ PROMPT;
         return ['error' => 'Erreur API : ' . $e->getMessage()];
     }
 }
+#[Route('/dashboard/journal/ai/conversation/{conversationId}/delete', name: 'app_ai_journal_conversation_delete', methods: ['POST'])]
+public function deleteConversation(string $conversationId, ChatMessageRepository $chatRepo): JsonResponse
+{
+    $user = $this->getUser();
+    if (!$user instanceof \App\Entity\Utilisateur) {
+        throw $this->createAccessDeniedException();
+    }
+
+    $data = json_decode($this->container->get('request_stack')->getCurrentRequest()->getContent(), true);
+    if (!$this->isCsrfTokenValid('ai_journal', $data['_token'] ?? '')) {
+        return $this->json(['error' => 'Token invalide'], 403);
+    }
+
+    $messages = $chatRepo->createQueryBuilder('c')
+        ->where('c.conversationId = :conv')
+        ->andWhere('c.utilisateur = :user')
+        ->setParameter('conv', $conversationId)
+        ->setParameter('user', $user)
+        ->getQuery()
+        ->getResult();
+
+    foreach ($messages as $msg) {
+        $chatRepo->remove($msg, false);
+    }
+    $chatRepo->flush(); // flush once after all removals
+
+    return $this->json(['deleted' => true]);
+}
 }
