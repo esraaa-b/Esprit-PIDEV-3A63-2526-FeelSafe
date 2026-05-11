@@ -4,8 +4,8 @@ namespace App\Enum;
 
 enum ImpactPercu: string
 {
-    case TRES_POSITIF = 'tres_positif';
-    case POSITIF = 'positif';
-    case NEUTRE = 'neutre';
-    case NEGATIF = 'negatif';
+    case TRES_POSITIF = 'TRES_POSITIF';
+    case POSITIF = 'POSITIF';
+    case NEUTRE = 'NEUTRE';
+    case NEGATIF = 'NEGATIF';
 }

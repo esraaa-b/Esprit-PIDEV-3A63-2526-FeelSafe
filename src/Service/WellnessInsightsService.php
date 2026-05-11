@@ -129,7 +129,7 @@ class WellnessInsightsService
             // Vérifier s'il y a au moins une session complétée ce jour
             $hasCompleted = false;
             foreach ($sessionsByDate[$dateKey] as $session) {
-                if ($session->getStatutSession()->value === 'completee') {
+                if ($session->getStatutSession()->value === 'COMPLETEE') {
                     $hasCompleted = true;
                     break;
                 }
@@ -301,7 +301,7 @@ class WellnessInsightsService
         });
 
         $completedCount = count(array_filter($weekSessions, function($session) {
-            return $session->getStatutSession()->value === 'completee';
+            return $session->getStatutSession()->value === 'COMPLETEE';
         }));
 
         if ($completedCount === 0) {

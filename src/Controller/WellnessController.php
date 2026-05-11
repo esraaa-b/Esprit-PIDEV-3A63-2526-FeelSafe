@@ -60,7 +60,7 @@ class WellnessController extends AbstractController
                     if ($session->getDureeReelle()) {
                         $dayMinutes += $session->getDureeReelle();
                     }
-                    if ($session->getStatutSession()->value === 'completee') {
+                    if ($session->getStatutSession()->value === 'COMPLETEE') {
                         $dayCompleted = true;
                     }
                 }
@@ -205,7 +205,7 @@ class WellnessController extends AbstractController
             ->getResult();
 
         $totalSessions = count($userSessions);
-        $completedSessions = count(array_filter($userSessions, fn($s) => $s->getStatutSession()->value === 'completee'));
+        $completedSessions = count(array_filter($userSessions, fn($s) => $s->getStatutSession()->value === 'COMPLETEE'));
         
         $totalMinutes = 0;
         foreach ($userSessions as $session) {
@@ -282,8 +282,10 @@ class WellnessController extends AbstractController
 
             // Humeur après
             if ($request->request->get('humeur_apres')) {
-                $session->setHumeurApres(\App\Enum\HumeurEnum::from($request->request->get('humeur_apres')));
-            }
+    $session->setHumeurApres(\App\Enum\HumeurEnum::from(
+        strtoupper($request->request->get('humeur_apres'))
+    ));
+}
             if ($request->request->get('score_humeur_apres')) {
                 $session->setScoreHumeurApres((int)$request->request->get('score_humeur_apres'));
             }
@@ -295,9 +297,11 @@ class WellnessController extends AbstractController
             if ($request->request->get('note_satisfaction')) {
                 $session->setNoteSatisfaction((int)$request->request->get('note_satisfaction'));
             }
-            if ($request->request->get('impact_percu')) {
-                $session->setImpactPercu(\App\Enum\ImpactPercu::from($request->request->get('impact_percu')));
-            }
+ if ($request->request->get('impact_percu')) {
+    $session->setImpactPercu(\App\Enum\ImpactPercu::from(
+        strtoupper($request->request->get('impact_percu'))
+    ));
+}
             if ($request->request->get('commentaire')) {
                 $session->setCommentaire($request->request->get('commentaire'));
             }
@@ -355,7 +359,7 @@ class WellnessController extends AbstractController
 
         // Calculer les statistiques
         $totalSessions = count($sessions);
-        $completedSessions = count(array_filter($sessions, fn($s) => $s->getStatutSession()->value === 'completee'));
+        $completedSessions = count(array_filter($sessions, fn($s) => $s->getStatutSession()->value === 'COMPLETEE'));
         
         $totalMinutes = 0;
         $moodEvolution = [];
@@ -502,7 +506,7 @@ public function quizResults(
             // Vérifier s'il y a au moins une session complétée ce jour
             $hasCompleted = false;
             foreach ($sessionsByDate[$dateKey] as $session) {
-                if ($session->getStatutSession()->value === 'completee') {
+                if ($session->getStatutSession()->value === 'COMPLETEE') {
                     $hasCompleted = true;
                     break;
                 }
