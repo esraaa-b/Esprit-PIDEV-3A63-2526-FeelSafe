@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\JournalEmotionnel;
 use App\Enum\EmotionEnum;
+use Cloudinary\Configuration\Configuration;
+use Cloudinary\Api\Upload\UploadApi;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,6 +16,12 @@ use Nucleos\DompdfBundle\Factory\DompdfFactoryInterface;
 #[Route('/dashboard/journal')]
 class JournalController extends BaseDashboardController
 {
+    private function cloudinary(): UploadApi
+    {
+        Configuration::instance($_ENV['CLOUDINARY_URL']);
+        return new UploadApi();
+    }
+
     #[Route('', name: 'app_journal')]
     public function index(EntityManagerInterface $em): Response
     {
@@ -47,20 +55,31 @@ class JournalController extends BaseDashboardController
         $journal->setUtilisateur($this->getUser());
         $journal->setEmotion(EmotionEnum::from($request->request->get('emotion')));
         $journal->setContenu($request->request->get('contenu'));
-        // dateCreation is set automatically in the entity constructor
 
         $imageFile = $request->files->get('image');
         if ($imageFile) {
-            $newFilename = uniqid() . '.' . $imageFile->guessExtension();
-            $imageFile->move($this->getParameter('journal_images_dir'), $newFilename);
-            $journal->setImage($newFilename);
+            try {
+                $result = $this->cloudinary()->upload(
+                    $imageFile->getPathname(),
+                    ['folder' => 'feelsafe/images']
+                );
+                $journal->setImage($result['public_id']);
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Erreur upload image : ' . $e->getMessage());
+            }
         }
 
-       $audioFile = $request->files->get('audio');
+        $audioFile = $request->files->get('audio');
         if ($audioFile) {
-            $newFilename = uniqid() . '.' . $audioFile->guessExtension();
-            $audioFile->move($this->getParameter('journal_audio_dir'), $newFilename); // ← correct
-            $journal->setAudio($newFilename);
+            try {
+                $result = $this->cloudinary()->upload(
+                    $audioFile->getPathname(),
+                    ['resource_type' => 'raw', 'folder' => 'feelsafe/audio']
+                );
+                $journal->setAudio($result['public_id']);
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'Erreur upload audio : ' . $e->getMessage());
+            }
         }
 
         $em->persist($journal);
@@ -73,7 +92,6 @@ class JournalController extends BaseDashboardController
     #[Route('/{id}/edit', name: 'app_journal_edit', methods: ['GET', 'POST'])]
     public function edit(int $id, Request $request, EntityManagerInterface $em): Response
     {
-        // Manual resolution — never throws the EntityValueResolver "not found" exception
         $journal = $em->getRepository(JournalEmotionnel::class)->find($id);
 
         if (!$journal) {
@@ -81,7 +99,6 @@ class JournalController extends BaseDashboardController
             return $this->redirectToRoute('app_journal');
         }
 
-        // Security: only the owner can edit
         if ($journal->getUtilisateur() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
@@ -95,42 +112,69 @@ class JournalController extends BaseDashboardController
             $journal->setEmotion(EmotionEnum::from($request->request->get('emotion')));
             $journal->setContenu($request->request->get('contenu'));
 
-            // Image handling
+            // ── Image ────────────────────────────────────────────────────────
             $removeImage = $request->request->get('remove_image') === '1';
             if ($removeImage && $journal->getImage()) {
-                $oldPath = $this->getParameter('journal_images_dir') . '/' . $journal->getImage();
-                if (file_exists($oldPath)) unlink($oldPath);
+                try {
+                    $this->cloudinary()->destroy($journal->getImage());
+                } catch (\Exception $e) {
+                    // log but don't block
+                    error_log('[Cloudinary] Delete image failed: ' . $e->getMessage());
+                }
                 $journal->setImage(null);
             }
 
             $imageFile = $request->files->get('image');
             if ($imageFile) {
+                // Delete old image first
                 if ($journal->getImage()) {
-                    $oldPath = $this->getParameter('journal_images_dir') . '/' . $journal->getImage();
-                    if (file_exists($oldPath)) unlink($oldPath);
+                    try {
+                        $this->cloudinary()->destroy($journal->getImage());
+                    } catch (\Exception $e) {
+                        error_log('[Cloudinary] Delete old image failed: ' . $e->getMessage());
+                    }
                 }
-                $newFilename = uniqid() . '.' . $imageFile->guessExtension();
-                $imageFile->move($this->getParameter('journal_images_dir'), $newFilename);
-                $journal->setImage($newFilename);
+                try {
+                    $result = $this->cloudinary()->upload(
+                        $imageFile->getPathname(),
+                        ['folder' => 'feelsafe/images']
+                    );
+                    $journal->setImage($result['public_id']);
+                } catch (\Exception $e) {
+                    $this->addFlash('error', 'Erreur upload image : ' . $e->getMessage());
+                }
             }
 
-            // Audio handling
+            // ── Audio ────────────────────────────────────────────────────────
             $removeAudio = $request->request->get('remove_audio') === '1';
             if ($removeAudio && $journal->getAudio()) {
-                $oldPath = $this->getParameter('journal_audio_dir') . '/' . $journal->getAudio();
-                if (file_exists($oldPath)) unlink($oldPath);
+                try {
+                    $this->cloudinary()->destroy($journal->getAudio(), ['resource_type' => 'raw']);
+                } catch (\Exception $e) {
+                    error_log('[Cloudinary] Delete audio failed: ' . $e->getMessage());
+                }
                 $journal->setAudio(null);
             }
 
             $audioFile = $request->files->get('audio');
             if ($audioFile) {
+                // Delete old audio first
                 if ($journal->getAudio()) {
-                    $oldPath = $this->getParameter('journal_audio_dir') . '/' . $journal->getAudio();
-                    if (file_exists($oldPath)) unlink($oldPath);
+                    try {
+                        $this->cloudinary()->destroy($journal->getAudio(), ['resource_type' => 'raw']);
+                    } catch (\Exception $e) {
+                        error_log('[Cloudinary] Delete old audio failed: ' . $e->getMessage());
+                    }
                 }
-                $newFilename = uniqid() . '.' . $audioFile->guessExtension();
-                $audioFile->move($this->getParameter('journal_audio_dir'), $newFilename);
-                $journal->setAudio($newFilename);
+                try {
+                    $result = $this->cloudinary()->upload(
+                        $audioFile->getPathname(),
+                        ['resource_type' => 'raw', 'folder' => 'feelsafe/audio']
+                    );
+                    $journal->setAudio($result['public_id']);
+                } catch (\Exception $e) {
+                    $this->addFlash('error', 'Erreur upload audio : ' . $e->getMessage());
+                }
             }
 
             $em->flush();
@@ -151,7 +195,6 @@ class JournalController extends BaseDashboardController
     #[Route('/{id}/delete', name: 'app_journal_delete', methods: ['POST'])]
     public function delete(int $id, Request $request, EntityManagerInterface $em): Response
     {
-        // Manual resolution — never throws the EntityValueResolver "not found" exception
         $journal = $em->getRepository(JournalEmotionnel::class)->find($id);
 
         if (!$journal) {
@@ -159,7 +202,6 @@ class JournalController extends BaseDashboardController
             return $this->redirectToRoute('app_journal');
         }
 
-        // Security: only the owner can delete
         if ($journal->getUtilisateur() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
@@ -170,13 +212,19 @@ class JournalController extends BaseDashboardController
         }
 
         if ($journal->getImage()) {
-            $imagePath = $this->getParameter('journal_images_dir') . '/' . $journal->getImage();
-            if (file_exists($imagePath)) unlink($imagePath);
+            try {
+                $this->cloudinary()->destroy($journal->getImage());
+            } catch (\Exception $e) {
+                error_log('[Cloudinary] Delete image failed: ' . $e->getMessage());
+            }
         }
 
         if ($journal->getAudio()) {
-            $audioPath = $this->getParameter('journal_audio_dir') . '/' . $journal->getAudio();
-            if (file_exists($audioPath)) unlink($audioPath);
+            try {
+                $this->cloudinary()->destroy($journal->getAudio(), ['resource_type' => 'raw']);
+            } catch (\Exception $e) {
+                error_log('[Cloudinary] Delete audio failed: ' . $e->getMessage());
+            }
         }
 
         $em->remove($journal);
@@ -191,8 +239,6 @@ class JournalController extends BaseDashboardController
     {
         $journals = $em->getRepository(JournalEmotionnel::class)
             ->findBy(['utilisateur' => $this->getUser()], ['dateCreation' => 'DESC']);
-
-        // … your existing PDF export logic here …
 
         return new Response('PDF export', 200, ['Content-Type' => 'application/pdf']);
     }
@@ -210,7 +256,6 @@ class JournalController extends BaseDashboardController
             (int) $j->getDateCreation()->format('Y') === $year
         );
 
-        // Consecutive days streak
         $days = array_unique(array_map(
             fn($j) => $j->getDateCreation()->format('Y-m-d'),
             $journals
@@ -250,41 +295,40 @@ class JournalController extends BaseDashboardController
         return $stats;
     }
 
-   private function computeCalendarData(array $journals): array
-{
-    $byDay = [];
-    foreach ($journals as $j) {
-        $date = $j->getDateCreation()->format('Y-m-d');
-        if (!isset($byDay[$date])) {
-            $byDay[$date] = ['emotions' => []];
+    private function computeCalendarData(array $journals): array
+    {
+        $byDay = [];
+        foreach ($journals as $j) {
+            $date = $j->getDateCreation()->format('Y-m-d');
+            if (!isset($byDay[$date])) {
+                $byDay[$date] = ['emotions' => []];
+            }
+            $val = $j->getEmotion()->value;
+            $byDay[$date]['emotions'][$val] = ($byDay[$date]['emotions'][$val] ?? 0) + 1;
         }
-        $val = $j->getEmotion()->value;
-        $byDay[$date]['emotions'][$val] = ($byDay[$date]['emotions'][$val] ?? 0) + 1;
-    }
 
-    $emotionLabels = [
-        'tres_bien' => 'Très bien',
-        'bien'      => 'Bien',
-        'neutre'    => 'Neutre',
-        'pas_bien'  => 'Pas bien',
-        'tres_mal'  => 'Très mal',
-    ];
-
-    $result = [];
-    foreach ($byDay as $date => $data) {
-        // Sort by count desc to find dominant emotion
-        arsort($data['emotions']);
-        $dominantEmotion = array_key_first($data['emotions']);
-        $count = array_sum($data['emotions']);
-
-        $result[] = [
-            'date'            => $date,
-            'count'           => $count,
-            'dominantEmotion' => $dominantEmotion,
-            'dominantLabel'   => $emotionLabels[$dominantEmotion] ?? $dominantEmotion,
+        $emotionLabels = [
+            'tres_bien' => 'Très bien',
+            'bien'      => 'Bien',
+            'neutre'    => 'Neutre',
+            'pas_bien'  => 'Pas bien',
+            'tres_mal'  => 'Très mal',
         ];
-    }
 
-    return $result;
-}
+        $result = [];
+        foreach ($byDay as $date => $data) {
+            arsort($data['emotions']);
+            $dominantEmotion = array_key_first($data['emotions']);
+            $count = array_sum($data['emotions']);
+
+            $result[] = [
+                'date'            => $date,
+                'count'           => $count,
+                'dominantEmotion' => $dominantEmotion,
+                'dominantLabel'   => $emotionLabels[$dominantEmotion] ?? $dominantEmotion,
+            ];
+        }
+
+        return $result;
+    }
 }

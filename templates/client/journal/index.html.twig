@@ -197,7 +197,7 @@
 
                         {% if entry.image %}
                             <div class="mt-4 flex justify-center">
-                                <img src="{{ asset('uploads/journals/images/' ~ entry.image) }}"
+                               <img src="https://res.cloudinary.com/dfgf4m52t/image/upload/{{ entry.image }}"
                                      alt="Journal image"
                                      class="rounded-lg max-w-md w-full object-cover border border-border hover-zoom">
                             </div>
@@ -206,7 +206,7 @@
                         {% if entry.audio %}
                             <div class="mt-4">
                                 <audio controls class="w-full">
-                                    <source src="{{ asset('uploads/journals/audio/' ~ entry.audio) }}">
+                                    <source src="https://res.cloudinary.com/dfgf4m52t/raw/upload/{{ entry.audio }}">
                                 </audio>
                             </div>
                         {% endif %}
@@ -215,7 +215,7 @@
                         <div class="flex items-center justify-end gap-3 mt-4 pt-3 border-t border-border">
 
                             <button type="button"
-                                    @click="openEditModal({{ entry.id }}, {{ entry.emotion.value|json_encode|e('html_attr') }}, {{ entry.contenu|json_encode|e('html_attr') }}, {{ (entry.image ? asset('uploads/journals/images/' ~ entry.image) : '')|json_encode|e('html_attr') }}, {{ (entry.audio ? asset('uploads/journals/audio/' ~ entry.audio) : '')|json_encode|e('html_attr') }}, {{ csrf_token('edit_journal_' ~ entry.id)|json_encode|e('html_attr') }})"
+                                    @click="openEditModal({{ entry.id }}, {{ entry.emotion.value|json_encode|e('html_attr') }}, {{ entry.contenu|json_encode|e('html_attr') }}, {{ (entry.image ? 'https://res.cloudinary.com/dfgf4m52t/image/upload/' ~ entry.image : '')|json_encode|e('html_attr') }}, {{ (entry.audio ? 'https://res.cloudinary.com/dfgf4m52t/raw/upload/' ~ entry.audio : '')|json_encode|e('html_attr') }}, {{ csrf_token('edit_journal_' ~ entry.id)|json_encode|e('html_attr') }})"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
