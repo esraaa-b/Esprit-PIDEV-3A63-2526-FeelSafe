@@ -26,28 +26,28 @@
                 <div x-data="{ selectedMood: '{{ session.humeurApres ? session.humeurApres.value : '' }}' }" class="space-y-4">
                     <div class="flex gap-3 flex-wrap">
                         <label class="flex-1 min-w-[120px] cursor-pointer">
-                            <input type="radio" name="humeur_apres" value="tres_bien" x-model="selectedMood" class="peer sr-only">
+                            <input type="radio" name="humeur_apres" value="TRES_BIEN" x-model="selectedMood" class="peer sr-only">
                             <div class="p-4 rounded-lg border-2 border-border peer-checked:border-chart-2 peer-checked:bg-chart-2/10 transition-all text-center hover:border-chart-2/50">
                                 <div class="text-3xl mb-2">😄</div>
                                 <p class="text-sm font-medium text-foreground">Très bien</p>
                             </div>
                         </label>
                         <label class="flex-1 min-w-[120px] cursor-pointer">
-                            <input type="radio" name="humeur_apres" value="bien" x-model="selectedMood" class="peer sr-only">
+                            <input type="radio" name="humeur_apres" value="BIEN" x-model="selectedMood" class="peer sr-only">
                             <div class="p-4 rounded-lg border-2 border-border peer-checked:border-chart-2 peer-checked:bg-chart-2/10 transition-all text-center hover:border-chart-2/50">
                                 <div class="text-3xl mb-2">🙂</div>
                                 <p class="text-sm font-medium text-foreground">Bien</p>
                             </div>
                         </label>
                         <label class="flex-1 min-w-[120px] cursor-pointer">
-                            <input type="radio" name="humeur_apres" value="neutre" x-model="selectedMood" class="peer sr-only">
+                            <input type="radio" name="humeur_apres" value="NEUTRE" x-model="selectedMood" class="peer sr-only">
                             <div class="p-4 rounded-lg border-2 border-border peer-checked:border-chart-4 peer-checked:bg-chart-4/10 transition-all text-center hover:border-chart-4/50">
                                 <div class="text-3xl mb-2">😐</div>
                                 <p class="text-sm font-medium text-foreground">Neutre</p>
                             </div>
                         </label>
                         <label class="flex-1 min-w-[120px] cursor-pointer">
-                            <input type="radio" name="humeur_apres" value="pas_bien" x-model="selectedMood" class="peer sr-only">
+                            <input type="radio" name="humeur_apres" value="PAS_BIEN" x-model="selectedMood" class="peer sr-only">
                             <div class="p-4 rounded-lg border-2 border-border peer-checked:border-destructive peer-checked:bg-destructive/10 transition-all text-center hover:border-destructive/50">
                                 <div class="text-3xl mb-2">😕</div>
                                 <p class="text-sm font-medium text-foreground">Pas bien</p>
@@ -110,10 +110,10 @@
                         </label>
                         <select name="impact_percu" class="w-full px-4 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                             <option value="">Sélectionner...</option>
-                            <option value="tres_positif">Très positif</option>
-                            <option value="positif">Positif</option>
-                            <option value="neutre">Neutre</option>
-                            <option value="negatif">Négatif</option>
+<option value="TRES_POSITIF">Très positif</option>
+<option value="POSITIF">Positif</option>
+<option value="NEUTRE">Neutre</option>
+<option value="NEGATIF">Négatif</option>
                         </select>
                     </div>
 

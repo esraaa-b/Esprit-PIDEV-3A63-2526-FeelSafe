@@ -8,9 +8,6 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900"></h1>
-<<<<<<< HEAD
-        <div class="flex items-center gap-2">
-=======
         <div class="flex items-center gap-4">
             <div class="relative">
                 <button id="notif-btn" class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 hover:bg-gray-50">
@@ -28,14 +25,11 @@
                     <div id="notif-list" class="max-h-80 overflow-auto divide-y divide-gray-100"></div>
                 </div>
             </div>
->>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
             <a href="{{ path('app_support_calendar') }}" class="btn btn-outline">Calendrier</a>
             <a href="{{ path('app_support_accomp') }}" class="btn btn-outline">Accompagnement</a>
         </div>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-<<<<<<< HEAD
-=======
         <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="col-span-2 bg-gray-50 rounded-lg border border-gray-200 p-4">
                 <div class="flex items-start justify-between">
@@ -56,7 +50,6 @@
                 <span class="text-gray-400">→</span>
             </a>
         </div>
->>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
         {% set clientIds = [] %}
         {% set clientList = [] %}
         {% for r in rdvs %}
@@ -108,12 +101,9 @@
                         </td>
                         <td class="px-6 py-4 text-sm">
                             <div class="flex items-center gap-2">
-<<<<<<< HEAD
-=======
                                 {% if rdv.mode.value == 'en_ligne' %}
                                 <button type="button" class="btn btn-sm btn-primary" onclick="openJitsi('{{ rdv.id }}','{{ app.user.getFullName()|e('js') }}','{{ ('RDV avec ' ~ (rdv.utilisateur ? rdv.utilisateur.getFullName() : 'client') ~ ' — ' ~ rdv.dateRdv|date('d/m/Y') ~ ' ' ~ rdv.heureRdv|date('H:i'))|e('js') }}')">Rejoindre</button>
                                 {% endif %}
->>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
                                 <form action="{{ path('support_rdv_accept', { id: rdv.id }) }}" method="post">
                                     <button type="submit" class="btn btn-sm">Accepter</button>
                                 </form>
@@ -147,8 +137,6 @@
             </table>
         </div>
     </div>
-<<<<<<< HEAD
-=======
     <div id="jitsi-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50">
         <div class="absolute top-4 right-4">
             <button id="jitsi-close" class="px-3 py-1 rounded bg-white text-gray-800 border">Fermer</button>
@@ -265,7 +253,6 @@
             document.getElementById('jitsi-close').onclick=function(){try{jitsiApi.executeCommand('hangup');}catch(e){}setTimeout(function(){if(jitsiApi){try{jitsiApi.dispose();}catch(e){}jitsiApi=null;}modal.classList.add('hidden');container.innerHTML='';},300);};
         }
     </script>
->>>>>>> 1ebf808 (Import complet projet CopieBONNE (rdv / accompagnement))
     <script>
         (function(){
             var fc=document.getElementById('filter-client');

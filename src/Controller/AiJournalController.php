@@ -157,6 +157,9 @@ PROMPT;
         }
 
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
 
         // Get the last 5 entries for context
         $recent = $em->getRepository(JournalEmotionnel::class)
@@ -215,6 +218,9 @@ PROMPT;
         }
 
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
 
         // Determine conversation id (reuse provided or create new)
         $conversationId = $data['conversationId'] ?? null;
@@ -283,8 +289,8 @@ PROMPT;
     public function listConversations(EntityManagerInterface $em, ChatMessageRepository $chatRepo): \Symfony\Component\HttpFoundation\Response
     {
         $user = $this->getUser();
-        if (!$user) {
-            return $this->json(['error' => 'Unauthorized'], 401);
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
         }
 
         $qb = $chatRepo->createQueryBuilder('c')
@@ -317,8 +323,8 @@ PROMPT;
     public function conversationMessages(string $conversationId, ChatMessageRepository $chatRepo): JsonResponse
     {
         $user = $this->getUser();
-        if (!$user) {
-            return $this->json(['error' => 'Unauthorized'], 401);
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
         }
 
         $messages = $chatRepo->createQueryBuilder('c')
@@ -371,5 +377,33 @@ PROMPT;
     } catch (\Throwable $e) {
         return ['error' => 'Erreur API : ' . $e->getMessage()];
     }
+}
+#[Route('/dashboard/journal/ai/conversation/{conversationId}/delete', name: 'app_ai_journal_conversation_delete', methods: ['POST'])]
+public function deleteConversation(string $conversationId, ChatMessageRepository $chatRepo): JsonResponse
+{
+    $user = $this->getUser();
+    if (!$user instanceof \App\Entity\Utilisateur) {
+        throw $this->createAccessDeniedException();
+    }
+
+    $data = json_decode($this->container->get('request_stack')->getCurrentRequest()->getContent(), true);
+    if (!$this->isCsrfTokenValid('ai_journal', $data['_token'] ?? '')) {
+        return $this->json(['error' => 'Token invalide'], 403);
+    }
+
+    $messages = $chatRepo->createQueryBuilder('c')
+        ->where('c.conversationId = :conv')
+        ->andWhere('c.utilisateur = :user')
+        ->setParameter('conv', $conversationId)
+        ->setParameter('user', $user)
+        ->getQuery()
+        ->getResult();
+
+    foreach ($messages as $msg) {
+        $chatRepo->remove($msg, false);
+    }
+    $chatRepo->flush(); // flush once after all removals
+
+    return $this->json(['deleted' => true]);
 }
 }

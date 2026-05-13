@@ -31,7 +31,7 @@
         <!-- Timeline -->
         <div class="space-y-4">
             {% for session in sessions %}
-                {% set isCompleted = session.statutSession.value == 'completee' %}
+                {% set isCompleted = session.statutSession.value == 'COMPLETEE' %}
                 {% set hasEvolution = session.scoreHumeurAvant and session.scoreHumeurApres %}
                 {% set evolution = hasEvolution ? session.scoreHumeurApres - session.scoreHumeurAvant : 0 %}
                 
@@ -42,7 +42,7 @@
                             <div class="w-12 h-12 rounded-full flex items-center justify-center
                                 {% if isCompleted %}
                                     bg-chart-2/10 text-chart-2
-                                {% elseif session.statutSession.value == 'en_cours' %}
+                                {% elseif session.statutSession.value == 'EN_COURS' %}
                                     bg-chart-4/10 text-chart-4
                                 {% else %}
                                     bg-secondary text-secondary-foreground
@@ -51,7 +51,7 @@
                                     <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
-                                {% elseif session.statutSession.value == 'en_cours' %}
+                                {% elseif session.statutSession.value == 'EN_COURS' %}
                                     <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <polyline points="12 6 12 12 16 14"></polyline>
@@ -99,7 +99,7 @@
                                 <span class="px-3 py-1 text-sm font-medium rounded-full
                                     {% if isCompleted %}
                                         bg-chart-2/10 text-chart-2
-                                    {% elseif session.statutSession.value == 'en_cours' %}
+                                    {% elseif session.statutSession.value == 'EN_COURS' %}
                                         bg-chart-4/10 text-chart-4
                                     {% else %}
                                         bg-secondary text-secondary-foreground
@@ -159,7 +159,7 @@
                                 {% endif %}
                                 {% if session.impactPercu %}
                                     <span class="px-2 py-1 text-xs rounded-full
-                                        {% if session.impactPercu.value == 'tres_positif' or session.impactPercu.value == 'positif' %}
+                                        {% if session.impactPercu.value == 'TRES_POSITIF' or session.impactPercu.value == 'positif' %}
                                             bg-chart-2/10 text-chart-2
                                         {% else %}
                                             bg-secondary text-secondary-foreground

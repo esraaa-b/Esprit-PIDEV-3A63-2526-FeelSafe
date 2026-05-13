@@ -33,6 +33,11 @@ services:
     arguments:
       $openrouterApiKey: "%env(OPENROUTER_API_KEY)%"
 
+  App\Controller\Admin\IaProxyController:
+    arguments:
+      $groqApiKey: "%env(GROQ_API_KEY)%"
+    tags: ["controller.service_arguments"]
+
   # Weather Service
   App\Service\WeatherService:
     arguments:
@@ -54,4 +59,15 @@ services:
 
   App\Service\EmergencyMailService:
     arguments:
-      $adminEmail: "aoueslatii95@gmail.com"
+      $adminEmail: "zaied.ilef138@gmail.com"
+
+  # ✅ Listener de langue — applique la locale de session à chaque requête
+  App\EventListener\LocaleSubscriber:
+    arguments:
+      $defaultLocale: '%kernel.default_locale%'
+
+  # ✅ Service email de bienvenue — contenu généré par GROQ selon le rôle
+  App\Service\WelcomeEmailService:
+    arguments:
+      $groqApiKey: "%env(GROQ_API_KEY)%"
+      $senderEmail: "nawellaouini210@gmail.com"

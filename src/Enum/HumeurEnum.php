@@ -4,9 +4,9 @@ namespace App\Enum;
 
 enum HumeurEnum: string
 {
-    case TRES_BIEN = 'tres_bien';
-    case BIEN = 'bien';
-    case NEUTRE = 'neutre';
-    case PAS_BIEN = 'pas_bien';
-    case TRES_MAL = 'tres_mal';
+    case TRES_BIEN = 'TRES_BIEN';
+    case BIEN = 'BIEN';
+    case NEUTRE = 'NEUTRE';
+    case PAS_BIEN = 'PAS_BIEN';
+    case TRES_MAL = 'TRES_MAL';
 }

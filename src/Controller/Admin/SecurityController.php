@@ -164,7 +164,7 @@ class SecurityController extends AbstractController
             $user->setPrenom($prenom);
             $user->setEmail($email);
             $user->setTelephone($request->request->get('telephone'));
-            $user->setStatut($request->request->get('statut', 'actif'));
+            // ⛔ Statut non modifiable manuellement — géré automatiquement via last_login
 
             $roles = $request->request->all('roles');
             if (!empty($roles)) {

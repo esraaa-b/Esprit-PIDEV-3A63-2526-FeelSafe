@@ -36,12 +36,12 @@ class GitHubAuthenticator extends OAuth2Authenticator
         $accessToken = $this->fetchAccessToken($client);
 
         return new SelfValidatingPassport(
-            new UserBadge($accessToken->getToken(), function () use ($accessToken, $client) {
+            new UserBadge($accessToken->getToken(), function() use ($accessToken, $client) {
                 /** @var \League\OAuth2\Client\Provider\GithubResourceOwner $githubUser */
                 $githubUser = $client->fetchUserFromToken($accessToken);
 
                 $email = $githubUser->getEmail();
-                $githubId = $githubUser->getId();
+                $githubId = $githubUser->getId() !== null ? (string) $githubUser->getId() : null;
 
                 // Si pas d'email public sur GitHub, on ne peut pas créer le compte
                 if (!$email) {
@@ -59,26 +59,26 @@ class GitHubAuthenticator extends OAuth2Authenticator
 
                     if ($user) {
                         // Lier le compte GitHub à l'utilisateur existant
-                        $user->setGithubId($githubId !== null ? (string) $githubId : null);
+                        $user->setGithubId($githubId);
                     } else {
                         // Créer un nouveau utilisateur
                         $user = new Utilisateur();
                         $user->setEmail($email);
-                        $user->setGithubId($githubId !== null ? (string) $githubId : null);
-
+                        $user->setGithubId($githubId);
+                        
                         // GitHub retourne parfois juste un "name" ou "login"
                         $name = $githubUser->getName() ?? $githubUser->getNickname() ?? 'GitHub User';
                         $nameParts = explode(' ', $name, 2);
-
+                        
                         $user->setPrenom($nameParts[0]);
                         $user->setNom($nameParts[1] ?? 'User');
-
+                        
                         // Avatar GitHub
                         $avatarUrl = $githubUser->toArray()['avatar_url'] ?? null;
                         if ($avatarUrl) {
                             $user->setAvatar($avatarUrl);
                         }
-
+                        
                         $user->setRoles(['ROLE_CLIENT']);
                         $user->setStatut('actif');
                         $user->setPassword(null);

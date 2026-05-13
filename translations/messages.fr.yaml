@@ -1,0 +1,237 @@
+# ══════════════════════════════════════════════════════════════════
+#  FeelSafe — Traductions FRANÇAISES (langue par défaut)
+#  Fichier : translations/messages.fr.yaml
+# ══════════════════════════════════════════════════════════════════
+
+# ── Général
+app:
+  name: FeelSafe
+  tagline: Votre espace de bien-être mental en toute sécurité
+  back: Retour
+  cancel: Annuler
+  save: Enregistrer
+  confirm: Confirmer
+  close: Fermer
+  send: Envoyer
+  delete: Supprimer
+  edit: Modifier
+  publish: Publier
+  refresh: Rafraîchir
+  loading: Chargement...
+  lang_switch: AR
+  yes: Oui
+  no: Non
+
+# ── Navigation
+nav:
+  dashboard: Tableau de bord
+  journal: Journal émotionnel
+  support: Accompagnement
+  wellness: Bien-être
+  emergency: Urgence
+  forum: Communauté
+  security: Sécurité & Profil
+  profile: Mon Profil
+  logout: Déconnexion
+  settings: Paramètres
+
+# ── Auth — Login
+login:
+  title: Connexion
+  subtitle: Entrez vos identifiants pour accéder à votre espace
+  email: Adresse email
+  email_placeholder: votre@email.com
+  password: Mot de passe
+  password_placeholder: "••••••••"
+  remember: Se souvenir de moi
+  submit: Se connecter
+  forgot: Mot de passe oublié ?
+  no_account: Pas encore de compte ?
+  create_account: Créer un compte
+  or_continue: Ou continuer avec
+  google: Continuer avec Google
+  github: Continuer avec GitHub
+  banner_title: Votre espace de bien-être mental en toute sécurité
+  banner_text: Rejoignez une communauté bienveillante et prenez soin de votre santé mentale avec des outils adaptés à vos besoins.
+  feature_privacy: Confidentialité garantie
+  feature_support: Accompagnement personnalisé
+  feature_community: Communauté bienveillante
+  feature_ai: Validation intelligente par IA
+
+# ── Auth — Inscription
+register:
+  title: Créer un compte
+  subtitle: Remplissez le formulaire pour commencer
+  firstname: Prénom
+  firstname_placeholder: Votre prénom
+  lastname: Nom
+  lastname_placeholder: Votre nom
+  email: Adresse email
+  email_placeholder: votre@email.com
+  phone: Téléphone
+  phone_placeholder: "+216 XX XXX XXX"
+  password: Mot de passe
+  password_hint: Minimum 8 caractères avec majuscule, minuscule et chiffre
+  confirm_password: Confirmer le mot de passe
+  role: Je suis
+  role_client: Client
+  role_pro: Professionnel
+  role_admin: Administrateur
+  language: Langue de l'interface
+  visibility: Visibilité du profil
+  dark_mode: Activer le mode sombre
+  dark_mode_hint: Interface sombre pour réduire la fatigue oculaire
+  notifications: Recevoir des notifications par email
+  data_sharing: Autoriser le partage anonyme de mes données
+  submit: Créer mon compte
+  already_account: Vous avez déjà un compte ?
+  login_link: Se connecter
+  banner_title: Rejoignez notre communauté bienveillante
+  banner_text: Créez votre compte et commencez votre parcours vers un meilleur bien-être mental.
+  feature_secure: Données 100% sécurisées
+  feature_multilang: Interface multilingue
+  feature_dark: Mode sombre disponible
+  success: Compte créé avec succès ! Bienvenue dans FeelSafe.
+
+# ── Auth — Mot de passe oublié
+forgot:
+  title: Mot de passe oublié
+  subtitle: Entrez votre adresse email pour réinitialiser votre mot de passe
+  email: Adresse email
+  submit: Réinitialiser le mot de passe
+  back_login: Retour à la connexion
+  check_inbox: Vérifiez votre boîte mail
+  sent_message: Un email de réinitialisation a été envoyé à votre adresse.
+
+# ── Auth — Réinitialisation
+reset:
+  title: Nouveau mot de passe
+  subtitle: Choisissez un nouveau mot de passe sécurisé
+  new_password: Nouveau mot de passe
+  confirm_password: Confirmer le mot de passe
+  password_hint: "8+ caractères, une MAJUSCULE, une minuscule, un chiffre"
+  submit: Enregistrer le nouveau mot de passe
+
+# ── Dashboard Client
+dashboard:
+  welcome: "Bonjour, %name% !"
+  your_modules: Vos modules
+  emotions_overview: Vos émotions en un coup d'œil
+  mood_avg: Humeur moyenne
+  mood_positive: Humeur positive
+  wellness_score: Score bien-être
+  emotion_distribution: Distribution des émotions
+  recent_activity: Activité récente
+  access: Accéder →
+  book_appointment: Prendre RDV
+  request_help: Demander de l'aide
+  go_journal: Accéder au journal
+
+# ── Journal émotionnel
+journal:
+  title: Journal émotionnel
+  new_entry: "+ Nouvelle entrée"
+  calendar: Calendrier
+  all: Tout
+  analyze: Analyser
+  listen: Écouter
+  stop: Arrêter
+  mood_label: Comment vous sentez-vous ?
+  describe: Décrivez votre journée...
+  add_image: Ajouter une image
+  add_audio: Ajouter un audio
+  save: Enregistrer
+  stats_title: Statistiques émotionnelles
+  calc_trends: Calculer les tendances
+  trends_30: Tendances sur 30 jours
+  dominant_emotion: Émotion dominante
+  calendar_emotional: Calendrier émotionnel
+  no_entries: Aucune entrée pour cette période
+  last_entry: Dernière entrée
+  active_days: Jours actifs
+  best_streak: Meilleure série
+  moods:
+    very_good: Très bien
+    good: Bien
+    neutral: Neutre
+    bad: Pas bien
+    very_bad: Très mal
+
+# ── Urgences
+emergency:
+  title: Urgences
+  report: Signaler une urgence
+  new: Nouvelle urgence
+  manage: Gestion des urgences
+  manage_interventions: Gestion des interventions
+  gravity: Gravité
+  description: Description
+  type: Type
+  status: Statut
+  datetime: Date/Heure
+  pending: En attente
+  active: Active
+  resolved: Résolue
+  critical: Urgences critiques
+  untreated: Urgences non traitées
+  help_24: Notre équipe est disponible 24h/24 pour vous accompagner
+
+# ── Profil & Sécurité
+profile:
+  title: Mon Profil
+  personal_info: Informations personnelles
+  preferences: Préférences
+  security: Sécurité
+  firstname: Prénom
+  lastname: Nom
+  email: Email
+  phone: Téléphone
+  dark_mode: Mode sombre
+  notifications: Notifications
+  language: Langue d'affichage
+  visibility: Visibilité du profil
+  data_sharing: Partage de données
+  save_prefs: Enregistrer les préférences
+  update_password: Mettre à jour le mot de passe
+  old_password: Ancien mot de passe
+  new_password: Nouveau mot de passe
+  confirm_password: Confirmer le mot de passe
+
+# ── Forum / Communauté
+forum:
+  title: Communauté
+  new_post: Nouvelle publication
+  publish: Publier
+  comment: Commenter
+  reply: Répondre
+  no_posts: Aucune publication pour le moment
+
+# ── Admin
+admin:
+  users_title: Gestion des utilisateurs
+  search: Rechercher un utilisateur...
+  all_roles: Tous les rôles
+  total_users: Total utilisateurs
+  clients: Clients
+  professionals: Professionnels
+  admins: Administrateurs
+  active: Actif
+  inactive: Inactif
+
+# ── Erreurs
+error:
+  required: Ce champ est obligatoire.
+  email_invalid: Format d'email invalide.
+  email_exists: Cet email est déjà utilisé.
+  password_short: Le mot de passe doit contenir au moins 8 caractères.
+  password_mismatch: Les mots de passe ne correspondent pas.
+  password_uppercase: Le mot de passe doit contenir au moins une majuscule.
+  password_lowercase: Le mot de passe doit contenir au moins une minuscule.
+  password_digit: Le mot de passe doit contenir au moins un chiffre.
+  firstname_invalid: Ce prénom ne semble pas réel.
+  lastname_invalid: Ce nom ne semble pas réel.
+  phone_invalid: "Format invalide. Utilisez : +216 XX XXX XXX"
+
+# ── Pro
+pro:
+  journal_patients: Journaux patients

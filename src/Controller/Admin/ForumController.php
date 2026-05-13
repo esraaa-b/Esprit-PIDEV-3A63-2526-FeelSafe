@@ -72,7 +72,6 @@ class ForumController extends AbstractController
         }
 
         $publication->setUser($user);
-        $publication->setDatePublication(new \DateTime());
 
         $form = $this->createForm(PublicationType::class, $publication);
         $form->handleRequest($request);
@@ -272,3 +271,4 @@ class ForumController extends AbstractController
         return $this->redirectToRoute('admin_forum_index');
     }
 }
+

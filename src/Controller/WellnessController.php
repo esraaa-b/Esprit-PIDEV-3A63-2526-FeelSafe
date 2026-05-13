@@ -28,6 +28,9 @@ class WellnessController extends AbstractController
         WellnessInsightsService $insightsService  // NOUVEAU
     ): Response {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         // Récupérer les sessions de l'utilisateur (7 derniers jours)
         $dateDebut = new \DateTime('-7 days');
@@ -57,7 +60,7 @@ class WellnessController extends AbstractController
                     if ($session->getDureeReelle()) {
                         $dayMinutes += $session->getDureeReelle();
                     }
-                    if ($session->getStatutSession()->value === 'completee') {
+                    if ($session->getStatutSession()->value === 'COMPLETEE') {
                         $dayCompleted = true;
                     }
                 }
@@ -188,6 +191,9 @@ class WellnessController extends AbstractController
         SessionActiviteRepository $sessionRepo
     ): Response {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         // Statistiques de l'activité pour cet utilisateur
         $userSessions = $sessionRepo->createQueryBuilder('s')
@@ -199,7 +205,7 @@ class WellnessController extends AbstractController
             ->getResult();
 
         $totalSessions = count($userSessions);
-        $completedSessions = count(array_filter($userSessions, fn($s) => $s->getStatutSession()->value === 'completee'));
+        $completedSessions = count(array_filter($userSessions, fn($s) => $s->getStatutSession()->value === 'COMPLETEE'));
         
         $totalMinutes = 0;
         foreach ($userSessions as $session) {
@@ -222,12 +228,15 @@ class WellnessController extends AbstractController
         EntityManagerInterface $em
     ): Response {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         // Créer une nouvelle session
         $session = new SessionActivite();
         $session->setUtilisateur($user);
         $session->setActivite($activite);
-        $session->setDateDebut(new \DateTime());
+        $session->setDateDebut(new \DateTimeImmutable());
         $session->setStatutSession(\App\Enum\StatutSession::EN_COURS);
 
         $em->persist($session);
@@ -262,7 +271,7 @@ class WellnessController extends AbstractController
 
         if ($request->isMethod('POST')) {
             // Récupérer les données du formulaire
-            $session->setDateFin(new \DateTime());
+            $session->setDateFin(new \DateTimeImmutable());
             $session->setStatutSession(\App\Enum\StatutSession::COMPLETEE);
             
             // Durée réelle (en minutes)
@@ -273,8 +282,10 @@ class WellnessController extends AbstractController
 
             // Humeur après
             if ($request->request->get('humeur_apres')) {
-                $session->setHumeurApres(\App\Enum\HumeurEnum::from($request->request->get('humeur_apres')));
-            }
+    $session->setHumeurApres(\App\Enum\HumeurEnum::from(
+        strtoupper($request->request->get('humeur_apres'))
+    ));
+}
             if ($request->request->get('score_humeur_apres')) {
                 $session->setScoreHumeurApres((int)$request->request->get('score_humeur_apres'));
             }
@@ -286,9 +297,11 @@ class WellnessController extends AbstractController
             if ($request->request->get('note_satisfaction')) {
                 $session->setNoteSatisfaction((int)$request->request->get('note_satisfaction'));
             }
-            if ($request->request->get('impact_percu')) {
-                $session->setImpactPercu(\App\Enum\ImpactPercu::from($request->request->get('impact_percu')));
-            }
+ if ($request->request->get('impact_percu')) {
+    $session->setImpactPercu(\App\Enum\ImpactPercu::from(
+        strtoupper($request->request->get('impact_percu'))
+    ));
+}
             if ($request->request->get('commentaire')) {
                 $session->setCommentaire($request->request->get('commentaire'));
             }
@@ -310,11 +323,15 @@ class WellnessController extends AbstractController
     public function history(SessionActiviteRepository $sessionRepo): Response
     {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         $sessions = $sessionRepo->createQueryBuilder('s')
             ->where('s.utilisateur = :user')
             ->setParameter('user', $user)
             ->orderBy('s.dateDebut', 'DESC')
+            ->setMaxResults(500)
             ->getQuery()
             ->getResult();
 
@@ -327,18 +344,22 @@ class WellnessController extends AbstractController
     public function stats(SessionActiviteRepository $sessionRepo): Response
     {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         // Toutes les sessions de l'utilisateur
         $sessions = $sessionRepo->createQueryBuilder('s')
             ->where('s.utilisateur = :user')
             ->setParameter('user', $user)
             ->orderBy('s.dateDebut', 'ASC')
+            ->setMaxResults(500)
             ->getQuery()
             ->getResult();
 
         // Calculer les statistiques
         $totalSessions = count($sessions);
-        $completedSessions = count(array_filter($sessions, fn($s) => $s->getStatutSession()->value === 'completee'));
+        $completedSessions = count(array_filter($sessions, fn($s) => $s->getStatutSession()->value === 'COMPLETEE'));
         
         $totalMinutes = 0;
         $moodEvolution = [];
@@ -380,6 +401,9 @@ class WellnessController extends AbstractController
         WeatherService $weatherService
     ): Response {
         $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
         
         $smartRecommendations = $recommendationService->getSmartRecommendations($user, 12);
         $activityOfTheMoment = $recommendationService->getActivityOfTheMoment($user);
@@ -482,7 +506,7 @@ public function quizResults(
             // Vérifier s'il y a au moins une session complétée ce jour
             $hasCompleted = false;
             foreach ($sessionsByDate[$dateKey] as $session) {
-                if ($session->getStatutSession()->value === 'completee') {
+                if ($session->getStatutSession()->value === 'COMPLETEE') {
                     $hasCompleted = true;
                     break;
                 }

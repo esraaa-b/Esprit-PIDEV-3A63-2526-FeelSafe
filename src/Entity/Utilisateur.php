@@ -24,26 +24,22 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private int $id;
+    private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    private ?string $email = null;
+    private string $email;
 
     #[ORM\Column(type: 'json')]
     private array $role = [];
 
-    /**
-     * ✅ La colonne s'appelle "mot_de_passe" dans la base de données
-     * Maintenant nullable pour OAuth
-     */
     #[ORM\Column(name: 'mot_de_passe', type: 'string', nullable: true)]
     private ?string $motDePasse = null;
 
     #[ORM\Column(length: 100)]
-    private ?string $nom = null;
+    private string $nom;
 
     #[ORM\Column(length: 100)]
-    private ?string $prenom = null;
+    private string $prenom;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $telephone = null;
@@ -52,11 +48,14 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private string $statut = 'actif';
 
     #[ORM\Column]
-    private ?\DateTimeImmutable $dateCreation = null;
+    private \DateTimeImmutable $dateCreation;
 
-    // ========================================
-    // 🆕 NOUVEAUX CHAMPS OAUTH (ajoutés)
-    // ========================================
+    /**
+     * Dernière connexion — mise à jour automatiquement à chaque login.
+     * Utilisée pour calculer le statut actif/inactif automatiquement.
+     */
+    #[ORM\Column(name: 'last_login', type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $lastLogin = null;
 
     #[ORM\Column(name: 'google_id', length: 255, nullable: true)]
     private ?string $googleId = null;
@@ -67,14 +66,15 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $avatar = null;
 
-    // ========================================
-    // Relations existantes (non modifiées)
-    // ========================================
-
     #[ORM\OneToOne(mappedBy: 'utilisateur', cascade: ['persist', 'remove'])]
     private ?ConfidentialiteUtilisateur $confidentialite = null;
 
-    #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: JournalEmotionnel::class, orphanRemoval: true)]
+    #[ORM\OneToMany(
+        mappedBy: 'utilisateur',
+        targetEntity: JournalEmotionnel::class,
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true
+    )]
     private Collection $journaux;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Publication::class)]
@@ -92,24 +92,33 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: TendanceEmotionnelle::class)]
     private Collection $usertend;
 
+    /* ═══════════════════════════════════════════
+       CONSTRUCTOR
+    ═══════════════════════════════════════════ */
     public function __construct()
     {
-        $this->dateCreation = new \DateTimeImmutable();
-        $this->role = ['ROLE_CLIENT']; // Rôle par défaut
-        $this->journaux = new ArrayCollection();
-        $this->publications = new ArrayCollection();
-        $this->userCom = new ArrayCollection();
-        $this->activitesCrees = new ArrayCollection();
+        $this->dateCreation      = new \DateTimeImmutable();
+        $this->role              = ['ROLE_CLIENT'];
+        $this->journaux          = new ArrayCollection();
+        $this->publications      = new ArrayCollection();
+        $this->userCom           = new ArrayCollection();
+        $this->activitesCrees    = new ArrayCollection();
         $this->sessionsActivites = new ArrayCollection();
-        $this->usertend = new ArrayCollection();
+        $this->usertend          = new ArrayCollection();
     }
 
+    /* ═══════════════════════════════════════════
+       ID
+    ═══════════════════════════════════════════ */
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getEmail(): ?string
+    /* ═══════════════════════════════════════════
+       EMAIL / USER IDENTIFIER
+    ═══════════════════════════════════════════ */
+    public function getEmail(): string
     {
         return $this->email;
     }
@@ -125,39 +134,53 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return (string) $this->email;
     }
 
+    /* ═══════════════════════════════════════════
+       ROLES
+    ═══════════════════════════════════════════ */
     public function getRoles(): array
     {
-        $roles = $this->role;
+        $roles   = $this->role;
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }
 
+    /**
+     * Alias utilisé dans AdminController (setRole)
+     */
+    public function setRole(array $roles): static
+    {
+        $this->role = $roles;
+        return $this;
+    }
+
+    public function getRole(): array
+    {
+        return $this->role;
+    }
+
+    /**
+     * Alias Symfony standard
+     */
     public function setRoles(array $roles): static
     {
         $this->role = $roles;
         return $this;
     }
 
-    /**
-     * Méthode requise par PasswordAuthenticatedUserInterface
-     */
+    /* ═══════════════════════════════════════════
+       MOT DE PASSE
+    ═══════════════════════════════════════════ */
     public function getPassword(): ?string
     {
         return $this->motDePasse;
     }
 
-    /**
-     * Méthode setPassword() requise par Symfony Security
-     */
     public function setPassword(?string $password): static
     {
         $this->motDePasse = $password;
         return $this;
     }
 
-    /**
-     * Méthode originale (conservée)
-     */
     public function setMotDePasse(?string $motDePasse): static
     {
         $this->motDePasse = $motDePasse;
@@ -169,12 +192,12 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->motDePasse;
     }
 
-    public function eraseCredentials(): void
-    {
-        // Rien à effacer
-    }
+    public function eraseCredentials(): void {}
 
-    public function getNom(): ?string
+    /* ═══════════════════════════════════════════
+       INFORMATIONS PERSONNELLES
+    ═══════════════════════════════════════════ */
+    public function getNom(): string
     {
         return $this->nom;
     }
@@ -185,7 +208,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getPrenom(): ?string
+    public function getPrenom(): string
     {
         return $this->prenom;
     }
@@ -207,7 +230,15 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getStatut(): ?string
+    public function getFullName(): string
+    {
+        return $this->prenom . ' ' . $this->nom;
+    }
+
+    /* ═══════════════════════════════════════════
+       STATUT (géré automatiquement)
+    ═══════════════════════════════════════════ */
+    public function getStatut(): string
     {
         return $this->statut;
     }
@@ -218,7 +249,10 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getDateCreation(): ?\DateTimeImmutable
+    /* ═══════════════════════════════════════════
+       DATE CRÉATION
+    ═══════════════════════════════════════════ */
+    public function getDateCreation(): \DateTimeImmutable
     {
         return $this->dateCreation;
     }
@@ -229,10 +263,42 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // ========================================
-    // 🆕 GETTERS/SETTERS OAUTH (nouveaux)
-    // ========================================
+    /* ═══════════════════════════════════════════
+       LAST LOGIN  ← NOUVEAU
+       Mise à jour dans SecurityController à chaque connexion.
+       Utilisé par AdminController pour calculer le statut.
+    ═══════════════════════════════════════════ */
+    public function getLastLogin(): ?\DateTimeInterface
+    {
+        return $this->lastLogin;
+    }
 
+    public function setLastLogin(?\DateTimeInterface $lastLogin): static
+    {
+        $this->lastLogin = $lastLogin;
+        return $this;
+    }
+
+    /**
+     * Nombre de jours depuis la dernière connexion (ou depuis la création si jamais connecté).
+     */
+    public function getJoursInactivite(): int
+    {
+        $ref = $this->lastLogin ?? \DateTime::createFromImmutable($this->dateCreation);
+        return (int) $ref->diff(new \DateTime())->days;
+    }
+
+    /**
+     * Détermine si l'utilisateur est inactif selon le seuil donné (défaut 30 jours).
+     */
+    public function isInactif(int $seuilJours = 30): bool
+    {
+        return $this->getJoursInactivite() >= $seuilJours;
+    }
+
+    /* ═══════════════════════════════════════════
+       OAUTH
+    ═══════════════════════════════════════════ */
     public function getGoogleId(): ?string
     {
         return $this->googleId;
@@ -255,6 +321,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /* ═══════════════════════════════════════════
+       AVATAR
+    ═══════════════════════════════════════════ */
     public function getAvatar(): ?string
     {
         return $this->avatar;
@@ -266,33 +335,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // ========================================
-    // Méthodes existantes (non modifiées)
-    // ========================================
-
-    public function getConfidentialite(): ?ConfidentialiteUtilisateur
-    {
-        return $this->confidentialite;
-    }
-
-    public function setConfidentialite(?ConfidentialiteUtilisateur $confidentialite): static
-    {
-        if ($this->confidentialite !== $confidentialite) {
-            $this->confidentialite = $confidentialite;
-
-            if ($confidentialite !== null && $confidentialite->getUtilisateur() !== $this) {
-                $confidentialite->setUtilisateur($this);
-            }
-        }
-
-        return $this;
-    }
-
-    public function getFullName(): string
-    {
-        return $this->prenom . ' ' . $this->nom;
-    }
-
+    /* ═══════════════════════════════════════════
+       HELPERS RÔLES
+    ═══════════════════════════════════════════ */
     public function hasRole(string $role): bool
     {
         return in_array($role, $this->getRoles());
@@ -313,9 +358,35 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->hasRole('ROLE_CLIENT');
     }
 
-    /**
-     * @return Collection<int, JournalEmotionnel>
-     */
+    public function getRoleLabel(): string
+    {
+        if ($this->isAdmin())         return 'ADMIN';
+        if ($this->isProfessionnel()) return 'PROFESSIONNEL';
+        return 'CLIENT';
+    }
+
+    /* ═══════════════════════════════════════════
+       CONFIDENTIALITÉ
+    ═══════════════════════════════════════════ */
+    public function getConfidentialite(): ?ConfidentialiteUtilisateur
+    {
+        return $this->confidentialite;
+    }
+
+    public function setConfidentialite(?ConfidentialiteUtilisateur $confidentialite): static
+    {
+        if ($this->confidentialite !== $confidentialite) {
+            $this->confidentialite = $confidentialite;
+            if ($confidentialite !== null && $confidentialite->getUtilisateur() !== $this) {
+                $confidentialite->setUtilisateur($this);
+            }
+        }
+        return $this;
+    }
+
+    /* ═══════════════════════════════════════════
+       JOURNAUX ÉMOTIONNELS
+    ═══════════════════════════════════════════ */
     public function getJournaux(): Collection
     {
         return $this->journaux;
@@ -327,21 +398,18 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
             $this->journaux->add($journal);
             $journal->setUtilisateur($this);
         }
-
         return $this;
     }
 
     public function removeJournal(JournalEmotionnel $journal): static
     {
-        if ($this->journaux->removeElement($journal)) {
-            if ($journal->getUtilisateur() === $this) {
-                $journal->setUtilisateur(null);
-            }
-        }
-
+        $this->journaux->removeElement($journal);
         return $this;
     }
 
+    /* ═══════════════════════════════════════════
+       PUBLICATIONS
+    ═══════════════════════════════════════════ */
     public function getPublications(): Collection
     {
         return $this->publications;
@@ -358,14 +426,13 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removePublication(Publication $publication): static
     {
-        if ($this->publications->removeElement($publication)) {
-            if ($publication->getUser() === $this) {
-                $publication->setUser(null);
-            }
-        }
+        $this->publications->removeElement($publication);
         return $this;
     }
 
+    /* ═══════════════════════════════════════════
+       COMMENTAIRES
+    ═══════════════════════════════════════════ */
     public function getUserCom(): Collection
     {
         return $this->userCom;
@@ -382,14 +449,13 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeUserCom(Commentaire $commentaire): static
     {
-        if ($this->userCom->removeElement($commentaire)) {
-            if ($commentaire->getUser() === $this) {
-                $commentaire->setUser(null);
-            }
-        }
+        $this->userCom->removeElement($commentaire);
         return $this;
     }
 
+    /* ═══════════════════════════════════════════
+       ACTIVITÉS BIEN-ÊTRE
+    ═══════════════════════════════════════════ */
     public function getActivitesCrees(): Collection
     {
         return $this->activitesCrees;
@@ -414,6 +480,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /* ═══════════════════════════════════════════
+       SESSIONS ACTIVITÉS
+    ═══════════════════════════════════════════ */
     public function getSessionsActivites(): Collection
     {
         return $this->sessionsActivites;
@@ -430,14 +499,13 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeSessionsActivite(SessionActivite $session): static
     {
-        if ($this->sessionsActivites->removeElement($session)) {
-            if ($session->getUtilisateur() === $this) {
-                $session->setUtilisateur(null);
-            }
-        }
+        $this->sessionsActivites->removeElement($session);
         return $this;
     }
 
+    /* ═══════════════════════════════════════════
+       TENDANCES ÉMOTIONNELLES
+    ═══════════════════════════════════════════ */
     public function getUsertend(): Collection
     {
         return $this->usertend;
@@ -454,11 +522,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeUsertend(TendanceEmotionnelle $tendance): static
     {
-        if ($this->usertend->removeElement($tendance)) {
-            if ($tendance->getUtilisateur() === $this) {
-                $tendance->setUtilisateur(null);
-            }
-        }
+        $this->usertend->removeElement($tendance);
         return $this;
     }
 }

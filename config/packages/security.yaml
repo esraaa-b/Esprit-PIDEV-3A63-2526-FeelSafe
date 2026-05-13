@@ -1,6 +1,19 @@
 security:
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        # ✅ FIX COMPATIBILITÉ SYMFONY ↔ JAVA
+        #
+        # Avant : 'auto' → Symfony choisissait bcrypt mais stockait avec préfixe "$2y$"
+        # que jBCrypt (Java) ne reconnaissait pas.
+        #
+        # Solution : on force bcrypt avec cost: 13 (même valeur que gensalt(13) côté Java).
+        # Symfony continue d'utiliser "$2y$" en interne, mais le fix côté Java dans
+        # UtilisateurService.checkPassword() remplace "$2y$" par "$2a$" avant vérification.
+        # Les deux sont algorithmiquement identiques.
+        #
+        # ⚠️ NE PAS changer migrate_from — cela efface la compatibilité avec les anciens hash.
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+            algorithm: bcrypt
+            cost: 13
 
     providers:
         app_user_provider:
@@ -16,12 +29,12 @@ security:
         main:
             lazy: true
             provider: app_user_provider
-            
+
             # OAuth Authenticators (Google + GitHub)
             custom_authenticators:
                 - App\Security\GoogleAuthenticator
                 - App\Security\GitHubAuthenticator
-            
+
             form_login:
                 login_path: app_login
                 check_path: app_login
@@ -29,12 +42,13 @@ security:
                 default_target_path: app_dashboard
                 always_use_default_target_path: false
                 use_referer: true
-            
+
             logout:
                 path: app_logout
                 target: app_login
 
     access_control:
+        - { path: ^/api/upload, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
         - { path: ^/connect, roles: PUBLIC_ACCESS }

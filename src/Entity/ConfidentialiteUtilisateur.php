@@ -16,17 +16,18 @@ class ConfidentialiteUtilisateur
     #[ORM\Column]
     private ?int $id = null;
 
+    // ✅ Fix: non-nullable types
     #[ORM\Column]
-    private ?bool $partageDonnees = false;
+    private bool $partageDonnees = false;
 
     #[ORM\Column]
-    private ?bool $notificationsEmail = true;
+    private bool $notificationsEmail = true;
 
     #[ORM\Column(length: 20)]
-    private ?string $visibiliteProfil = 'prive';
+    private string $visibiliteProfil = 'prive';
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $dateModification = null;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $dateModification;
 
     #[ORM\OneToOne(inversedBy: 'confidentialite', targetEntity: Utilisateur::class)]
     private ?Utilisateur $utilisateur = null;
@@ -83,7 +84,8 @@ class ConfidentialiteUtilisateur
         return $this->dateModification;
     }
 
-    public function setDateModification(\DateTimeImmutable $dateModification): static
+    // ✅ Fix: private setter
+    private function setDateModification(\DateTimeImmutable $dateModification): static
     {
         $this->dateModification = $dateModification;
         return $this;

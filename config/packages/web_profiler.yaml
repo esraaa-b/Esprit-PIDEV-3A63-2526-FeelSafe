@@ -7,6 +7,7 @@ when@dev:
         profiler:
             enabled: true
             collect: true
+            only_main_requests: true
 
 when@test:
     framework:

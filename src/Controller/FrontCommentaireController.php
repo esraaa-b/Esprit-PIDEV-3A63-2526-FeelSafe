@@ -26,22 +26,17 @@ final class FrontCommentaireController extends AbstractController
             $commentaire = new Commentaire();
             $commentaire->setContenu($contenu ?? '');
             $commentaire->setGifUrl($gifUrl);
-            $commentaire->setDateCommentaire(new \DateTime());
+            $commentaire->setDateCommentaire(new \DateTimeImmutable());
             $commentaire->setPublication($publication);
 
-            // Simuler utilisateur connecté (id=1)
-            $user = $em->getRepository(Utilisateur::class)->find(1); 
-            
+            $user = $em->getRepository(Utilisateur::class)->find(1);
             $commentaire->setUser($user);
 
             $em->persist($commentaire);
 
-            // Notification pour l'auteur de la publication via Publication
-            if ($publication->getUser()) {
-                $publication->setNotificationMessage("Nouveau commentaire de " . $user->getNom() . " sur votre publication.");
-                $publication->setNotificationRead(false);
-                $publication->setNotificationDate(new \DateTime());
-            }
+            $publication->setNotificationMessage("Nouveau commentaire de " . $user->getNom() . " sur votre publication.");
+            $publication->setNotificationRead(false);
+            $publication->setNotificationDate(new \DateTimeImmutable());
 
             $em->flush();
 
@@ -61,25 +56,19 @@ final class FrontCommentaireController extends AbstractController
             $reply = new Commentaire();
             $reply->setContenu($contenu ?? '');
             $reply->setGifUrl($gifUrl);
-            $reply->setDateCommentaire(new \DateTime());
+            $reply->setDateCommentaire(new \DateTimeImmutable());
             $reply->setPublication($parentComment->getPublication());
             $reply->setParent($parentComment);
 
-            // Simuler utilisateur connecté (id=1)
             $user = $em->getRepository(Utilisateur::class)->find(1);
             $reply->setUser($user);
 
             $em->persist($reply);
 
-            // Notification pour l'auteur du commentaire parent
             $publication = $parentComment->getPublication();
-            if ($parentComment->getUser()) {
-                $publication->setNotificationMessage(
-                    $user->getNom() . " a répondu à votre commentaire."
-                );
-                $publication->setNotificationRead(false);
-                $publication->setNotificationDate(new \DateTime());
-            }
+            $publication->setNotificationMessage($user->getNom() . " a répondu à votre commentaire.");
+            $publication->setNotificationRead(false);
+            $publication->setNotificationDate(new \DateTimeImmutable());
 
             $em->flush();
 
@@ -166,7 +155,6 @@ final class FrontCommentaireController extends AbstractController
     #[Route('/{id}/delete', name: 'app_front_commentaire_delete', methods: ['POST'])]
     public function delete(Commentaire $commentaire, EntityManagerInterface $em): Response
     {
-        // Simuler utilisateur connecté (id=1)
         $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
 
         $isCommentAuthor = ($commentaire->getUser() === $fakeUser);
@@ -189,21 +177,19 @@ final class FrontCommentaireController extends AbstractController
     #[Route('/{id}/edit', name: 'app_front_commentaire_edit', methods: ['GET', 'POST'])]
     public function edit(Commentaire $commentaire, Request $request, EntityManagerInterface $em): Response
     {
-        // Simuler utilisateur connecté (id=1)
         $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
 
         if ($commentaire->getUser() !== $fakeUser) {
             throw $this->createAccessDeniedException("Seul l'auteur peut modifier son commentaire !");
         }
 
-        // Si le formulaire est soumis
         $contenu = $request->request->get('contenu');
         $gifUrl = $request->request->get('gif_url');
-        
+
         if ($contenu !== null || $gifUrl !== null) {
             $commentaire->setContenu($contenu ?? '');
             $commentaire->setGifUrl($gifUrl);
-            $commentaire->setDateCommentaire(new \DateTime());
+            $commentaire->setDateCommentaire(new \DateTimeImmutable());
             $em->flush();
 
             $this->addFlash('success', 'Commentaire mis à jour !');
@@ -213,7 +199,6 @@ final class FrontCommentaireController extends AbstractController
             ]);
         }
 
-        // Affichage du formulaire simple
         return $this->render('front_commentaire/edit.html.twig', [
             'commentaire' => $commentaire
         ]);

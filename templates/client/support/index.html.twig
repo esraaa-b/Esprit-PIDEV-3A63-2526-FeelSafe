@@ -4,21 +4,6 @@
 {% set localisationPattern = '\\d+\\s+[A-Za-zÀ-ÖØ-öø-ÿ].+' %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900">Prendre un rendez-vous</h1>
-        <div class="flex items-center gap-2">
-            <a href="{{ path('app_support_next') }}" class="btn btn-primary">Prochain RDV</a>
-            <a href="{{ path('app_support_accomp') }}" class="btn btn-outline">Accompagnement</a>
-        </div>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <p class="text-sm text-gray-600">Choisissez un professionnel, une date, une heure et le mode</p>
-        <form action="{{ path('support_create') }}" method="post" class="mt-6 space-y-4" novalidate>
-            <div id="form-alert" role="alert" aria-live="assertive" class="hidden fixed top-5 right-5 z-50 max-w-sm shadow-lg mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-800 border border-red-200"></div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Professionnel</label>
-                <select name="professionnel_id" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
 <div class="max-w-4xl mx-auto space-y-6">
     <div class="rounded-2xl p-6 text-white shadow" style="background:linear-gradient(90deg,#2563eb 0%,#4f46e5 100%);">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -54,13 +39,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Date</label>
-                    <input type="date" id="rdv-date" name="date" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
+
                     <input type="date" id="rdv-date" name="date" class="mt-1 w-full border border-gray-300 rounded-xl px-3 py-2 hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Heure</label>
                     <div class="flex items-center gap-3">
-                        <input type="time" id="rdv-time" name="time" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
                         <input type="time" id="rdv-time" name="time" class="mt-1 w-full border border-gray-300 rounded-xl px-3 py-2 hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" required>
                         <span id="recommend-badge" class="hidden inline-flex items-center px-2 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">Recommandé</span>
                     </div>
@@ -68,7 +52,7 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Mode</label>
-                <select name="mode" id="mode-select" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" required>
+
                 <select name="mode" id="mode-select" class="mt-1 w-full border border-gray-300 rounded-xl px-3 py-2 hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" required>
                     {% for m in modes %}
                         <option value="{{ m.value }}">{{ m.name|lower }}</option>
@@ -77,11 +61,6 @@
             </div>
             <div id="localisation-field" class="hidden">
                 <label class="block text-sm font-medium text-gray-700">Localisation</label>
-                <input type="text" id="localisation-input" name="localisation" placeholder="Ex: 9 rue Mohamed Lakkani" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" pattern="{{ localisationPattern }}" title="Format requis: numéro au début puis nom de voie (ex: 9 rue Mohamed Lakkani)">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Commentaire</label>
-                <textarea name="commentaire" rows="3" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Message pour le professionnel (optionnel)"></textarea>
                 <input type="text" id="localisation-input" name="localisation" placeholder="Ex: 9 rue Mohamed Lakkani" class="mt-1 w-full border border-gray-300 rounded-xl px-3 py-2 hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" pattern="{{ localisationPattern }}" title="Format requis: numéro au début puis nom de voie (ex: 9 rue Mohamed Lakkani)">
             </div>
             <div>
@@ -93,8 +72,6 @@
             </div>
         </form>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
     <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
             <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold">Mes demandes de rendez-vous</h2>
@@ -147,7 +124,6 @@
                                     <button type="button" class="btn btn-sm btn-primary" onclick="openJitsi('{{ r.id }}','{{ app.user.getFullName()|e('js') }}','RDV FeelSafe {{ r.dateRdv|date('d/m/Y') }} {{ r.heureRdv|date('H:i') }}')">Rejoindre</button>
                                 {% endif %}
                                 {% if r.statut.value == 'planifie' %}
-                                    <form action="{{ path('support_rdv_cancel', { id: r.id }) }}" method="post">
                                     <form action="{{ path('support_rdv_cancel', { id: r.id }) }}" method="post" data-cancel-rdv="true">
                                         <button type="submit" class="btn btn-sm btn-outline">Annuler</button>
                                     </form>
@@ -242,11 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
     dateInput.addEventListener('change', updateRecommendBadge);
     timeInput.addEventListener('change', updateRecommendBadge);
 
-    function showAlert(msg) {
-        alertBox.textContent = msg;
-        alertBox.classList.remove('hidden');
-        clearTimeout(alertTimer);
-        alertTimer = setTimeout(() => { alertBox.classList.add('hidden'); alertBox.textContent = ''; }, 4000);
     function showBanner(msg, type){
         const textEl = document.getElementById('form-alert-text');
         textEl.textContent = msg;
@@ -316,7 +287,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!dateInput.value || !timeInput.value) return;
         if (new Date(dateInput.value + 'T' + timeInput.value).getTime() <= Date.now()) {
             e.preventDefault(); showAlert('La date et l\'heure doivent être futures.');
-        }
             return;
         }
         if (document.querySelector('table tbody tr')) {

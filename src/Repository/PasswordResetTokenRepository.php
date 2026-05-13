@@ -46,8 +46,18 @@ class PasswordResetTokenRepository extends ServiceEntityRepository
             ->getQuery()
             ->execute();
     }
+    /**
+     * Invalidate all tokens for a specific user
+     */
+    public function invalidateUserTokens(Utilisateur $user): void
+    {
+        $this->createQueryBuilder('prt')
+            ->update()
+            ->set('prt.isUsed', ':true')
+            ->where('prt.user = :user')
+            ->setParameter('true', true)
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->execute();
+    }
 }
-
-
-
-

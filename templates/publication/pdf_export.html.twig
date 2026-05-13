@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Export Publications</title>
+    <style>
+        body { font-family: DejaVu Sans, Arial, sans-serif; color: #1f2937; font-size: 12px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .title { font-size: 20px; font-weight: 700; }
+        .meta { color: #6b7280; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 10px; border: 1px solid #e5e7eb; vertical-align: top; }
+        th { background: #f9fafb; text-transform: uppercase; font-size: 11px; color: #6b7280; }
+        .muted { color: #6b7280; }
+        .nowrap { white-space: nowrap; }
+        .text-right { text-align: right; }
+    </style>
+    </head>
+<body>
+    <div class="header">
+        <div class="title">Liste des publications</div>
+        <div class="meta">
+            Généré le {{ generatedAt|date('d/m/Y H:i') }} • Tri:
+            {% if sort_by == 'datePublication' %}Date ({{ sort_order }})
+            {% elseif sort_by == 'titre' %}Titre ({{ sort_order }})
+            {% elseif sort_by == 'id' %}ID ({{ sort_order }})
+            {% endif %}
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 6%;">ID</th>
+                <th style="width: 26%;">Titre</th>
+                <th style="width: 42%;">Contenu</th>
+                <th style="width: 10%;">Réactions</th>
+                <th style="width: 8%;">Commentaires</th>
+                <th style="width: 8%;">Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in publications %}
+                {% set totalReactions = (p.likesCount|default(0)) + (p.dislikesCount|default(0)) %}
+                <tr>
+                    <td class="nowrap">#{{ p.id }}</td>
+                    <td><strong>{{ p.titre }}</strong></td>
+                    <td class="muted">{{ p.contenu ? p.contenu|slice(0, 160) ~ (p.contenu|length > 160 ? '…' : '') : '' }}</td>
+                    <td class="text-right">{{ totalReactions }}</td>
+                    <td class="text-right">{{ p.pubCom|length }}</td>
+                    <td class="nowrap">{{ p.datePublication ? p.datePublication|date('d/m/Y') : '-' }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6" class="muted" style="text-align:center; padding: 18px;">
+                        Aucune publication
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

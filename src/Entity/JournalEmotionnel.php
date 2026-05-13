@@ -10,6 +10,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: JournalEmotionnelRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class JournalEmotionnel
 {
     #[ORM\Id]
@@ -17,6 +18,7 @@ class JournalEmotionnel
     #[ORM\Column]
     private ?int $id = null;
 
+    // ✅ Fix 1: enumType already correct, kept as is
     #[ORM\Column(length: 20, enumType: EmotionEnum::class)]
     private EmotionEnum $emotion;
 
@@ -34,13 +36,20 @@ class JournalEmotionnel
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $audio = null;
 
-    #[ORM\Column]
-    private ?\DateTime $dateCreation = null;
+    // ✅ Fix 2: DateTime → DateTimeImmutable, non-nullable, initialized in constructor
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $dateCreation;
 
-    #[ORM\ManyToOne(inversedBy: 'journaux')]  // ✅ Changé de 'userjour' à 'journaux'
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Utilisateur $utilisateur = null;
+    // ✅ Fix 3: non-nullable (removed ?)
+    #[ORM\ManyToOne(inversedBy: 'journaux')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    private Utilisateur $utilisateur;
 
+    // ✅ Fix 4: constructor initializes dateCreation automatically
+    public function __construct()
+    {
+        $this->dateCreation = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
@@ -57,18 +66,15 @@ class JournalEmotionnel
         $this->emotion = $emotion;
         return $this;
     }
+
     #[Assert\Callback]
     public function validateContenu(ExecutionContextInterface $context, $payload)
     {
-        // Si le contenu n'est PAS vide, on vérifie la longueur
         if (!empty($this->contenu) && mb_strlen($this->contenu) < 6) {
             $context->buildViolation('Le contenu doit contenir au moins 6 caractères.')
                 ->atPath('contenu')
                 ->addViolation();
         }
-
-        // ✅ Pas de vérification si le contenu est vide
-        // Car on peut avoir une image ou un audio sans texte
     }
 
     public function getContenu(): ?string
@@ -79,7 +85,6 @@ class JournalEmotionnel
     public function setContenu(?string $contenu): static
     {
         $this->contenu = $contenu;
-
         return $this;
     }
 
@@ -91,7 +96,6 @@ class JournalEmotionnel
     public function setImage(?string $image): static
     {
         $this->image = $image;
-
         return $this;
     }
 
@@ -103,31 +107,29 @@ class JournalEmotionnel
     public function setAudio(?string $audio): static
     {
         $this->audio = $audio;
-
         return $this;
     }
 
-    public function getDateCreation(): ?\DateTime
+    public function getDateCreation(): \DateTimeImmutable
     {
         return $this->dateCreation;
     }
 
-    public function setDateCreation(\DateTime $dateCreation): static
+    // ✅ Fix 5: setter is now private to prevent manual manipulation
+    private function setDateCreation(\DateTimeImmutable $dateCreation): static
     {
         $this->dateCreation = $dateCreation;
-
         return $this;
     }
 
-    public function getUtilisateur(): ?Utilisateur
+    public function getUtilisateur(): Utilisateur
     {
         return $this->utilisateur;
     }
 
-    public function setUtilisateur(?Utilisateur $utilisateur): static
+    public function setUtilisateur(Utilisateur $utilisateur): static
     {
         $this->utilisateur = $utilisateur;
-
         return $this;
     }
 }

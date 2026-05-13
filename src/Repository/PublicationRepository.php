@@ -11,36 +11,18 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class PublicationRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+   public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Publication::class);
     }
 
-    //    /**
-    //     * @return Publication[] Returns an array of Publication objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Publication
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
-    public function findUnreadNotifications(int $userId): array
+    /**
+     * Find unread notifications for a user.
+     * setMaxResults avoids "ORDER BY without LIMIT" Doctrine Doctor warning.
+     *
+     * @return Publication[]
+     */
+    public function findUnreadNotifications(int $userId, int $limit = 50): array
     {
         return $this->createQueryBuilder('p')
             ->andWhere('p.user = :userId')
@@ -49,24 +31,32 @@ class PublicationRepository extends ServiceEntityRepository
             ->setParameter('userId', $userId)
             ->setParameter('read', false)
             ->orderBy('p.notificationDate', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }
-    public function findByTopic(string $topic): array
+
+    /**
+     * Find publications matching a topic keyword cluster.
+     * setMaxResults avoids "ORDER BY without LIMIT" Doctrine Doctor warning.
+     *
+     * @return Publication[]
+     */
+    public function findByTopic(string $topic, int $limit = 100): array
     {
         $clusters = [
-            'Anxiété' => ['anxiété', 'anxieux', 'peur', 'panique', 'crise', 'inquiétude', 'anxiety', 'anxious', 'fear', 'panic', 'attack', 'worry'],
+            'Anxiété'    => ['anxiété', 'anxieux', 'peur', 'panique', 'crise', 'inquiétude', 'anxiety', 'anxious', 'fear', 'panic', 'attack', 'worry'],
             'Dépression' => ['dépression', 'déprimé', 'triste', 'tristesse', 'vide', 'désespoir', 'depression', 'depressed', 'sad', 'sadness', 'empty', 'hopeless', 'despair'],
-            'Stress' => ['stress', 'stressé', 'pression', 'surmenage', 'épuisement', 'stressed', 'pressure', 'burnout', 'exhausted'],
-            'Angoisse' => ['angoisse', 'angoisse', 'oppression', 'thoracique', 'tremblement', 'anguish', 'distress', 'tight chest', 'shaking'],
-            'Addiction' => ['addiction', 'dépendance', 'drogue', 'alcool', 'tabac', 'jeu', 'drug', 'alcohol', 'smoking', 'gambling', 'substance'],
-            'Solitude' => ['solitude', 'seul', 'isolement', 'isolé', 'délaissé', 'loneliness', 'lonely', 'alone', 'isolation', 'isolated', 'neglected'],
+            'Stress'     => ['stress', 'stressé', 'pression', 'surmenage', 'épuisement', 'stressed', 'pressure', 'burnout', 'exhausted'],
+            'Angoisse'   => ['angoisse', 'oppression', 'thoracique', 'tremblement', 'anguish', 'distress', 'tight chest', 'shaking'],
+            'Addiction'  => ['addiction', 'dépendance', 'drogue', 'alcool', 'tabac', 'jeu', 'drug', 'alcohol', 'smoking', 'gambling', 'substance'],
+            'Solitude'   => ['solitude', 'seul', 'isolement', 'isolé', 'délaissé', 'loneliness', 'lonely', 'alone', 'isolation', 'isolated', 'neglected'],
         ];
 
         $keywords = $clusters[$topic] ?? [$topic];
-        
+
         $qb = $this->createQueryBuilder('p')
-            ->leftJoin('p.pubCom', 'c'); // Pour chercher aussi dans les commentaires
+            ->leftJoin('p.pubCom', 'c');
 
         $orX = $qb->expr()->orX();
         foreach ($keywords as $key => $word) {
@@ -81,6 +71,7 @@ class PublicationRepository extends ServiceEntityRepository
             ->andWhere('p.isDeleted = :false')
             ->setParameter('false', false)
             ->orderBy('p.datePublication', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }

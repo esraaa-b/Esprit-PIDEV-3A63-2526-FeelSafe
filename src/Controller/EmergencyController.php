@@ -67,17 +67,11 @@ class EmergencyController extends AbstractController
 
                 $urgence->setSeverityLevel($severityMap[$urgencyLevel] ?? 3);
                 $urgence->setStatus('Pending');
-                $urgence->setCreatedAt(new \DateTime());
                 $urgence->setUser($user);
 
                 $entityManager->persist($urgence);
                 $entityManager->flush();
 
-                // SEND EMAIL NOTIFICATION TO ADMIN ONLY
-                if (!$user instanceof \App\Entity\Utilisateur) {
-                $logger->error('User is not an Utilisateur instance');
-                throw new \LogicException('Expected Utilisateur');
-            }
                 $this->mailService->sendEmergencyNotification($urgence, $user);
 
                 // UPDATE SUCCESS MESSAGE
@@ -113,12 +107,10 @@ class EmergencyController extends AbstractController
     /**
      * Always returns authenticated user
      */
-    private function getCurrentUser(LoggerInterface $logger): UserInterface
+    private function getCurrentUser(LoggerInterface $logger): \App\Entity\Utilisateur
     {
         $user = $this->getUser();
-
-        if (!$user instanceof UserInterface) {
-            $logger->warning('Anonymous access blocked');
+        if (!$user instanceof \App\Entity\Utilisateur) {
             throw $this->createAccessDeniedException();
         }
 

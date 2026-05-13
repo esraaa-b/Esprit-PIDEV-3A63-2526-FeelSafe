@@ -4,7 +4,7 @@ namespace App\Enum;
 
 enum RecommandePar: string
 {
-    case IA = 'ia';
-    case PROFESSIONNEL = 'professionnel';
-    case AUTO = 'auto';
+    case IA = 'IA';
+    case PROFESSIONNEL = 'PROFESSIONNEL';
+    case AUTO = 'AUTO';
 }

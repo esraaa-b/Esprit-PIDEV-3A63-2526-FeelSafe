@@ -79,13 +79,17 @@ class TendancesController extends AbstractController
             
             $thirtyDaysAgo = (new \DateTime())->modify('-30 days');
             
+            // JOIN FETCH utilisateur to avoid lazy loading; LIMIT 300 prevents full table scan
             $allJournals = $em->getRepository(JournalEmotionnel::class)
                 ->createQueryBuilder('j')
+                ->addSelect('u')
+                ->join('j.utilisateur', 'u')
                 ->where('j.utilisateur = :user')
                 ->andWhere('j.dateCreation >= :thirtyDaysAgo')
                 ->setParameter('user', $user)
                 ->setParameter('thirtyDaysAgo', $thirtyDaysAgo)
                 ->orderBy('j.dateCreation', 'ASC')
+                ->setMaxResults(300)
                 ->getQuery()
                 ->getResult();
             

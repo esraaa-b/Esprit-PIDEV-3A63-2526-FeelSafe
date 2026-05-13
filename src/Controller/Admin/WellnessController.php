@@ -146,8 +146,8 @@ class WellnessController extends AbstractController
     #[Route('/sessions', name: 'admin_wellness_sessions')]
     public function listeSessions(SessionActiviteRepository $repo): Response
     {
-        $sessions = $repo->findBy([], ['dateDebut' => 'DESC']);
-        
+// ✅ Fix
+        $sessions = $repo->findBy([], ['dateDebut' => 'DESC'], 100);        
         return $this->render('admin/wellness/sessions/index.html.twig', [
             'sessions' => $sessions,
         ]);
@@ -173,14 +173,14 @@ class WellnessController extends AbstractController
             $activiteId = $request->request->get('activite_id');
             $activite = $activiteRepo->find($activiteId);
             $session->setActivite($activite);
-            
-            $session->setDateDebut(new \DateTime($request->request->get('date_debut')));
-            
+
+            $session->setDateDebut(new \DateTimeImmutable($request->request->get('date_debut')));
+
             $dateFin = $request->request->get('date_fin');
             if ($dateFin) {
-                $session->setDateFin(new \DateTime($dateFin));
+                $session->setDateFin(new \DateTimeImmutable($dateFin));
             }
-            
+                        
             $session->setDureeReelle($request->request->get('duree_reelle'));
             
             $statutSession = $request->request->get('statut_session');

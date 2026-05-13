@@ -11,20 +11,22 @@ class ProfessionnelDashboardController extends BaseDashboardController
 {
     #[Route('/pro/dashboard', name: 'professionnel_dashboard')]
     #[IsGranted('ROLE_PROFESSIONNEL')]
-public function index(): Response
-{
-    $hour = (int) date('G');
-    if ($hour < 12) {
-        $greeting = 'Bonjour';
-    } elseif ($hour < 18) {
-        $greeting = 'Bon après-midi';
-    } else {
-        $greeting = 'Bonsoir';
-    }
+    public function index(): Response
+    {
+        $hour = (int) date('G');
+        if ($hour < 12) {
+            $greeting = 'Bonjour';
+        } elseif ($hour < 18) {
+            $greeting = 'Bon après-midi';
+        } else {
+            $greeting = 'Bonsoir';
+        }
 
-    /** @var \App\Entity\Utilisateur $user */
-    $user = $this->getUser();
-    $userName = $user->getPrenom() ?? 'Professionnel';
+        $user = $this->getUser();
+        if (!$user instanceof \App\Entity\Utilisateur) {
+            throw $this->createAccessDeniedException();
+        }
+        $userName = $user->getPrenom() ?: 'Professionnel';
 
         $stats = [
             ['label' => 'Patients actifs',       'value' => 24,  'icon' => 'users',    'color' => 'bg-primary/10 text-primary'],
