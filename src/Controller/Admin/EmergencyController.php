@@ -2,186 +2,205 @@
 
 namespace App\Controller\Admin;
 
-use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Urgence;
-use App\Entity\Utilisateur;
+use App\Entity\Intervention;
 use App\Repository\UrgenceRepository;
+use App\Repository\InterventionRepository;
+use App\Service\PdfExportService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
-use Knp\Component\Pager\PaginatorInterface; // 👈 AJOUTER
+use Knp\Component\Pager\PaginatorInterface;
 
 #[Route('/admin/emergency')]
 class EmergencyController extends AbstractController
 {
-    #[Route('', name: 'admin_emergency', methods: ['GET', 'POST'])]
+    #[Route('', name: 'admin_emergency', methods: ['GET'])]
     public function index(
-        Request $request,
-        EntityManagerInterface $entityManager,
         UrgenceRepository $urgenceRepository,
-        PaginatorInterface $paginator // 👈 AJOUTER
+        InterventionRepository $interventionRepository
     ): Response {
+        // Get all urgences
+        $urgences = $urgenceRepository->findAll();
 
-        // Handle Admin-Created Emergency Form Submission
-        if ($request->isMethod('POST') && $request->request->has('admin_create_emergency')) {
+        // Get interventions en cours
+        $interventionsEnCours = $interventionRepository->findBy(['statut' => Intervention::STATUT_EN_COURS]);
 
-            try {
-                $urgence = new Urgence();
-
-                // Get form data
-                $userId = $request->request->get('user_id');
-                $urgencyLevel = $request->request->get('urgency_level');
-                $location = $request->request->get('location');
-                $description = $request->request->get('description');
-
-                // Find the selected user
-                $user = $entityManager->getRepository(Utilisateur::class)->find($userId);
-
-                if (!$user) {
-                    throw new \Exception('User not found');
-                }
-
-                // Map urgency level to severity level (like in user's form)
-                $severityMap = [
-                    'high' => 5,
-                    'medium' => 3,
-                    'low' => 1
-                ];
-
-                // Set emergency data
-                $urgence->setTypeUrgence('Admin Created');
-                $urgence->setDescription($description);
-                $urgence->setLocation($location ?: 'Non spécifié');
-                $urgence->setSeverityLevel($severityMap[$urgencyLevel] ?? 3);
-                $urgence->setStatus('Pending');
-                $urgence->setCreatedAt(new \DateTime());
-                $urgence->setUser($user);
-
-                $entityManager->persist($urgence);
-                $entityManager->flush();
-
-                $this->addFlash('success', 'Emergency created successfully for ' . $user->getPrenom() . ' ' . $user->getNom());
-
-            } catch (\Exception $e) {
-                $this->addFlash('error', 'Error creating emergency: ' . $e->getMessage());
-            }
-
-            return $this->redirectToRoute('admin_emergency');
-        }
-
-        // ===== NOUVEAU : Requête avec pagination au lieu de findAll() =====
-        $query = $urgenceRepository->createQueryBuilder('u')
-            ->orderBy('u.createdAt', 'DESC')
-            ->getQuery();
-
-        $emergencies = $paginator->paginate(
-            $query,
-            $request->query->getInt('page', 1), // Page courante, défaut 1
-            20 // Éléments par page
-        );
-
-        // Get all users for the dropdown and health tracker
-        $users = $entityManager->getRepository(Utilisateur::class)->findAll();
-
-        // ===== AJOUT : Statistiques avec DTO =====
-        $statsType = $urgenceRepository->countDistinctTypeUrgence();
-        $statsStatus = $urgenceRepository->countDistinctStatus();
+        // Count stats
+        $urgencesCritiques = $urgenceRepository->countCritiques();
+        $urgencesNonTraitees = $urgenceRepository->countNonTraitees();
+        $interventionsEnCoursCount = count($interventionsEnCours);
 
         return $this->render('admin/emergency/index.html.twig', [
-            'emergencies' => $emergencies,
-            'users' => $users,
-            'stats_type_distinct' => $statsType->getDistinctCount(),
-            'stats_type_total' => $statsType->getTotalCount(),
-            'stats_status_distinct' => $statsStatus->getDistinctCount(),
-            'stats_status_total' => $statsStatus->getTotalCount(),
+            'urgences' => $urgences,
+            'interventionsEnCours' => $interventionsEnCours,
+            'urgencesCritiques' => $urgencesCritiques,
+            'urgencesNonTraitees' => $urgencesNonTraitees,
+            'interventionsEnCoursCount' => $interventionsEnCoursCount,
         ]);
     }
 
-    #[Route('/delete/{id}', name: 'admin_emergency_delete', methods: ['POST'])]
-    public function deleteUrgence(Request $request, Urgence $urgence, EntityManagerInterface $entityManager): Response
-    {
-        if ($this->isCsrfTokenValid('delete' . $urgence->getId(), $request->request->get('_token'))) {
-            $entityManager->remove($urgence);
-            $entityManager->flush();
-            $this->addFlash('success', 'Emergency deleted successfully!');
+    #[Route('/data', name: 'admin_emergency_data', methods: ['GET'])]
+    public function getData(
+        UrgenceRepository $urgenceRepository,
+        InterventionRepository $interventionRepository
+    ): JsonResponse {
+        $urgences = $urgenceRepository->findAll();
+        $interventionsEnCours = $interventionRepository->findBy(['statut' => Intervention::STATUT_EN_COURS]);
+
+        $urgencesData = [];
+        foreach ($urgences as $urgence) {
+            $urgencesData[] = [
+                'id' => $urgence->getId(),
+                'type' => $urgence->getTypeUrgence(),
+                'description' => $urgence->getDescription(),
+                'gravity' => $urgence->getNiveauGravite(),
+                'status' => $urgence->getStatut(),
+                'date' => $urgence->getDateHeure() ? $urgence->getDateHeure()->format('Y-m-d H:i:s') : null,
+                'userId' => $urgence->getIdUtilisateur(),
+            ];
         }
 
-        return $this->redirectToRoute('admin_emergency');
+        $interventionsData = [];
+        foreach ($interventionsEnCours as $intervention) {
+            $interventionsData[] = [
+                'id' => $intervention->getId(),
+                'idUrgence' => $intervention->getIdUrgence(),
+                'type' => $intervention->getTypeIntervention(),
+                'status' => $intervention->getStatut(),
+                'date' => $intervention->getDateHeure() ? $intervention->getDateHeure()->format('Y-m-d H:i:s') : null,
+                'notes' => $intervention->getNotes(),
+                'adminId' => $intervention->getIdAdmin(),
+            ];
+        }
+
+        return $this->json([
+            'success' => true,
+            'urgencesCritiques' => $urgenceRepository->countCritiques(),
+            'urgencesNonTraitees' => $urgenceRepository->countNonTraitees(),
+            'interventionsEnCoursCount' => count($interventionsEnCours),
+            'urgences' => $urgencesData,
+            'interventions' => $interventionsData,
+        ]);
     }
 
     #[Route('/{id}/status/{status}', name: 'admin_emergency_status', methods: ['POST'])]
     public function updateStatus(int $id, string $status, Request $request, EntityManagerInterface $entityManager, UrgenceRepository $urgenceRepository): JsonResponse
     {
         try {
-            if (!$request->headers->get('X-Requested-With') == 'XMLHttpRequest') {
-                return $this->json(['success' => false, 'error' => 'Invalid request'], Response::HTTP_BAD_REQUEST);
-            }
-
             $emergency = $urgenceRepository->find($id);
 
             if (!$emergency) {
                 return $this->json(['success' => false, 'error' => 'Emergency not found'], Response::HTTP_NOT_FOUND);
             }
 
-            $allowedStatuses = ['Pending', 'In Progress', 'Resolved', 'Closed'];
+            $allowedStatuses = [Urgence::STATUT_EN_ATTENTE, Urgence::STATUT_PRISE_EN_CHARGE, Urgence::STATUT_RESOLUE];
             if (!in_array($status, $allowedStatuses)) {
                 return $this->json(['success' => false, 'error' => 'Invalid status'], Response::HTTP_BAD_REQUEST);
             }
 
-            $emergency->setStatus($status);
+            $emergency->setStatut($status);
             $entityManager->flush();
 
-            return $this->json([
-                'success' => true,
-                'message' => "Emergency #{$id} marked as {$status}",
-                'new_status' => $status
-            ]);
+            return $this->json(['success' => true, 'new_status' => $status]);
 
         } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'error' => 'Error updating status: ' . $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->json(['success' => false, 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    #[Route('/emergency/{id}/details', name: 'admin_emergency_details', methods: ['GET'])]
-    public function getEmergencyDetails(int $id, UrgenceRepository $urgenceRepository): JsonResponse
+    #[Route('/intervention/create', name: 'admin_intervention_create', methods: ['POST'])]
+    public function createIntervention(Request $request, EntityManagerInterface $entityManager, UrgenceRepository $urgenceRepository): JsonResponse
     {
         try {
-            $emergency = $urgenceRepository->find($id);
+            $data = json_decode($request->getContent(), true);
 
-            if (!$emergency) {
-                return $this->json(['success' => false, 'error' => 'Emergency not found'], Response::HTTP_NOT_FOUND);
+            $urgence = $urgenceRepository->find($data['idUrgence']);
+            if (!$urgence) {
+                return $this->json(['success' => false, 'error' => 'Urgence not found'], Response::HTTP_NOT_FOUND);
             }
 
-            $user = $emergency->getUser();
+            // Update urgency status to "prise en charge"
+            $urgence->setStatut(Urgence::STATUT_PRISE_EN_CHARGE);
 
-            return $this->json([
-                'success' => true,
-                'emergency' => [
-                    'id' => $emergency->getId(),
-                    'type' => $emergency->getTypeUrgence(),
-                    'description' => $emergency->getDescription(),
-                    'severity' => $emergency->getSeverityLevel(),
-                    'status' => $emergency->getStatus(),
-                    'location' => $emergency->getLocation(),
-                    'created_at' => $emergency->getCreatedAt() ? $emergency->getCreatedAt()->format('Y-m-d H:i:s') : null,
-                    'user' => $user ? [
-                        'name' => $user->getPrenom() . ' ' . $user->getNom(),
-                        'email' => $user->getEmail(),
-                        'phone' => $user->getTelephone()
-                    ] : null
-                ]
-            ]);
+            // Create intervention
+            $intervention = new Intervention();
+            $intervention->setIdUrgence($data['idUrgence']);
+            $intervention->setTypeIntervention($data['type']);
+            $intervention->setStatut(Intervention::STATUT_EN_COURS);
+            $intervention->setDateHeure(new \DateTime());
+            $intervention->setNotes($data['notes'] ?? '');
+            $intervention->setIdAdmin($this->getUser()->getId());
+
+            // Optionally increase gravity
+            if (isset($data['increaseGravity']) && $data['increaseGravity'] === true) {
+                $newGravity = min($urgence->getNiveauGravite() + 1, 5);
+                $urgence->setNiveauGravite($newGravity);
+                $intervention->setNotes(($intervention->getNotes() ?: '') . " [Gravité augmentée à $newGravity]");
+            }
+
+            $entityManager->persist($intervention);
+            $entityManager->flush();
+
+            return $this->json(['success' => true, 'intervention_id' => $intervention->getId()]);
 
         } catch (\Exception $e) {
-            return $this->json([
-                'success' => false,
-                'error' => 'Error fetching details: ' . $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->json(['success' => false, 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    #[Route('/intervention/{id}', name: 'admin_intervention_delete', methods: ['DELETE'])]
+    public function deleteIntervention(int $id, EntityManagerInterface $entityManager, InterventionRepository $interventionRepository): JsonResponse
+    {
+        try {
+            $intervention = $interventionRepository->find($id);
+            if (!$intervention) {
+                return $this->json(['success' => false, 'error' => 'Intervention not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $entityManager->remove($intervention);
+            $entityManager->flush();
+
+            return $this->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/urgence/delete/{id}', name: 'admin_urgence_delete', methods: ['DELETE'])]
+    public function deleteUrgence(int $id, EntityManagerInterface $entityManager, UrgenceRepository $urgenceRepository): JsonResponse
+    {
+        try {
+            $urgence = $urgenceRepository->find($id);
+            if (!$urgence) {
+                return $this->json(['success' => false, 'error' => 'Urgence not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $entityManager->remove($urgence);
+            $entityManager->flush();
+
+            return $this->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/export/urgences', name: 'admin_export_urgences', methods: ['GET'])]
+    public function exportUrgences(UrgenceRepository $urgenceRepository, PdfExportService $pdfExportService): Response
+    {
+        $urgences = $urgenceRepository->findAll();
+        return $pdfExportService->exportUrgencesToPDF($urgences, 'Liste des Urgences - FeelSafe');
+    }
+
+    #[Route('/export/interventions', name: 'admin_export_interventions', methods: ['GET'])]
+    public function exportInterventions(InterventionRepository $interventionRepository, PdfExportService $pdfExportService): Response
+    {
+        $interventions = $interventionRepository->findAll();
+        return $pdfExportService->exportInterventionsToPDF($interventions, 'Liste des Interventions - FeelSafe');
     }
 }

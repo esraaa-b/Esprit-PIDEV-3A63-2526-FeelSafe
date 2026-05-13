@@ -9,86 +9,143 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UrgenceRepository::class)]
+#[ORM\Table(name: 'urgence')]
 class Urgence
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private int $id;
+    private ?int $id = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
+    #[ORM\Column(name: 'type_urgence', length: 100, nullable: true)]
     private ?string $typeUrgence = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(type: Types::SMALLINT, nullable: true)]
-    private ?int $severityLevel = null;
+    #[ORM\Column(name: 'niveau_gravite', nullable: true)]
+    private ?int $niveauGravite = null;
 
-    #[ORM\Column(length: 30, nullable: true)]
-    private ?string $status = null;
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $statut = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
-    private ?string $location = null;
+    #[ORM\Column(name: 'date_heure', type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $dateHeure = null;
 
-    // ✅ Fix: DateTimeImmutable, non-nullable, initialized in constructor
-    #[ORM\Column(type: 'datetime_immutable')]
-    private \DateTimeImmutable $createdAt;
+    #[ORM\Column(name: 'id_utilisateur', nullable: true)]
+    private ?int $idUtilisateur = null;
 
-    // ✅ Fix: non-nullable relation
-    #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
-    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
-    private Utilisateur $user;
+    // Java-compatible status constants
+    public const STATUT_EN_ATTENTE = 'en attente';
+    public const STATUT_PRISE_EN_CHARGE = 'prise en charge';
+    public const STATUT_RESOLUE = 'résolue';
 
-    #[ORM\OneToMany(targetEntity: Intervention::class, mappedBy: 'urgence')]
-    private Collection $urginter;
+    // Java-compatible gravity levels
+    public const GRAVITE_MIN = 1;
+    public const GRAVITE_MAX = 5;
 
     public function __construct()
     {
-        $this->urginter = new ArrayCollection();
-        // ✅ Fix: initialized in constructor
-        $this->createdAt = new \DateTimeImmutable();
+        $this->dateHeure = new \DateTime();
+        $this->statut = self::STATUT_EN_ATTENTE;
     }
 
-    public function getId(): ?int { return $this->id; }
-
-    public function getTypeUrgence(): ?string { return $this->typeUrgence; }
-    public function setTypeUrgence(?string $typeUrgence): static { $this->typeUrgence = $typeUrgence; return $this; }
-
-    public function getDescription(): ?string { return $this->description; }
-    public function setDescription(?string $description): static { $this->description = $description; return $this; }
-
-    public function getSeverityLevel(): ?int { return $this->severityLevel; }
-    public function setSeverityLevel(?int $severityLevel): static { $this->severityLevel = $severityLevel; return $this; }
-
-    public function getStatus(): ?string { return $this->status; }
-    public function setStatus(?string $status): static { $this->status = $status; return $this; }
-
-    public function getLocation(): ?string { return $this->location; }
-    public function setLocation(?string $location): static { $this->location = $location; return $this; }
-
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
-
-    // ✅ Fix: private setter
-    private function setCreatedAt(\DateTimeImmutable $createdAt): static { $this->createdAt = $createdAt; return $this; }
-
-    public function getUser(): Utilisateur { return $this->user; }
-    public function setUser(Utilisateur $user): static { $this->user = $user; return $this; }
-
-    public function getUrginter(): Collection { return $this->urginter; }
-
-    public function addUrginter(Intervention $urginter): static
+    public function getId(): ?int
     {
-        if (!$this->urginter->contains($urginter)) {
-            $this->urginter->add($urginter);
-            $urginter->setUrgence($this);
-        }
+        return $this->id;
+    }
+
+    public function getTypeUrgence(): ?string
+    {
+        return $this->typeUrgence;
+    }
+
+    public function setTypeUrgence(?string $typeUrgence): static
+    {
+        $this->typeUrgence = $typeUrgence;
         return $this;
     }
-    
-public function removeUrginter(Intervention $urginter): static
-{
-    $this->urginter->removeElement($urginter);
-    return $this;
-}
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): static
+    {
+        $this->description = $description;
+        return $this;
+    }
+
+    public function getNiveauGravite(): ?int
+    {
+        return $this->niveauGravite;
+    }
+
+    public function setNiveauGravite(?int $niveauGravite): static
+    {
+        if ($niveauGravite !== null) {
+            $niveauGravite = max(self::GRAVITE_MIN, min(self::GRAVITE_MAX, $niveauGravite));
+        }
+        $this->niveauGravite = $niveauGravite;
+        return $this;
+    }
+
+    public function getStatut(): ?string
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(?string $statut): static
+    {
+        $allowedStatuts = [self::STATUT_EN_ATTENTE, self::STATUT_PRISE_EN_CHARGE, self::STATUT_RESOLUE];
+        if ($statut !== null && !in_array($statut, $allowedStatuts)) {
+            throw new \InvalidArgumentException('Invalid status: ' . $statut);
+        }
+        $this->statut = $statut;
+        return $this;
+    }
+
+    public function getDateHeure(): ?\DateTimeInterface
+    {
+        return $this->dateHeure;
+    }
+
+    public function setDateHeure(?\DateTimeInterface $dateHeure): static
+    {
+        $this->dateHeure = $dateHeure;
+        return $this;
+    }
+
+    public function getIdUtilisateur(): ?int
+    {
+        return $this->idUtilisateur;
+    }
+
+    public function setIdUtilisateur(?int $idUtilisateur): static
+    {
+        $this->idUtilisateur = $idUtilisateur;
+        return $this;
+    }
+
+    // Helper methods for Java compatibility
+    public function isEnAttente(): bool
+    {
+        return $this->statut === self::STATUT_EN_ATTENTE;
+    }
+
+    public function isPriseEnCharge(): bool
+    {
+        return $this->statut === self::STATUT_PRISE_EN_CHARGE;
+    }
+
+    public function isResolue(): bool
+    {
+        return $this->statut === self::STATUT_RESOLUE;
+    }
+
+    public function isCritique(): bool
+    {
+        return $this->niveauGravite === 5;
+    }
 }

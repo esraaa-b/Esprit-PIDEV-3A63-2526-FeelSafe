@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\Urgence;
 use App\Repository\UrgenceRepository;
 use App\Service\EmergencyChatbotService;
-use App\Service\EmergencyMailService; // ADD THIS LINE
+use App\Service\EmergencyMailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,15 +19,19 @@ use Psr\Log\LoggerInterface;
 class EmergencyController extends AbstractController
 {
     private EmergencyChatbotService $chatbot;
-    private EmergencyMailService $mailService; // ADD THIS PROPERTY
+    private EmergencyMailService $mailService;
 
-    // UPDATE CONSTRUCTOR
+    // Crisis keywords matching Java's GeminiService
+    private const CRITICAL_KEYWORDS = ['kill myself', 'suicide', 'end my life', 'want to die', 'hurt myself', 'take my life'];
+    private const HIGH_KEYWORDS = ['abuse', 'assault', 'attack', 'weapon', 'bleeding', 'raped', 'beaten'];
+    private const MEDIUM_KEYWORDS = ['panic attack', 'crisis', 'can\'t cope', 'overdose', 'self harm'];
+
     public function __construct(
         EmergencyChatbotService $chatbot,
-        EmergencyMailService $mailService // ADD THIS PARAMETER
+        EmergencyMailService $mailService
     ) {
         $this->chatbot = $chatbot;
-        $this->mailService = $mailService; // ADD THIS LINE
+        $this->mailService = $mailService;
     }
 
     #[Route('/dashboard/emergency', name: 'app_emergency', methods: ['GET', 'POST'])]
@@ -55,26 +59,41 @@ class EmergencyController extends AbstractController
                 $urgencyLevel = $request->request->get('urgency_level');
                 $location = $request->request->get('location');
 
-                $urgence->setTypeUrgence('User Report');
-                $urgence->setDescription($description);
-                $urgence->setLocation($location ?: 'Non spécifié');
-
+                // Set type based on gravity (matching Java)
                 $severityMap = [
                     'high' => 5,
                     'medium' => 3,
                     'low' => 1
                 ];
 
-                $urgence->setSeverityLevel($severityMap[$urgencyLevel] ?? 3);
-                $urgence->setStatus('Pending');
-                $urgence->setUser($user);
+                $gravity = $severityMap[$urgencyLevel] ?? 3;
+
+                // Determine type based on gravity (matching Java)
+                if ($gravity == 5) {
+                    $type = 'Tentative de suicide';
+                } elseif ($gravity == 4) {
+                    $type = 'Violence/Agression';
+                } else {
+                    $type = 'Crise de panique';
+                }
+
+                $urgence->setTypeUrgence($type);
+                $urgence->setDescription($description . ($location ? " | Localisation: " . $location : ""));
+                $urgence->setNiveauGravite($gravity);
+                $urgence->setStatut(Urgence::STATUT_EN_ATTENTE);
+                $urgence->setDateHeure(new \DateTime());
+                $urgence->setIdUtilisateur($user->getId());
 
                 $entityManager->persist($urgence);
                 $entityManager->flush();
 
+                // SEND EMAIL NOTIFICATION TO ADMIN ONLY
+                if (!$user instanceof \App\Entity\Utilisateur) {
+                    $logger->error('User is not an Utilisateur instance');
+                    throw new \LogicException('Expected Utilisateur');
+                }
                 $this->mailService->sendEmergencyNotification($urgence, $user);
 
-                // UPDATE SUCCESS MESSAGE
                 $this->addFlash('success', 'Votre demande d\'urgence a été envoyée avec succès! Une confirmation vous a été envoyée par email.');
 
             } catch (\Throwable $e) {
@@ -92,25 +111,45 @@ class EmergencyController extends AbstractController
         /* ===================== LIST USER EMERGENCIES ===================== */
 
         $userEmergencies = $urgenceRepository->findBy(
-            ['user' => $user],
-            ['createdAt' => 'DESC']
+            ['idUtilisateur' => $user->getId()],
+            ['dateHeure' => 'DESC']
         );
 
         $hasEmergencies = count($userEmergencies) > 0;
 
         return $this->render('dashboard/emergency/index.html.twig', [
             'emergencies' => $userEmergencies,
-            'hasEmergencies' => $hasEmergencies,  // 👈 AJOUTEZ CETTE LIGNE
+            'hasEmergencies' => $hasEmergencies,
         ]);
-            }
+    }
+
+    #[Route('/emergency/history', name: 'emergency_history', methods: ['GET'])]
+    public function history(UrgenceRepository $urgenceRepository): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        $emergencies = $urgenceRepository->findBy(
+            ['idUtilisateur' => $user->getId()],
+            ['dateHeure' => 'DESC']
+        );
+
+        return $this->render('dashboard/emergency/history.html.twig', [
+            'emergencies' => $emergencies
+        ]);
+    }
 
     /**
      * Always returns authenticated user
      */
-    private function getCurrentUser(LoggerInterface $logger): \App\Entity\Utilisateur
+    private function getCurrentUser(LoggerInterface $logger): UserInterface
     {
         $user = $this->getUser();
-        if (!$user instanceof \App\Entity\Utilisateur) {
+
+        if (!$user instanceof UserInterface) {
+            $logger->warning('Anonymous access blocked');
             throw $this->createAccessDeniedException();
         }
 
@@ -119,12 +158,80 @@ class EmergencyController extends AbstractController
 
     // ===================== CHAT METHODS =====================
 
-    #[Route('/chat/send', name: 'chat_send', methods: ['POST'])]
-    public function sendChat(Request $request, SessionInterface $session, LoggerInterface $logger): JsonResponse
+    /**
+     * Detect crisis level from message (matching Java GeminiService)
+     */
+    private function detectCrisisLevel(string $message): int
+    {
+        $lowerMsg = strtolower($message);
+
+        foreach (self::CRITICAL_KEYWORDS as $keyword) {
+            if (strpos($lowerMsg, $keyword) !== false) {
+                return 5;
+            }
+        }
+
+        foreach (self::HIGH_KEYWORDS as $keyword) {
+            if (strpos($lowerMsg, $keyword) !== false) {
+                return 4;
+            }
+        }
+
+        foreach (self::MEDIUM_KEYWORDS as $keyword) {
+            if (strpos($lowerMsg, $keyword) !== false) {
+                return 3;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Create urgency from chat detection (matching Java)
+     */
+    private function createUrgencyFromChat(string $message, int $gravity, int $userId, EntityManagerInterface $entityManager, LoggerInterface $logger): ?Urgence
     {
         try {
-            // Verify user is authenticated
-            $this->getCurrentUser($logger);
+            // Determine type based on gravity
+            if ($gravity == 5) {
+                $type = 'Tentative de suicide';
+            } elseif ($gravity == 4) {
+                $type = 'Violence/Agression';
+            } else {
+                $type = 'Crise de panique';
+            }
+
+            $urgence = new Urgence();
+            $urgence->setTypeUrgence($type);
+            $urgence->setDescription("Message: \"" . substr($message, 0, 500) . "\"");
+            $urgence->setNiveauGravite($gravity);
+            $urgence->setStatut(Urgence::STATUT_EN_ATTENTE);
+            $urgence->setDateHeure(new \DateTime());
+            $urgence->setIdUtilisateur($userId);
+
+            $entityManager->persist($urgence);
+            $entityManager->flush();
+
+            $logger->info('Urgence créée automatiquement via chat', [
+                'user_id' => $userId,
+                'gravity' => $gravity,
+                'type' => $type
+            ]);
+
+            return $urgence;
+
+        } catch (\Exception $e) {
+            $logger->error('Failed to create urgency from chat: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    #[Route('/chat/send', name: 'chat_send', methods: ['POST'])]
+    public function sendChat(Request $request, SessionInterface $session, EntityManagerInterface $entityManager, LoggerInterface $logger): JsonResponse
+    {
+        try {
+            $user = $this->getCurrentUser($logger);
+            $userId = $user->getId();
 
             $data = json_decode($request->getContent(), true);
             $userMessage = $data['message'] ?? '';
@@ -133,35 +240,46 @@ class EmergencyController extends AbstractController
                 return $this->json(['error' => 'Message cannot be empty'], Response::HTTP_BAD_REQUEST);
             }
 
-            // Get conversation history from session
+            // Detect crisis level (matching Java)
+            $crisisLevel = $this->detectCrisisLevel($userMessage);
+
+            // Create urgency if crisis detected (matching Java GeminiService)
+            if ($crisisLevel > 0) {
+                $this->createUrgencyFromChat($userMessage, $crisisLevel, $userId, $entityManager, $logger);
+            }
+
             $conversationHistory = $session->get('chat_history', []);
 
-            // Detect crisis level
-            $crisisLevel = $this->chatbot->detectCrisisLevel($userMessage);
-
-            // Get bot response
+            // Get response from Gemini (already in your service)
             $response = $this->chatbot->generateResponse($userMessage, $conversationHistory);
 
-            // Add messages to history
             $conversationHistory[] = ['role' => 'user', 'content' => $userMessage];
             $conversationHistory[] = ['role' => 'assistant', 'content' => $response['message']];
 
-            // Keep only last 20 messages to prevent session bloat
             if (count($conversationHistory) > 20) {
                 $conversationHistory = array_slice($conversationHistory, -20);
             }
 
             $session->set('chat_history', $conversationHistory);
 
-            // Log chat for monitoring (optional)
+            // Customize response based on crisis level (matching Java)
+            $responseMessage = $response['message'];
+            if ($crisisLevel == 5) {
+                $responseMessage = "🚨 **URGENCE CRITIQUE** - Une urgence niveau 5 a été créée. Un administrateur va vous contacter immédiatement. Restez en ligne, vous n'êtes pas seul(e). 💚\n\n" . $responseMessage;
+            } elseif ($crisisLevel == 4) {
+                $responseMessage = "⚠️ **SITUATION GRAVE** - Une urgence niveau 4 a été créée. Un administrateur vous contactera rapidement. Je suis là pour vous écouter.\n\n" . $responseMessage;
+            } elseif ($crisisLevel == 3) {
+                $responseMessage = "🆘 **CRISE DÉTECTÉE** - Une urgence niveau 3 a été enregistrée. Parlez-moi de ce que vous ressentez, je suis là pour vous aider.\n\n" . $responseMessage;
+            }
+
             $logger->info('Chat message processed', [
-                'user' => $this->getUser()->getUserIdentifier(),
+                'user' => $user->getUserIdentifier(),
                 'crisis_level' => $crisisLevel
             ]);
 
             return $this->json([
                 'success' => true,
-                'message' => $response['message'],
+                'message' => $responseMessage,
                 'crisis_level' => $crisisLevel,
                 'timestamp' => (new \DateTime())->format('H:i:s')
             ]);
@@ -203,13 +321,12 @@ class EmergencyController extends AbstractController
 
             $history = $session->get('chat_history', []);
 
-            // Format for frontend display
             $formattedHistory = [];
             foreach ($history as $message) {
                 $formattedHistory[] = [
                     'sender' => $message['role'] === 'user' ? 'user' : 'bot',
                     'text' => $message['content'],
-                    'time' => '' // We don't store timestamps in session
+                    'time' => ''
                 ];
             }
 

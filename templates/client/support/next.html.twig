@@ -10,7 +10,7 @@
             <div>
                 <div class="text-sm text-gray-500">Prochain rendez-vous</div>
                 <div class="mt-1 text-base font-medium text-gray-900">
-                    {{ nextRdv.dateRdv|date('d/m/Y') }} à {{ nextRdv.heureRdv|date('H:i') }}
+                    <time datetime="{{ nextRdvIso }}">{{ nextRdv.dateRdv|date('d/m/Y') }} à {{ nextRdv.heureRdv|date('H:i') }}</time>
                     • {{ nextRdv.mode.value == 'en_ligne' ? 'En ligne' : 'Présentiel' }}
                 </div>
                 <div class="mt-1 text-sm text-gray-600">Démarre dans <span id="rdv-countdown" class="font-semibold text-gray-800">—</span></div>
@@ -42,7 +42,6 @@
                         <div class="text-sm text-gray-500">Heure</div>
                         <div class="text-base font-medium text-gray-900">{{ s.time }}</div>
                     </div>
-
                     <a href="{{ path('app_support', { date: s.date|date('Y-m-d'), time: s.time }) }}" class="btn btn-sm">Choisir</a>
                 </div>
             {% else %}
