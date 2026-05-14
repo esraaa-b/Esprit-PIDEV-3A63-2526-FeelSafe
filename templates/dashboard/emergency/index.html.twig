@@ -31,7 +31,7 @@
             margin-top: 4px;
         }
         
-        /* SmartWatch Styling - Matching Java FXML */
+        /* SmartWatch Styling - Exactly matching Java FXML */
         .smartwatch-container {
             background-color: #f5f5f5;
             border-radius: 20px;
@@ -63,21 +63,97 @@
             margin-bottom: 15px;
         }
         
+        .location-btn {
+            background-color: #1565c0;
+            color: white;
+            border-radius: 15px;
+            padding: 4px 12px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .location-btn:hover {
+            background-color: #0d47a1;
+        }
+        
+        .metrics-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 5px 0;
+        }
+        
         .metric-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
         }
         
         .metric-icon {
             width: 35px;
             text-align: center;
+            font-size: 16px;
         }
         
         .metric-slider {
             flex: 1;
             margin: 0 12px;
+            height: 4px;
+            border-radius: 5px;
+            -webkit-appearance: none;
+        }
+        
+        .metric-slider:focus {
+            outline: none;
+        }
+        
+        .metric-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #2e7d32;
+            cursor: pointer;
+        }
+        
+        .bp-sliders {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+            margin: 0 12px;
+        }
+        
+        .bp-slider-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .bp-label {
+            font-size: 9px;
+            color: #666666;
+            width: 20px;
+        }
+        
+        .bp-slider {
+            flex: 1;
+            height: 4px;
+            border-radius: 5px;
+            -webkit-appearance: none;
+        }
+        
+        .bp-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #2e7d32;
+            cursor: pointer;
         }
         
         .metric-value {
@@ -85,6 +161,64 @@
             text-align: right;
             font-weight: bold;
             font-size: 12px;
+        }
+        
+        /* Button styles matching Java */
+        .start-btn {
+            background-color: #2e7d32;
+            color: white;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-size: 13px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .start-btn:hover {
+            background-color: #1b5e20;
+        }
+        
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .stop-btn {
+            background-color: #c62828;
+            color: white;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-size: 13px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .stop-btn:hover {
+            background-color: #b71c1c;
+        }
+        
+        .stop-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Metric value colors matching Java */
+        .metric-critical {
+            color: #c62828 !important;
+            font-weight: bold;
+        }
+        
+        .metric-warning {
+            color: #ff9800 !important;
+            font-weight: bold;
+        }
+        
+        .metric-normal {
+            color: #2e7d32 !important;
         }
         
         /* Stat Cards - Exactly matching Java */
@@ -345,8 +479,8 @@
         <div class="w-96 flex-shrink-0" x-ref="rightPanel" style="overflow-y: auto;">
             <div class="space-y-4">
                 
-                <!-- SmartWatch Component -->
-                <div class="smartwatch-container">
+                <!-- SmartWatch Component - Java style with color hints -->
+                <div class="smartwatch-container" x-ref="watchContainer">
                     <div class="smartwatch-header">
                         <svg class="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20 12.4V7.6a2 2 0 0 0-1.5-1.9l-6-1.2a2 2 0 0 0-1 0l-6 1.2A2 2 0 0 0 4 7.6v4.8a2 2 0 0 0 1.5 1.9l6 1.2a2 2 0 0 0 1 0l6-1.2a2 2 0 0 0 1.5-1.9z"></path>
@@ -362,48 +496,56 @@
                     
                     <div class="smartwatch-location">
                         <span class="text-xs text-gray-500" x-text="locationText"></span>
-                        <button @click="selectLocation()" class="px-3 py-1 bg-blue-700 text-white rounded-full text-xs">📍 Localisation</button>
+                        <button @click="selectLocation()" class="location-btn">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span>Localisation</span>
+                        </button>
                     </div>
                     
                     <!-- Heart Rate -->
                     <div class="metric-row">
                         <div class="metric-icon">❤️</div>
-                        <input type="range" x-model="heartRate" min="40" max="180" class="metric-slider">
-                        <div class="metric-value" x-text="heartRate + ' bpm'"></div>
+                        <input type="range" x-model="heartRate" min="40" max="180" class="metric-slider" @input="updateWatchStyle()">
+                        <div class="metric-value" x-text="heartRate + ' bpm'" :class="getHeartRateClass()"></div>
                     </div>
                     
                     <!-- SpO2 -->
                     <div class="metric-row">
                         <div class="metric-icon">🫁</div>
-                        <input type="range" x-model="spo2" min="70" max="100" class="metric-slider">
-                        <div class="metric-value" x-text="spo2 + '%'"></div>
+                        <input type="range" x-model="spo2" min="70" max="100" class="metric-slider" @input="updateWatchStyle()">
+                        <div class="metric-value" x-text="spo2 + '%'" :class="getSpO2Class()"></div>
                     </div>
                     
-                    <!-- Blood Pressure -->
-                    <div class="metric-row">
-                        <div class="metric-icon">💉</div>
-                        <div class="flex gap-2 flex-1 mx-3">
-                            <input type="range" x-model="bpSys" min="60" max="220" class="flex-1">
-                            <span class="text-sm">/</span>
-                            <input type="range" x-model="bpDia" min="40" max="140" class="flex-1">
-                        </div>
-                        <div class="metric-value" x-text="bpSys + '/' + bpDia + ' mmHg'"></div>
-                    </div>
+<!-- Blood Pressure - Sys and Dia on same line (labels left of sliders) -->
+<div class="metric-row">
+    <div class="metric-icon">💉</div>
+    <div style="flex: 1; display: flex; gap: 8px; margin: 0 12px; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+            <span style="font-size: 9px; color: #666; width: 25px;">Sys</span>
+            <input type="range" x-model="bpSys" min="60" max="220" style="flex: 1; height: 4px;" @input="updateWatchStyle()">
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+            <span style="font-size: 9px; color: #666; width: 25px;">Dia</span>
+            <input type="range" x-model="bpDia" min="40" max="140" style="flex: 1; height: 4px;" @input="updateWatchStyle()">
+        </div>
+    </div>
+    <div class="metric-value" x-text="bpSys + '/' + bpDia + ' mmHg'" :class="getBloodPressureClass()"></div>
+</div>
                     
                     <!-- Temperature -->
                     <div class="metric-row">
                         <div class="metric-icon">🌡️</div>
-                        <input type="range" x-model="temperature" min="34" max="42" step="0.1" class="metric-slider">
-                        <div class="metric-value" x-text="temperature + '°C'"></div>
+                        <input type="range" x-model="temperature" min="34" max="42" step="0.1" class="metric-slider" @input="updateWatchStyle()">
+                        <div class="metric-value" x-text="temperature + '°C'" :class="getTemperatureClass()"></div>
                     </div>
                     
                     <!-- Controls -->
                     <div class="flex justify-center gap-4 mt-4">
-                        <button @click="startSimulation()" :disabled="simulationRunning" 
-                                style="background-color: #2e7d32;" 
-                                class="px-5 py-2 text-white rounded-full text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50">Démarrer</button>
-                        <button @click="stopSimulation()" :disabled="!simulationRunning" 
-                                class="px-5 py-2 bg-red-600 text-white rounded-full text-sm font-bold">Arrêter</button>
+                        <button @click="startSimulation()" :disabled="simulationRunning" class="start-btn">Démarrer</button>
+                        <button @click="stopSimulation()" :disabled="!simulationRunning" class="stop-btn">Arrêter</button>
                     </div>
                 </div>
                 
@@ -486,6 +628,12 @@ function emergencyDashboard() {
         init() {
             this.loadChatHistory();
             this.loadStats();
+            // Watch for value changes to update colors (matching Java)
+            this.$watch('heartRate', () => this.updateWatchStyle());
+            this.$watch('spo2', () => this.updateWatchStyle());
+            this.$watch('bpSys', () => this.updateWatchStyle());
+            this.$watch('bpDia', () => this.updateWatchStyle());
+            this.$watch('temperature', () => this.updateWatchStyle());
             
             this.$nextTick(() => {
                 const container = this.$refs.mainContainer;
@@ -621,6 +769,63 @@ function emergencyDashboard() {
         },
         
         // ===================== SMARTWATCH SIMULATION =====================
+
+        // Check if any value is critical (for container styling)
+        isAnyValueCritical() {
+            const hr = parseFloat(this.heartRate);
+            const sp = parseFloat(this.spo2);
+            const sys = parseFloat(this.bpSys);
+            const temp = parseFloat(this.temperature);
+            
+            return hr < 40 || hr > 120 || sp < 90 || sys < 90 || sys > 180 || temp < 35.0 || temp > 39.5;
+        },
+
+        // Update container style based on current values (matching Java's updateStatusColor)
+        updateWatchStyle() {
+            if (this.simulationRunning) return;
+            
+            const container = document.querySelector('.smartwatch-container');
+            if (!container) return;
+            
+            if (this.isAnyValueCritical()) {
+                container.style.backgroundColor = '#fff3e0';
+                container.style.borderColor = '#ff9800';
+                container.style.borderWidth = '2px';
+            } else {
+                container.style.backgroundColor = '#f5f5f5';
+                container.style.borderColor = '#e0e0e0';
+                container.style.borderWidth = '1px';
+            }
+        },
+
+        // Individual metric color classes (matching Java's per-value styling)
+        getHeartRateClass() {
+            const hr = parseFloat(this.heartRate);
+            if (hr < 40 || hr > 120) return 'metric-critical';
+            if (hr < 50 || hr > 110) return 'metric-warning';
+            return 'metric-normal';
+        },
+
+        getSpO2Class() {
+            const sp = parseFloat(this.spo2);
+            if (sp < 90) return 'metric-critical';
+            if (sp < 94) return 'metric-warning';
+            return 'metric-normal';
+        },
+
+        getBloodPressureClass() {
+            const sys = parseFloat(this.bpSys);
+            if (sys < 90 || sys > 180) return 'metric-critical';
+            if (sys < 100 || sys > 160) return 'metric-warning';
+            return 'metric-normal';
+        },
+
+        getTemperatureClass() {
+            const temp = parseFloat(this.temperature);
+            if (temp < 35 || temp > 39.5) return 'metric-critical';
+            if (temp < 36 || temp > 38.5) return 'metric-warning';
+            return 'metric-normal';
+        },
         
         startSimulation() {
             if (this.simulationRunning) return;
