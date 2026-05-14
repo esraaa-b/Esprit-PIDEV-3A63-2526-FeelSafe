@@ -222,6 +222,7 @@
                                 </svg>
                                 Modifier
                             </button>
+                            
 
                             <button type="button"
                                     @click.stop="$dispatch('open-delete-modal', { id: {{ entry.id }}, token: '{{ csrf_token('delete' ~ entry.id) }}', action: '{{ path('app_journal_delete', {id: entry.id}) }}' })"

@@ -116,10 +116,10 @@ final class PublicationController extends AbstractController
         $publication = new Publication();
        
         // 1. Pré-remplissage des données obligatoires non présentes dans le formulaire
-        $user = $entityManager->getRepository(Utilisateur::class)->find(1);
+        $user = $this->getUser();
         if (!$user) {
-            $this->addFlash('error', 'Erreur critique : L\'utilisateur par défaut (ID 1) n est pas dans la base de données.');
-            return $this->redirectToRoute('app_publication_index');
+            $this->addFlash('error', 'Vous devez être connecté pour accéder à cette page.');
+            return $this->redirectToRoute('app_login');
         }
        
         $publication->setUser($user);

@@ -122,21 +122,21 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" 
+                <input type="text"
                        name="q"
                        value="{{ search }}"
-                       placeholder="Rechercher un sujet..." 
+                       placeholder="Rechercher un sujet..."
                        class="w-full h-10 pl-10 px-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary">
             </form>
         </div>
 
         <!-- Filters -->
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ path('app_front_publication') }}" 
+            <a href="{{ path('app_front_publication') }}"
                class="px-4 py-2 rounded-full text-sm font-medium transition-colors {{ app.request.query.get('tag') is empty and app.request.query.get('q') is empty ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80' }}">
                Tous
             </a>
-            
+           
             {% for tag in ['Anxiété', 'Dépression', 'Stress', 'Angoisse', 'Addiction', 'Solitude'] %}
                 <a href="{{ path('app_front_publication', {'tag': tag}) }}"
                    class="px-4 py-2 rounded-full text-sm font-medium transition-colors {{ app.request.query.get('tag') == tag ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80' }}">
@@ -145,7 +145,7 @@
             {% endfor %}
 
             {% if app.request.query.get('q') or app.request.query.get('tag') %}
-                <a href="{{ path('app_front_publication') }}" 
+                <a href="{{ path('app_front_publication') }}"
                    class="ml-auto flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -198,11 +198,11 @@
                                                 {{ publication.datePublication ? publication.datePublication|date('d/m/Y à H:i') : '' }}
                                             </span>
                                             <span class="text-muted-foreground">•</span>
-                                            
+                                           
                                         </div>
                                     </div>
                                     {% if publication.image %}
-                                        <img src="{{ asset('uploads/' ~ publication.image) }}" 
+                                        <img src="{{ asset('uploads/' ~ publication.image) }}"
                                              alt="{{ publication.titre }}"
                                              class="w-16 h-16 object-cover rounded-lg">
                                     {% endif %}
@@ -222,25 +222,25 @@
                                     <!-- Likes -->
                                     <span class="flex items-center gap-1">
                                         <form method="POST" action="{{ path('app_front_publication_like', {'id': publication.id}) }}" class="inline">
-                                            <button type="submit" class="hover:text-green-600 transition">
+                                            <button type="submit" class="transition {% if userPubVotes[publication.id] is defined and userPubVotes[publication.id] == 'like' %}text-green-600 fill-green-600 font-bold{% else %}hover:text-green-600{% endif %}">
                                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                                                 </svg>
                                             </button>
                                         </form>
-                                        <span>{{ publication.likesCount|default(0) }}</span>
+                                        <span class="{% if userPubVotes[publication.id] is defined and userPubVotes[publication.id] == 'like' %}text-green-600 font-bold{% endif %}">{{ publication.likesCount|default(0) }}</span>
                                     </span>
 
                                     <!-- Dislikes -->
                                     <span class="flex items-center gap-1">
                                         <form method="POST" action="{{ path('app_front_publication_dislike', {'id': publication.id}) }}" class="inline">
-                                            <button type="submit" class="hover:text-red-600 transition">
+                                            <button type="submit" class="transition {% if userPubVotes[publication.id] is defined and userPubVotes[publication.id] == 'dislike' %}text-red-600 fill-red-600 font-bold{% else %}hover:text-red-600{% endif %}">
                                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
                                                 </svg>
                                             </button>
                                         </form>
-                                        <span>{{ publication.dislikesCount|default(0) }}</span>
+                                        <span class="{% if userPubVotes[publication.id] is defined and userPubVotes[publication.id] == 'dislike' %}text-red-600 font-bold{% endif %}">{{ publication.dislikesCount|default(0) }}</span>
                                     </span>
 
                                     {% if publication.image %}
@@ -255,29 +255,29 @@
                                     {% endif %}
 
                                     {# Boutons d'action : modification et suppression (si propriétaire) #}
-                                    {% if publication.user and publication.user.id == 1 %}
+                                    {% if app.user and publication.user and publication.user.id == app.user.id %}
                                         <div class="flex items-center gap-2 ml-auto">
                                             {# Pin/Unpin Button #}
                                             <form method="post" action="{{ publication.pinnedAt ? path('app_front_publication_unpin', {id: publication.id}) : path('app_front_publication_pin', {id: publication.id}) }}" class="inline">
-                                                <button type="submit" 
+                                                <button type="submit"
                                                         class="inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors font-medium text-lg border {{ publication.pinnedAt ? 'bg-yellow-50 text-yellow-700 border-yellow-100 hover:bg-yellow-100' : 'bg-gray-50 text-gray-700 border-gray-100 hover:bg-gray-100' }}"
                                                         title="{{ publication.pinnedAt ? 'Désépingler cette publication' : 'Épingler cette publication en haut de la liste' }}">
                                                     {{ publication.pinnedAt ? '📌' : '📍' }}
                                                 </button>
                                             </form>
 
-                                            <a href="{{ path('app_front_publication_edit', {'id': publication.id}) }}" 
+                                            <a href="{{ path('app_front_publication_edit', {'id': publication.id}) }}"
                                                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm border border-blue-100">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
                                                 <span>Modifier</span>
                                             </a>
-                                            <form method="post" 
-                                                  action="{{ path('app_front_publication_delete', {'id': publication.id}) }}" 
-                                                  onsubmit="return confirm('Supprimer cette publication ?');" 
+                                            <form method="post"
+                                                  action="{{ path('app_front_publication_delete', {'id': publication.id}) }}"
+                                                  onsubmit="return confirm('Supprimer cette publication ?');"
                                                   style="display:inline;">
-                                                <button type="submit" 
+                                                <button type="submit"
                                                         class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm border border-red-100">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

@@ -14,9 +14,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class AiJournalController extends AbstractController
 {
     public function __construct(
-        private HttpClientInterface $httpClient,
-        private string $anthropicApiKey
-    ) {}
+    private HttpClientInterface $httpClient,
+    private string $groqApiKey          // ← renommé
+) {}
 
     // ─────────────────────────────────────────────────────────────
     // 1. Analyse a single journal entry
@@ -355,7 +355,7 @@ PROMPT;
     try {
         $response = $this->httpClient->request('POST', 'https://api.groq.com/openai/v1/chat/completions', [
             'headers' => [
-                'Authorization' => 'Bearer ' . $this->anthropicApiKey, // put your Groq key in the same env var
+                'Authorization' => 'Bearer ' . $this->groqApiKey, // put your Groq key in the same env var
                 'content-type'  => 'application/json',
             ],
             'json' => [

@@ -7,7 +7,21 @@
 
 <div class="border border-border rounded-lg p-3 bg-background space-y-2 {% if depth > 0 %}ml-6 border-l-2 border-l-primary/30{% endif %}"
      style="padding-left: 1.5rem !important;"
-     x-data="{ contenu: {{ commentaire.contenu|json_encode }}, translated: null, showTranslated: false, translateLang: 'en' }">
+     x-data="{
+         rawContenu: {{ commentaire.contenu|json_encode }},
+         dbGifUrl: {{ commentaire.gifUrl|json_encode }},
+         get contenu() {
+             return this.rawContenu.replace(/https?:\/\/\S*(?:giphy\.com|media\.giphy\.com)\/\S+/gi, '').trim();
+         },
+         get effectiveGifUrl() {
+             if (this.dbGifUrl) return this.dbGifUrl;
+             const match = this.rawContenu.match(/https?:\/\/\S*(?:giphy\.com|media\.giphy\.com)\/\S+/i);
+             return match ? match[0] : null;
+         },
+         translated: null,
+         showTranslated: false,
+         translateLang: 'en'
+     }">
     {# Comment content #}
     <p class="text-foreground">
         <span x-show="!showTranslated" x-text="contenu"></span>
@@ -24,15 +38,15 @@
                 class="ml-1 text-xs text-primary hover:underline" title="Traduire">🌐</button>
     </p>
 
-    {# GIF attachment (if any) #}
-    {% if commentaire.gifUrl %}
+    {# GIF attachment (database or extracted from text) #}
+    <template x-if="effectiveGifUrl">
         <div class="mt-1">
-            <img src="{{ commentaire.gifUrl }}"
+            <img :src="effectiveGifUrl"
                  alt="GIF"
                  class="max-h-40 rounded-lg border border-border/50"
                  loading="lazy">
         </div>
-    {% endif %}
+    </template>
 
     {# Bottom row: author/date + like/dislike + reply/edit/delete #}
     <div class="flex items-center justify-between text-sm text-muted-foreground flex-wrap gap-2">
@@ -91,7 +105,7 @@
             </button>
 
             {# Edit (pencil) - only for comment author #}
-            {% if commentaire.user and commentaire.user.id == 1 %}
+            {% if app.user and commentaire.user and commentaire.user.id == app.user.id %}
                 <div x-data="{ open: false }">
                     <button @click="open = true" class="text-blue-600 hover:text-blue-800 text-sm">
                         ✏️
@@ -105,9 +119,9 @@
                                           id="edit-textarea-{{ commentaire.id }}"
                                           rows="4"
                                           class="w-full border rounded p-2">{{ commentaire.contenu }}</textarea>
-                                
+                               
                                 <input type="hidden" name="gif_url" id="edit-gif-{{ commentaire.id }}" value="{{ commentaire.gifUrl }}">
-                                
+                               
                                 {# Giphy Picker for Edit #}
                                 {% include 'front_publication/_giphy_picker.html.twig' with {
                                     textareaId: 'edit-textarea-' ~ commentaire.id,
@@ -130,7 +144,7 @@
             {% endif %}
 
             {# Delete (trash) - for comment author OR publication author #}
-            {% if (commentaire.user and commentaire.user.id == 1) or (publication.user and publication.user.id == 1) %}
+            {% if app.user and ((commentaire.user and commentaire.user.id == app.user.id) or (publication.user and publication.user.id == app.user.id)) %}
                 <form action="{{ path('app_front_commentaire_delete', {id: commentaire.id}) }}"
                       method="POST"
                       onsubmit="return confirm('Supprimer ce commentaire ?');">
@@ -168,7 +182,7 @@
                             <textarea x-model="description" class="w-full border border-border rounded-lg px-3 py-2 bg-background" rows="2"></textarea>
                         </div>
                         <div class="flex gap-2 mt-4 items-center justify-end">
-                            <button type="button" @click="open = false; done = false; sending = false; description = ''; reason = 'spam'" 
+                            <button type="button" @click="open = false; done = false; sending = false; description = ''; reason = 'spam'"
                                     class="px-4 py-2 border border-border rounded-lg hover:bg-secondary bg-background text-foreground">
                                 Annuler
                             </button>

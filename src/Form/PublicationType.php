@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
 
@@ -58,6 +59,9 @@ class PublicationType extends AbstractType
                         'mimeTypesMessage' => 'Veuillez uploader une image valide (JPG, PNG, WEBP, GIF)',
                     ])
                 ],
+            ])
+            ->add('gifUrl', HiddenType::class, [
+                'required' => false,
             ])
         ;
 

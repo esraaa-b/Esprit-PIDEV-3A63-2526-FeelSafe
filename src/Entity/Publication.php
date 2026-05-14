@@ -59,6 +59,9 @@ class Publication
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $audioUrl = null;
 
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $gifUrl = null;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $transcription = null;
 
@@ -72,9 +75,11 @@ class Publication
     #[Asse\NotNull(message: "Vous devez sélectionner un utilisateur")]
     private Utilisateur $user;
 
-    // ✅ Fix: added cascade persist
     #[ORM\OneToMany(targetEntity: Commentaire::class, mappedBy: 'publication', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $pubCom;
+
+    #[ORM\OneToMany(targetEntity: PublicationLike::class, mappedBy: 'publication', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $likes;
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $reportReason = null;
@@ -95,6 +100,7 @@ class Publication
     public function __construct()
     {
         $this->pubCom = new ArrayCollection();
+        $this->likes = new ArrayCollection();
         // ✅ Fix: initialized in constructor
         $this->datePublication = new \DateTimeImmutable();
     }
@@ -112,6 +118,9 @@ class Publication
 
     public function getAudioUrl(): ?string { return $this->audioUrl; }
     public function setAudioUrl(?string $audioUrl): static { $this->audioUrl = $audioUrl; return $this; }
+
+    public function getGifUrl(): ?string { return $this->gifUrl; }
+    public function setGifUrl(?string $gifUrl): static { $this->gifUrl = $gifUrl; return $this; }
 
     public function getTranscription(): ?string { return $this->transcription; }
     public function setTranscription(?string $transcription): static { $this->transcription = $transcription; return $this; }

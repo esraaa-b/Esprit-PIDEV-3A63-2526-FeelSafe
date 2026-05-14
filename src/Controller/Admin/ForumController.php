@@ -14,8 +14,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Entity\Utilisateur;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/forum')]
+#[IsGranted('ROLE_ADMIN')]
 class ForumController extends AbstractController
 {
     #[Route('', name: 'admin_forum_index', methods: ['GET'])]
@@ -61,9 +63,10 @@ class ForumController extends AbstractController
     {
         $publication = new Publication();
 
-        $user = $entityManager->getRepository(Utilisateur::class)->findOneBy(['role' => 'ROLE_ADMIN']);
+        $user = $this->getUser();
+       
         if (!$user) {
-            $user = $entityManager->getRepository(Utilisateur::class)->findOneBy([], ['id' => 'ASC']);
+            $user = $entityManager->getRepository(Utilisateur::class)->findOneBy([]);
         }
 
         if (!$user) {
@@ -185,58 +188,58 @@ class ForumController extends AbstractController
     public function stats(EntityManagerInterface $em): Response
     {
         // ===== CORRECTION : Utiliser des COUNT au lieu de findAll() =====
-        
+       
         // Compter les publications et commentaires sans les charger
         $totalPublications = $em->createQuery('SELECT COUNT(p) FROM App\Entity\Publication p')
             ->getSingleScalarResult();
-        
+       
         $totalCommentaires = $em->createQuery('SELECT COUNT(c) FROM App\Entity\Commentaire c')
             ->getSingleScalarResult();
-        
+       
         // Récupérer les statistiques mensuelles avec des requêtes GROUP BY
         $pubStats = $em->createQuery('
-            SELECT MONTH(p.datePublication) as month, COUNT(p) as count 
-            FROM App\Entity\Publication p 
+            SELECT MONTH(p.datePublication) as month, COUNT(p) as count
+            FROM App\Entity\Publication p
             GROUP BY month
         ')->getResult();
-        
+       
         $comStats = $em->createQuery('
-            SELECT MONTH(c.dateCommentaire) as month, COUNT(c) as count 
-            FROM App\Entity\Commentaire c 
+            SELECT MONTH(c.dateCommentaire) as month, COUNT(c) as count
+            FROM App\Entity\Commentaire c
             GROUP BY month
         ')->getResult();
-        
+       
         // Initialiser les compteurs
         $pubCounts = array_fill(0, 12, 0);
         $comCounts = array_fill(0, 12, 0);
-        
+       
         // Remplir avec les résultats
         foreach ($pubStats as $stat) {
             $month = (int) $stat['month'] - 1;
             $pubCounts[$month] = (int) $stat['count'];
         }
-        
+       
         foreach ($comStats as $stat) {
             $month = (int) $stat['month'] - 1;
             $comCounts[$month] = (int) $stat['count'];
         }
-        
+       
         // Moyenne des commentaires par publication
-        $moyenneCommentaires = $totalPublications > 0 
-            ? round($totalCommentaires / $totalPublications, 1) 
+        $moyenneCommentaires = $totalPublications > 0
+            ? round($totalCommentaires / $totalPublications, 1)
             : 0;
 
         // Trouver la publication avec le plus de commentaires (sans tout charger)
         $topPublication = $em->createQuery('
-            SELECT p, COUNT(c) as HIDDEN commentCount 
+            SELECT p, COUNT(c) as HIDDEN commentCount
             FROM App\Entity\Publication p
             LEFT JOIN p.pubCom c
             GROUP BY p
             ORDER BY commentCount DESC
         ')->setMaxResults(1)->getOneOrNullResult();
-        
-        $maxCommentaires = $topPublication 
-            ? count($topPublication->getPubCom()) 
+       
+        $maxCommentaires = $topPublication
+            ? count($topPublication->getPubCom())
             : 0;
 
         $months = [];
@@ -271,4 +274,3 @@ class ForumController extends AbstractController
         return $this->redirectToRoute('admin_forum_index');
     }
 }
-

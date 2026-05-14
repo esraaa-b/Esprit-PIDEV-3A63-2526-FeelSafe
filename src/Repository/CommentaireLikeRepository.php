@@ -21,13 +21,45 @@ class CommentaireLikeRepository extends ServiceEntityRepository
      */
     public function findByUserAndCommentaire(int $userId, int $commentaireId): ?CommentaireLike
     {
-        return $this->createQueryBuilder('cl')
+        // Use setMaxResults(1) + getResult() to avoid NonUniqueResultException
+        // when legacy duplicate rows exist (old code allowed both like+dislike simultaneously)
+        $results = $this->createQueryBuilder('cl')
+            ->andWhere('cl.user = :userId')
+            ->andWhere('cl.commentaire = :commentaireId')
+            ->setParameter('userId', $userId)
+            ->setParameter('commentaireId', $commentaireId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getResult();
+
+        return $results[0] ?? null;
+    }
+
+    /**
+     * Delete all votes for a user on a comment (to clean up legacy duplicate rows).
+     */
+    public function deleteAllForUserAndCommentaire(int $userId, int $commentaireId): void
+    {
+        $this->createQueryBuilder('cl')
+            ->delete()
             ->andWhere('cl.user = :userId')
             ->andWhere('cl.commentaire = :commentaireId')
             ->setParameter('userId', $userId)
             ->setParameter('commentaireId', $commentaireId)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->execute();
+    }
+
+    public function countByCommentaireAndType(int $commentaireId, string $type): int
+    {
+        return (int) $this->createQueryBuilder('cl')
+            ->select('COUNT(cl.id)')
+            ->andWhere('cl.commentaire = :commentaireId')
+            ->andWhere('cl.type = :type')
+            ->setParameter('commentaireId', $commentaireId)
+            ->setParameter('type', $type)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     /**

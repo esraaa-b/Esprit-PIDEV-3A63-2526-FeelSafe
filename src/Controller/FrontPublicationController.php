@@ -6,10 +6,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Repository\PublicationRepository;
+use App\Repository\PublicationLikeRepository;
 use App\Repository\CommentaireRepository;
 use App\Repository\CommentaireLikeRepository;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Publication;
+use App\Entity\PublicationLike;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,7 +26,7 @@ final class FrontPublicationController extends AbstractController
 {
     #[Route('/dashboard/forum', name: 'app_dashboard_forum')]
     #[Route('/front/publication', name: 'app_front_publication')]
-    public function index(PublicationRepository $publicationRepository, Request $request): Response
+    public function index(PublicationRepository $publicationRepository, PublicationLikeRepository $pubLikeRepo, Request $request): Response
     {
         $search = $request->query->get('q');
         $tag = $request->query->get('tag');
@@ -51,10 +53,22 @@ final class FrontPublicationController extends AbstractController
             );
         }
 
+        // Pass user vote status so the index page can highlight active buttons
+        $userPubVotes = [];
+        $user = $this->getUser();
+        if ($user instanceof Utilisateur && !empty($publications)) {
+            try {
+                $userPubVotes = $pubLikeRepo->findUserVotesForPublications($user->getId(), $publications);
+            } catch (\Throwable $e) {
+                $userPubVotes = [];
+            }
+        }
+
         return $this->render('front_publication/index.html.twig', [
             'publications' => $publications,
             'search' => $search,
             'currentTag' => $tag,
+            'userPubVotes' => $userPubVotes,
         ]);
     }
 
@@ -68,6 +82,7 @@ final class FrontPublicationController extends AbstractController
         int $id,
         CommentaireRepository $commentaireRepo,
         CommentaireLikeRepository $likeRepo,
+        PublicationLikeRepository $pubLikeRepo,
         EntityManagerInterface $em,
         PublicationRepository $publicationRepo
     ): Response {
@@ -77,13 +92,16 @@ final class FrontPublicationController extends AbstractController
             return $this->redirectToRoute('app_front_publication');
         }
         $rootComments = $commentaireRepo->findRootByPublication($publication);
-        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
+        $user = $this->getUser();
         $userVotes = [];
-        if ($fakeUser) {
+        $pubVote = [];
+        if ($user instanceof Utilisateur) {
             try {
-                $userVotes = $likeRepo->findUserVotesForPublication($fakeUser->getId(), $publication->getId());
+                $userVotes = $likeRepo->findUserVotesForPublication($user->getId(), $publication->getId());
+                $pubVote = $pubLikeRepo->findUserVotesForPublication($user->getId(), $publication->getId());
             } catch (\Throwable $e) {
                 $userVotes = [];
+                $pubVote = [];
             }
         }
 
@@ -91,6 +109,7 @@ final class FrontPublicationController extends AbstractController
             'publication' => $publication,
             'rootComments' => $rootComments,
             'userVotes' => $userVotes,
+            'pubVote' => $pubVote,
         ]);
     }
 
@@ -102,7 +121,11 @@ final class FrontPublicationController extends AbstractController
     ): Response {
         $publication = new Publication();
 
-        $user = $entityManager->getRepository(Utilisateur::class)->find(1);
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            $this->addFlash('error', 'Vous devez être connecté pour créer une publication.');
+            return $this->redirectToRoute('app_login');
+        }
         $publication->setUser($user);
 
         $form = $this->createForm(PublicationType::class, $publication);
@@ -157,8 +180,8 @@ final class FrontPublicationController extends AbstractController
             $this->addFlash('error', 'Désolé, cette publication n\'existe pas ou a déjà été supprimée.');
             return $this->redirectToRoute('app_front_publication');
         }
-        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
-        if ($publication->getUser() !== $fakeUser) {
+        $user = $this->getUser();
+        if (!$user || $publication->getUser() !== $user) {
             $this->addFlash('error', 'Action non autorisée.');
             return $this->redirectToRoute('app_front_publication');
         }
@@ -176,9 +199,8 @@ final class FrontPublicationController extends AbstractController
             return $this->redirectToRoute('app_front_publication');
         }
 
-        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
-
-        if ($publication->getUser() !== $fakeUser) {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur || $publication->getUser() !== $user) {
             throw $this->createAccessDeniedException("Vous ne pouvez pas modifier cette publication !");
         }
 
@@ -225,43 +247,133 @@ final class FrontPublicationController extends AbstractController
     }
 
     #[Route('/front/publication/{id}/like', name: 'app_front_publication_like', methods: ['POST'])]
-    public function like(Publication $publication, Request $request, EntityManagerInterface $em): Response
-    {
-        $publication->setLikesCount($publication->getLikesCount() + 1);
+    public function like(
+        Publication $publication,
+        Request $request,
+        EntityManagerInterface $em,
+        PublicationLikeRepository $likeRepo
+    ): Response {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            $this->addFlash('error', 'Vous devez être connecté pour voter.');
+            return $this->redirectToRoute('app_login');
+        }
 
-        $liker = $em->getRepository(Utilisateur::class)->find(2);
-        if (!$liker) $liker = $em->getRepository(Utilisateur::class)->find(1);
+        $pubId  = $publication->getId();
+        $referer = $request->headers->get('referer') ?: $this->generateUrl('app_front_publication_show', ['id' => $pubId]);
 
-        $publication->setNotificationMessage("Votre publication a reçu un nouveau Like !");
-        $publication->setNotificationRead(false);
-        $publication->setNotificationDate(new \DateTimeImmutable());
+        try {
+            // 1. Get current vote (safe even with legacy duplicate rows)
+            $existingVote = $likeRepo->findByUserAndPublication($user->getId(), $pubId);
+            $currentType = $existingVote ? $existingVote->getType() : null;
 
-        $em->flush();
+            // 2. Delete ALL existing votes for this user+publication
+            $likeRepo->deleteAllForUserAndPublication($user->getId(), $pubId);
+            $em->clear();
 
-        return $this->redirect($request->headers->get('referer'));
+            // 3. Re-fetch the detached entities
+            $publication = $em->find(Publication::class, $pubId);
+
+            // 4. Create new vote if it's not a toggle off
+            if ($currentType !== 'like') {
+                $vote = new PublicationLike();
+                $vote->setPublication($publication);
+                $vote->setUser($em->getReference(Utilisateur::class, $user->getId()));
+                $vote->setType('like');
+                $em->persist($vote);
+
+                // Notify author
+                if ($publication->getUser()->getId() !== $user->getId()) {
+                    $publication->setNotificationMessage("Votre publication a reçu un nouveau Like !");
+                    $publication->setNotificationRead(false);
+                    $publication->setNotificationDate(new \DateTimeImmutable());
+                }
+            }
+
+            $em->flush();
+
+            // 5. Sync counters from DB
+            $publication->setLikesCount($likeRepo->countByPublicationAndType($pubId, 'like'));
+            $publication->setDislikesCount($likeRepo->countByPublicationAndType($pubId, 'dislike'));
+            $em->flush();
+
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors du vote : ' . $e->getMessage());
+        }
+
+        return $this->redirect($referer);
     }
 
     #[Route('/front/publication/{id}/dislike', name: 'app_front_publication_dislike', methods: ['POST'])]
-    public function dislike(Publication $publication, Request $request, EntityManagerInterface $em): Response
-    {
-        $publication->setDislikesCount($publication->getDislikesCount() + 1);
+    public function dislike(
+        Publication $publication,
+        Request $request,
+        EntityManagerInterface $em,
+        PublicationLikeRepository $likeRepo
+    ): Response {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            $this->addFlash('error', 'Vous devez être connecté pour voter.');
+            return $this->redirectToRoute('app_login');
+        }
 
-        $disliker = $em->getRepository(Utilisateur::class)->find(2);
-        if (!$disliker) $disliker = $em->getRepository(Utilisateur::class)->find(1);
+        $pubId  = $publication->getId();
+        $referer = $request->headers->get('referer') ?: $this->generateUrl('app_front_publication_show', ['id' => $pubId]);
 
-        $publication->setNotificationMessage("Votre publication a reçu un nouveau Dislike.");
-        $publication->setNotificationRead(false);
-        $publication->setNotificationDate(new \DateTimeImmutable());
+        try {
+            // 1. Get current vote (safe even with legacy duplicate rows)
+            $existingVote = $likeRepo->findByUserAndPublication($user->getId(), $pubId);
+            $currentType = $existingVote ? $existingVote->getType() : null;
 
-        $em->flush();
+            // 2. Delete ALL existing votes for this user+publication
+            $likeRepo->deleteAllForUserAndPublication($user->getId(), $pubId);
+            $em->clear();
 
-        return $this->redirect($request->headers->get('referer'));
+            // 3. Re-fetch the detached entities
+            $publication = $em->find(Publication::class, $pubId);
+
+            // 4. Create new vote if it's not a toggle off
+            if ($currentType !== 'dislike') {
+                $vote = new PublicationLike();
+                $vote->setPublication($publication);
+                $vote->setUser($em->getReference(Utilisateur::class, $user->getId()));
+                $vote->setType('dislike');
+                $em->persist($vote);
+
+                // Notify author
+                if ($publication->getUser()->getId() !== $user->getId()) {
+                    $publication->setNotificationMessage("Votre publication a reçu un nouveau Dislike.");
+                    $publication->setNotificationRead(false);
+                    $publication->setNotificationDate(new \DateTimeImmutable());
+                }
+            }
+
+            $em->flush();
+
+            // 5. Sync counters from DB
+            $publication->setLikesCount($likeRepo->countByPublicationAndType($pubId, 'like'));
+            $publication->setDislikesCount($likeRepo->countByPublicationAndType($pubId, 'dislike'));
+            $em->flush();
+
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors du vote : ' . $e->getMessage());
+        }
+
+        return $this->redirect($referer);
     }
 
     public function badge(PublicationRepository $repository): Response
     {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            return new Response('');
+        }
+
         try {
-            $unread = $repository->findUnreadNotifications(1);
+            $unread = $repository->findBy([
+                'user' => $user,
+                'notificationRead' => false
+            ], ['notificationDate' => 'DESC']);
             $count = count($unread);
         } catch (\Throwable $e) {
             $unread = [];
@@ -277,8 +389,8 @@ final class FrontPublicationController extends AbstractController
     #[Route('/front/publication/{id}/pin', name: 'app_front_publication_pin', methods: ['POST'])]
     public function pin(Publication $publication, EntityManagerInterface $em): Response
     {
-        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
-        if ($publication->getUser() !== $fakeUser) {
+        $user = $this->getUser();
+        if (!$user || $publication->getUser() !== $user) {
             $this->addFlash('error', 'Action non autorisée.');
             return $this->redirectToRoute('app_front_publication');
         }
@@ -293,8 +405,8 @@ final class FrontPublicationController extends AbstractController
     #[Route('/front/publication/{id}/unpin', name: 'app_front_publication_unpin', methods: ['POST'])]
     public function unpin(Publication $publication, EntityManagerInterface $em): Response
     {
-        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
-        if ($publication->getUser() !== $fakeUser) {
+        $user = $this->getUser();
+        if (!$user || $publication->getUser() !== $user) {
             $this->addFlash('error', 'Action non autorisée.');
             return $this->redirectToRoute('app_front_publication');
         }
@@ -309,7 +421,12 @@ final class FrontPublicationController extends AbstractController
     #[Route('/notification/mark-as-read', name: 'app_notification_mark_as_read', methods: ['POST'])]
     public function markAsRead(PublicationRepository $repository, EntityManagerInterface $em): Response
     {
-        $unread = $repository->findUnreadNotifications(1);
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            return $this->json(['error' => 'Not authenticated'], 403);
+        }
+
+        $unread = $repository->findUnreadNotifications($user->getId());
         foreach ($unread as $publication) {
             $publication->setNotificationRead(true);
         }

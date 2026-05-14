@@ -8,7 +8,7 @@
 <div class="max-w-xl mx-auto mt-10 px-4">
     <div class="bg-card rounded-2xl shadow-lg border border-border p-8 space-y-8">
         <div class="flex items-center gap-4">
-            <a href="{{ path('app_front_publication') }}" 
+            <a href="{{ path('app_front_publication') }}"
                class="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors border border-border text-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -55,8 +55,8 @@
             </div>
 
             {# CONTENU #}
-            <div x-data="{ 
-                loading: null, 
+            <div x-data="{
+                loading: null,
                 error: null,
                 async applyAI(action) {
                     const textarea = document.getElementById('edit-publication-contenu');
@@ -66,20 +66,20 @@
                         setTimeout(() => this.error = null, 3000);
                         return;
                     }
-                    
+                   
                     this.loading = action;
                     this.error = null;
-                    
+                   
                     try {
                         const response = await fetch('{{ path('app_front_publication_ai') }}', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ action, text })
                         });
-                        
+                       
                         const data = await response.json();
                         if (data.error) throw new Error(data.error);
-                        
+                       
                         textarea.value = data.text;
                     } catch (e) {
                         this.error = 'Erreur: ' + e.message;
@@ -91,7 +91,7 @@
                 <div class="flex items-center justify-between">
                     <label class="block text-sm font-semibold text-foreground uppercase tracking-wider">Contenu</label>
                     <div class="flex gap-2">
-                        <button type="button" 
+                        <button type="button"
                                 @click="applyAI('reformulate')"
                                 :disabled="loading"
                                 class="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors border border-blue-100 disabled:opacity-50">
@@ -103,7 +103,7 @@
                             </template>
                             Reformuler
                         </button>
-                        <button type="button" 
+                        <button type="button"
                                 @click="applyAI('correct')"
                                 :disabled="loading"
                                 class="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors border border-green-100 disabled:opacity-50">
@@ -142,8 +142,19 @@
                 {{ form_errors(form.contenu) }}
             </div>
 
+            {# GIF attachment for Publication #}
+            <div class="space-y-2">
+                <label class="block text-sm font-semibold text-foreground uppercase tracking-wider mb-2">Pièce jointe (GIF/Sticker)</label>
+                {{ form_widget(form.gifUrl) }}
+                {% include 'front_publication/_giphy_picker.html.twig' with {
+                    textareaId: 'edit-publication-contenu',
+                    hiddenInputId: form.gifUrl.vars.id,
+                    initialGif: form.gifUrl.vars.value
+                } only %}
+            </div>
+
             {# IMAGE UPLOAD STYLE FACEBOOK (avec aperçu) #}
-            <div class="space-y-2" x-data="{ 
+            <div class="space-y-2" x-data="{
                 fileName: '{{ publication.image ? publication.image : 'Aucun fichier choisi' }}',
                 previewUrl: '{{ publication.image ? asset('uploads/' ~ publication.image) : '' }}',
                 updatePreview(event) {
@@ -160,7 +171,7 @@
                 }
             }">
                 <label class="block text-sm font-semibold text-foreground uppercase tracking-wider mb-2">Image</label>
-                
+               
                 <div class="border border-dashed border-border rounded-xl p-4 hover:bg-secondary transition">
                     <div class="flex items-center gap-4">
                         {# Miniature si une image existe #}

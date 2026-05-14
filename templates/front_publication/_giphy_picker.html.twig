@@ -1,7 +1,7 @@
 {# Variables: textareaId, hiddenInputId (optional), initialGif (optional), showMedia (optional, default true) #}
 {% set showMedia = showMedia ?? true %}
 
-<div x-data="giphyPicker('{{ textareaId }}', '{{ hiddenInputId|default('') }}', '{{ initialGif|default('') }}')" 
+<div x-data="giphyPicker('{{ textareaId }}', '{{ hiddenInputId|default('') }}', '{{ initialGif|default('') }}')"
      class="relative giphy-picker-container"
      @giphy-clear.window="if($event.detail.textareaId === '{{ textareaId }}') clearGif()">
 
@@ -142,7 +142,7 @@ if (!window.giphyPickerInitialized) {
             results: [],
             loading: false,
             selectedGif: initialGif,
-            apiKey: 'op6XRewghcphFFeaUluWfSKSDEtK1xbO',
+            apiKey: 'n8duRZuzvYirm2KnbnO7eSVXuJMmI2NL',
             activeEmojiCategory: '😊 Smileys',
 
             allTextEmojis: {
@@ -180,7 +180,7 @@ if (!window.giphyPickerInitialized) {
                 this.loading = true;
                 let endpoint = this.activePanel;
                 if (endpoint === 'emojis') endpoint = 'emoji';
-                
+               
                 try {
                     const response = await fetch(`https://api.giphy.com/v1/${endpoint}/trending?api_key=${this.apiKey}&limit=30&rating=g`);
                     const data = await response.json();
@@ -193,8 +193,8 @@ if (!window.giphyPickerInitialized) {
                 if (!this.searchQuery.trim()) return this.fetchTrending();
                 this.loading = true;
                 let endpoint = this.activePanel;
-                if (endpoint === 'emojis') endpoint = 'gifs'; 
-                
+                if (endpoint === 'emojis') endpoint = 'gifs';
+               
                 try {
                     const response = await fetch(`https://api.giphy.com/v1/${endpoint}/search?api_key=${this.apiKey}&q=${encodeURIComponent(this.searchQuery)}&limit=30&rating=g&lang=fr`);
                     const data = await response.json();

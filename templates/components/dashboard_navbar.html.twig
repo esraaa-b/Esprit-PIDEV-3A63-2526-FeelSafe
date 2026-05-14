@@ -2,18 +2,23 @@
 <nav class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
      x-data="{ scrolled: false }"
      x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 50)"
-     :class="scrolled ? 'bg-white/95 dark:bg-gray-100/95 backdrop-blur-md shadow-lg' : 'bg-transparent'">
+     :class="scrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'">
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 md:h-20">
-            <!-- Logo -->
+
+            <!-- Logo + Stars -->
             <div class="flex items-center gap-2">
-                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
                     <svg class="w-6 h-6 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                 </div>
-                <span class="text-xl font-bold text-foreground">FeelSafe</span>
+
+                <div class="flex flex-col leading-tight">
+                    <span class="text-xl font-bold text-foreground leading-none">FeelSafe</span>
+                    <div id="stars-trigger" class="flex items-center gap-0.5 mt-0.5 cursor-pointer" title="Cliquez pour voir vos étoiles"></div>
+                </div>
             </div>
 
             <!-- Desktop Navigation -->
@@ -24,71 +29,185 @@
                     or (app.request.pathInfo starts with '/front/publication')
                     or (app.request.pathInfo starts with '/dashboard/forum')
                 %}
-                
-                <a href="/client/dashboard" class="text-muted-foreground hover:text-primary transition-colors {{ current_route == 'dashboard' ? 'text-primary font-medium' : '' }}">
-                    Tableau de bord
-                </a>
-                <a href="/dashboard/security" class="text-muted-foreground hover:text-primary transition-colors">
-                    Sécurité & Profil
-                </a>
-                <a href="/dashboard/journal" class="text-muted-foreground hover:text-primary transition-colors">
-                    Journal
-                </a>
-                <a href="/dashboard/support" class="text-muted-foreground hover:text-primary transition-colors">
-                    Accompagnement
-                </a>
-                <a href="/dashboard/wellness" class="text-muted-foreground hover:text-primary transition-colors">
-                    Bien-être
-                </a>
-                <a href="/dashboard/emergency" class="text-muted-foreground hover:text-primary transition-colors">
-                    Urgence
-                </a>
-                <a href="/dashboard/forum" class="text-muted-foreground hover:text-primary transition-colors {{ isForumContext ? 'text-primary font-medium' : '' }}">
-                    Forum
-                </a>
+                <a href="/client/dashboard" class="text-muted-foreground hover:text-primary transition-colors {{ current_route == 'dashboard' ? 'text-primary font-medium' : '' }}">Tableau de bord</a>
+                <a href="/dashboard/security" class="text-muted-foreground hover:text-primary transition-colors">Sécurité & Profil</a>
+                <a href="/dashboard/journal" class="text-muted-foreground hover:text-primary transition-colors">Journal</a>
+                <a href="/dashboard/support" class="text-muted-foreground hover:text-primary transition-colors">Accompagnement</a>
+                <a href="/dashboard/wellness" class="text-muted-foreground hover:text-primary transition-colors">Bien-être</a>
+                <a href="/dashboard/emergency" class="text-muted-foreground hover:text-primary transition-colors">Urgence</a>
+                <a href="/dashboard/forum" class="text-muted-foreground hover:text-primary transition-colors {{ isForumContext ? 'text-primary font-medium' : '' }}">Forum</a>
             </div>
 
             <!-- Right side -->
             <div class="flex items-center gap-3">
-                <!-- Notifications -->
                 <div class="relative">
                     {{ render(controller('App\\Controller\\FrontPublicationController::badge')) }}
                 </div>
-
-                <!-- User menu -->
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="flex items-center gap-2 p-2 hover:bg-secondary rounded-lg transition-colors">
                         <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                             <span class="text-sm font-medium text-primary-foreground">
-                                {% if app.user %}
-                                    {{ app.user.prenom|first|upper }}{{ app.user.nom|first|upper }}
-                                {% else %}
-                                    U
-                                {% endif %}
+                                {% if app.user %}{{ app.user.prenom|first|upper }}{{ app.user.nom|first|upper }}{% else %}U{% endif %}
                             </span>
                         </div>
                         <svg class="w-4 h-4 text-muted-foreground" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
-
-                    <!-- Dropdown -->
-                    <div x-show="open" 
-                         @click.away="open = false"
+                    <div x-show="open" @click.away="open = false"
                          x-transition:enter="transition ease-out duration-100"
                          x-transition:enter-start="opacity-0 scale-95"
                          x-transition:enter-end="opacity-100 scale-100"
-                         class="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50"
-                         style="display: none;">
-                        
-                       
+                         class="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1"
+                         style="display:none; z-index:9999;">
                         <hr class="my-1 border-border">
-                        <a href="{{ path('app_logout') }}" @click="open = false" class="block px-4 py-2 text-sm text-destructive hover:bg-secondary">
-                            Déconnexion
-                        </a>
+                        <a href="{{ path('app_logout') }}" class="block px-4 py-2 text-sm text-destructive hover:bg-secondary">Déconnexion</a>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </nav>
+
+<!-- Click popup -->
+<div id="stars-popup"
+     style="display:none; position:fixed; z-index:99999; width:260px; background:white; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.15); border:1px solid #f0f0f0; padding:16px;">
+    <div style="position:absolute; top:-8px; left:16px; width:16px; height:16px; background:white; border-left:1px solid #f0f0f0; border-top:1px solid #f0f0f0; transform:rotate(45deg);"></div>
+    <button id="stars-popup-close" style="position:absolute; top:8px; right:12px; background:none; border:none; font-size:18px; color:#9ca3af; cursor:pointer;">&times;</button>
+    <p id="stars-popup-title" style="font-size:14px; font-weight:700; color:#1f2937; margin:0 0 4px;"></p>
+    <p id="stars-popup-subtitle" style="font-size:13px; color:#6b7280; margin:0 0 12px;"></p>
+    <div id="stars-popup-stars" style="display:flex; gap:4px;"></div>
+</div>
+
+<!-- Auto toast — appears when a new star is earned -->
+<div id="stars-toast"
+     style="display:none; position:fixed; top:72px; left:16px; z-index:99999; background:white; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.12); border:1px solid #fde68a; padding:14px 18px; min-width:220px; transition: opacity 0.4s ease, transform 0.4s ease; opacity:0; transform:translateY(-8px);">
+    <p id="stars-toast-title" style="font-size:13px; font-weight:700; color:#1f2937; margin:0 0 2px;"></p>
+    <p id="stars-toast-sub" style="font-size:12px; color:#6b7280; margin:0 0 10px;"></p>
+    <div id="stars-toast-stars" style="display:flex; gap:3px;"></div>
+</div>
+
+<script>
+(function () {
+    const STAR_PATH = "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
+    const STORAGE_KEY = 'feelsafe_stars_count';
+    let starsData = { stars: 0, badge: false, tooltip: '' };
+    let popupOpen = false;
+    let toastTimer = null;
+
+    function starSVG(size, filled) {
+        return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="' + (filled ? '#FBBF24' : '#D1D5DB') + '"><path d="' + STAR_PATH + '"/></svg>';
+    }
+
+    function renderTrigger(stars) {
+        var el = document.getElementById('stars-trigger');
+        if (!el) return;
+        el.innerHTML = Array.from({length: 6}, function(_, i) { return starSVG(14, i < stars); }).join('');
+    }
+
+    function openPopup() {
+        var popup   = document.getElementById('stars-popup');
+        var title   = document.getElementById('stars-popup-title');
+        var sub     = document.getElementById('stars-popup-subtitle');
+        var starsEl = document.getElementById('stars-popup-stars');
+        var trigger = document.getElementById('stars-trigger');
+        if (!popup) return;
+
+        var s = starsData.stars;
+        title.textContent = starsData.badge ? '🏅 Badge du mois obtenu !' : (s > 0 ? '⭐ Nouvelle étoile obtenue !' : '✨ Commencez à journaliser !');
+        sub.textContent   = starsData.tooltip;
+        starsEl.innerHTML = Array.from({length: 6}, function(_, i) { return starSVG(28, i < s); }).join('');
+
+        var rect = trigger.getBoundingClientRect();
+        popup.style.top  = (rect.bottom + 10) + 'px';
+        popup.style.left = rect.left + 'px';
+        popup.style.display = 'block';
+        popupOpen = true;
+    }
+
+    function closePopup() {
+        var popup = document.getElementById('stars-popup');
+        if (popup) popup.style.display = 'none';
+        popupOpen = false;
+    }
+
+    function showToast(stars, badge, tooltip) {
+        var toast   = document.getElementById('stars-toast');
+        var title   = document.getElementById('stars-toast-title');
+        var sub     = document.getElementById('stars-toast-sub');
+        var starsEl = document.getElementById('stars-toast-stars');
+        if (!toast) return;
+
+        title.textContent = badge ? '🏅 Badge du mois obtenu !' : '⭐ Nouvelle étoile obtenue !';
+        sub.textContent   = tooltip;
+        starsEl.innerHTML = Array.from({length: 6}, function(_, i) { return starSVG(22, i < stars); }).join('');
+
+        // Show with animation
+        toast.style.display = 'block';
+        setTimeout(function() {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+
+        // Auto-hide after 4 seconds
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-8px)';
+            setTimeout(function() { toast.style.display = 'none'; }, 400);
+        }, 4000);
+    }
+
+    async function loadStars() {
+        try {
+            var res  = await fetch('/dashboard/stars/data');
+            var data = await res.json();
+            var newStars = data.stars ?? 0;
+            var prevStars = parseInt(sessionStorage.getItem(STORAGE_KEY) ?? '-1', 10);
+
+            starsData = { stars: newStars, badge: data.badge ?? false, tooltip: data.tooltip ?? '' };
+            renderTrigger(newStars);
+
+            // Show toast only if stars increased since last check this session
+            if (prevStars >= 0 && newStars > prevStars) {
+                showToast(newStars, starsData.badge, starsData.tooltip);
+            }
+
+            sessionStorage.setItem(STORAGE_KEY, newStars);
+        } catch(e) {
+            renderTrigger(0);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        loadStars();
+
+        var trigger = document.getElementById('stars-trigger');
+        var closeBtn = document.getElementById('stars-popup-close');
+
+        if (trigger) {
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                popupOpen ? closePopup() : openPopup();
+            }, true);
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closePopup();
+            }, true);
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!popupOpen) return;
+            var popup   = document.getElementById('stars-popup');
+            var trigger = document.getElementById('stars-trigger');
+            if (popup && !popup.contains(e.target) && trigger && !trigger.contains(e.target)) {
+                closePopup();
+            }
+        });
+    });
+})();
+</script>

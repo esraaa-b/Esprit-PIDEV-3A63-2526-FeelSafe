@@ -29,14 +29,21 @@ final class FrontCommentaireController extends AbstractController
             $commentaire->setDateCommentaire(new \DateTimeImmutable());
             $commentaire->setPublication($publication);
 
-            $user = $em->getRepository(Utilisateur::class)->find(1);
+            $user = $this->getUser();
+            if (!$user instanceof Utilisateur) {
+                $this->addFlash('error', 'Vous devez être connecté pour commenter.');
+                return $this->redirectToRoute('app_login');
+            }
             $commentaire->setUser($user);
 
             $em->persist($commentaire);
 
-            $publication->setNotificationMessage("Nouveau commentaire de " . $user->getNom() . " sur votre publication.");
-            $publication->setNotificationRead(false);
-            $publication->setNotificationDate(new \DateTimeImmutable());
+            // Ne notifier que si l'auteur du commentaire n'est pas l'auteur de la publication
+            if ($publication->getUser() !== $user) {
+                $publication->setNotificationMessage("Nouveau commentaire de " . $user->getNom() . " sur votre publication.");
+                $publication->setNotificationRead(false);
+                $publication->setNotificationDate(new \DateTimeImmutable());
+            }
 
             $em->flush();
 
@@ -60,7 +67,10 @@ final class FrontCommentaireController extends AbstractController
             $reply->setPublication($parentComment->getPublication());
             $reply->setParent($parentComment);
 
-            $user = $em->getRepository(Utilisateur::class)->find(1);
+            $user = $this->getUser();
+            if (!$user instanceof Utilisateur) {
+                return $this->json(['error' => 'Non connecté'], 403);
+            }
             $reply->setUser($user);
 
             $em->persist($reply);
@@ -86,33 +96,47 @@ final class FrontCommentaireController extends AbstractController
         EntityManagerInterface $em,
         CommentaireLikeRepository $likeRepo
     ): Response {
-        $user = $em->getRepository(Utilisateur::class)->find(1);
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            $this->addFlash('error', 'Vous devez être connecté pour voter.');
+            return $this->redirectToRoute('app_login');
+        }
         try {
-            $existingVote = $likeRepo->findByUserAndCommentaire($user->getId(), $commentaire->getId());
-            if ($existingVote) {
-                if ($existingVote->getType() === 'like') {
-                    $em->remove($existingVote);
-                    $commentaire->setLikesCount($commentaire->getLikesCount() - 1);
-                } else {
-                    $existingVote->setType('like');
-                    $commentaire->setDislikesCount($commentaire->getDislikesCount() - 1);
-                    $commentaire->setLikesCount($commentaire->getLikesCount() + 1);
-                }
-            } else {
+            $commentaireId = $commentaire->getId();
+            $publicationId = $commentaire->getPublication()->getId();
+
+            // Get current vote (safe even with legacy duplicate rows)
+            $existingVote = $likeRepo->findByUserAndCommentaire($user->getId(), $commentaireId);
+            $currentType = $existingVote ? $existingVote->getType() : null;
+
+            // Delete ALL existing votes (cleans up legacy duplicates)
+            $likeRepo->deleteAllForUserAndCommentaire($user->getId(), $commentaireId);
+            $em->clear();
+
+            // Re-fetch detached entities
+            $commentaire = $em->find(Commentaire::class, $commentaireId);
+
+            if ($currentType !== 'like') {
                 $vote = new CommentaireLike();
                 $vote->setCommentaire($commentaire);
-                $vote->setUser($user);
+                $vote->setUser($em->getReference(Utilisateur::class, $user->getId()));
                 $vote->setType('like');
                 $em->persist($vote);
-                $commentaire->setLikesCount($commentaire->getLikesCount() + 1);
             }
             $em->flush();
+
+            // Sync counters from DB
+            $commentaire->setLikesCount($likeRepo->countByCommentaireAndType($commentaireId, 'like'));
+            $commentaire->setDislikesCount($likeRepo->countByCommentaireAndType($commentaireId, 'dislike'));
+            $em->flush();
+
         } catch (\Throwable $e) {
-            $this->addFlash('error', 'Les votes ne sont pas disponibles pour le moment.');
+            $publicationId = $publicationId ?? null;
+            $this->addFlash('error', 'Erreur vote : ' . $e->getMessage());
         }
 
         return $this->redirectToRoute('app_front_publication_show', [
-            'id' => $commentaire->getPublication()->getId()
+            'id' => $publicationId ?? 0
         ]);
     }
 
@@ -122,43 +146,60 @@ final class FrontCommentaireController extends AbstractController
         EntityManagerInterface $em,
         CommentaireLikeRepository $likeRepo
     ): Response {
-        $user = $em->getRepository(Utilisateur::class)->find(1);
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            $this->addFlash('error', 'Vous devez être connecté pour voter.');
+            return $this->redirectToRoute('app_login');
+        }
         try {
-            $existingVote = $likeRepo->findByUserAndCommentaire($user->getId(), $commentaire->getId());
-            if ($existingVote) {
-                if ($existingVote->getType() === 'dislike') {
-                    $em->remove($existingVote);
-                    $commentaire->setDislikesCount($commentaire->getDislikesCount() - 1);
-                } else {
-                    $existingVote->setType('dislike');
-                    $commentaire->setLikesCount($commentaire->getLikesCount() - 1);
-                    $commentaire->setDislikesCount($commentaire->getDislikesCount() + 1);
-                }
-            } else {
+            $commentaireId = $commentaire->getId();
+            $publicationId = $commentaire->getPublication()->getId();
+
+            // Get current vote (safe even with legacy duplicate rows)
+            $existingVote = $likeRepo->findByUserAndCommentaire($user->getId(), $commentaireId);
+            $currentType = $existingVote ? $existingVote->getType() : null;
+
+            // Delete ALL existing votes (cleans up legacy duplicates)
+            $likeRepo->deleteAllForUserAndCommentaire($user->getId(), $commentaireId);
+            $em->clear();
+
+            // Re-fetch detached entities
+            $commentaire = $em->find(Commentaire::class, $commentaireId);
+
+            if ($currentType !== 'dislike') {
                 $vote = new CommentaireLike();
                 $vote->setCommentaire($commentaire);
-                $vote->setUser($user);
+                $vote->setUser($em->getReference(Utilisateur::class, $user->getId()));
                 $vote->setType('dislike');
                 $em->persist($vote);
-                $commentaire->setDislikesCount($commentaire->getDislikesCount() + 1);
             }
             $em->flush();
+
+            // Sync counters from DB
+            $commentaire->setLikesCount($likeRepo->countByCommentaireAndType($commentaireId, 'like'));
+            $commentaire->setDislikesCount($likeRepo->countByCommentaireAndType($commentaireId, 'dislike'));
+            $em->flush();
+
         } catch (\Throwable $e) {
-            $this->addFlash('error', 'Les votes ne sont pas disponibles pour le moment.');
+            $publicationId = $publicationId ?? null;
+            $this->addFlash('error', 'Erreur vote : ' . $e->getMessage());
         }
 
         return $this->redirectToRoute('app_front_publication_show', [
-            'id' => $commentaire->getPublication()->getId()
+            'id' => $publicationId ?? 0
         ]);
     }
 
     #[Route('/{id}/delete', name: 'app_front_commentaire_delete', methods: ['POST'])]
     public function delete(Commentaire $commentaire, EntityManagerInterface $em): Response
     {
-        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            throw $this->createAccessDeniedException("Vous devez être connecté.");
+        }
 
-        $isCommentAuthor = ($commentaire->getUser() === $fakeUser);
-        $isPublicationAuthor = ($commentaire->getPublication()->getUser() === $fakeUser);
+        $isCommentAuthor = ($commentaire->getUser() === $user);
+        $isPublicationAuthor = ($commentaire->getPublication()->getUser() === $user);
 
         if (!$isCommentAuthor && !$isPublicationAuthor) {
             throw $this->createAccessDeniedException("Vous ne pouvez pas supprimer ce commentaire !");
@@ -177,9 +218,8 @@ final class FrontCommentaireController extends AbstractController
     #[Route('/{id}/edit', name: 'app_front_commentaire_edit', methods: ['GET', 'POST'])]
     public function edit(Commentaire $commentaire, Request $request, EntityManagerInterface $em): Response
     {
-        $fakeUser = $em->getRepository(Utilisateur::class)->find(1);
-
-        if ($commentaire->getUser() !== $fakeUser) {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur || $commentaire->getUser() !== $user) {
             throw $this->createAccessDeniedException("Seul l'auteur peut modifier son commentaire !");
         }
 

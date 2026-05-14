@@ -5,7 +5,7 @@
 {% block title %}{{ publication.titre }}{% endblock %}
 
 {% block content %}
-    <div class="max-w-3xl mx-auto space-y-6" x-data="{ 
+    <div class="max-w-3xl mx-auto space-y-6" x-data="{
     isPlaying: false,
     utterance: null,
     isSummarizing: false,
@@ -15,6 +15,16 @@
     translatedContent: null,
     showTranslated: false,
     translating: false,
+    rawPublicationContenu: {{ publication.contenu|json_encode }},
+    dbGifUrl: {{ publication.gifUrl|json_encode }},
+    get publicationContenu() {
+        return this.rawPublicationContenu.replace(/https?:\/\/\S*(?:giphy\.com|media\.giphy\.com)\/\S+/gi, '').trim();
+    },
+    get effectiveGifUrl() {
+        if (this.dbGifUrl) return this.dbGifUrl;
+        const match = this.rawPublicationContenu.match(/https?:\/\/\S*(?:giphy\.com|media\.giphy\.com)\/\S+/i);
+        return match ? match[0] : null;
+    },
     speakPublication(text) {
         if (this.isPlaying) {
             window.speechSynthesis.cancel();
@@ -24,13 +34,13 @@
 
         window.speechSynthesis.cancel();
         this.isPlaying = true;
-        
+       
         this.utterance = new SpeechSynthesisUtterance(text);
         this.utterance.lang = 'fr-FR';
         this.utterance.onend = () => {
             this.isPlaying = false;
         };
-        
+       
         window.speechSynthesis.speak(this.utterance);
     },
     async summarize() {
@@ -82,7 +92,7 @@
 
     {# Bouton retour à la liste amélioré #}
     <div class="mb-4">
-        <a href="{{ path('app_front_publication') }}" 
+        <a href="{{ path('app_front_publication') }}"
            class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary font-medium rounded-lg hover:bg-primary/20 transition-colors border border-primary/20">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -121,7 +131,7 @@
 
         <div class="text-muted-foreground mb-3">
             <p class="whitespace-pre-line">
-                <span x-show="!showTranslated">{{ publication.contenu }}</span>
+                <span x-show="!showTranslated" x-text="publicationContenu"></span>
                 <span x-show="showTranslated" x-text="translatedContent || ''"></span>
             </p>
             {% if publication.audioUrl %}
@@ -131,10 +141,17 @@
                     </audio>
                 </div>
             {% endif %}
+
+            {# GIF attachment (database or extracted from text) #}
+            <template x-if="effectiveGifUrl">
+                <div class="mt-3">
+                    <img :src="effectiveGifUrl" alt="GIF" class="max-h-60 rounded-xl border border-border shadow-sm">
+                </div>
+            </template>
         </div>
 
         {# AI Summary Result #}
-        <div x-show="aiSummary" x-transition 
+        <div x-show="aiSummary" x-transition
              class="mb-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 relative overflow-hidden group">
             <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
                 <i data-feather="sparkles" class="w-12 h-12 text-indigo-600"></i>
@@ -159,7 +176,7 @@
             <span class="text-muted-foreground">•</span>
 
             {# TTS Button #}
-            <button @click.prevent="speakPublication('{{ (publication.titre ~ ". " ~ publication.contenu)|e('js') }}')" 
+            <button @click.prevent="speakPublication('{{ (publication.titre ~ ". " ~ publication.contenu)|e('js') }}')"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-colors text-sm font-bold"
                     :class="{ 'bg-primary text-white': isPlaying }">
                 <template x-if="!isPlaying">
@@ -179,7 +196,7 @@
             <span class="text-muted-foreground">•</span>
 
             {# AI Summarize Button #}
-            <button @click.prevent="summarize()" 
+            <button @click.prevent="summarize()"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all text-sm font-bold border border-indigo-100 disabled:opacity-50"
                     :disabled="isSummarizing">
                 <template x-if="!isSummarizing">
@@ -229,7 +246,7 @@
                         </div>
 
                         <div class="flex gap-2 mt-4 items-center justify-end">
-                            <button type="button" @click="open = false; done = false; sending = false; description = ''; reason = 'spam'" 
+                            <button type="button" @click="open = false; done = false; sending = false; description = ''; reason = 'spam'"
                                     class="px-4 py-2 border border-border rounded-lg hover:bg-secondary bg-background text-foreground">
                                 Annuler
                             </button>
@@ -284,25 +301,25 @@
             <!-- Likes -->
             <span class="flex items-center gap-1">
                 <form method="POST" action="{{ path('app_front_publication_like', {'id': publication.id}) }}" class="inline">
-                    <button type="submit" class="hover:text-green-600 transition">
+                    <button type="submit" class="transition {{ pubVote.like is defined ? 'text-green-600 fill-green-600' : 'hover:text-green-600' }}">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                         </svg>
                     </button>
                 </form>
-                <span>{{ publication.likesCount|default(0) }}</span>
+                <span class="{{ pubVote.like is defined ? 'text-green-600 font-bold' : '' }}">{{ publication.likesCount|default(0) }}</span>
             </span>
 
             <!-- Dislikes -->
             <span class="flex items-center gap-1">
                 <form method="POST" action="{{ path('app_front_publication_dislike', {'id': publication.id}) }}" class="inline">
-                    <button type="submit" class="hover:text-red-600 transition">
+                    <button type="submit" class="transition {{ pubVote.dislike is defined ? 'text-red-600 fill-red-600' : 'hover:text-red-600' }}">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
                         </svg>
                     </button>
                 </form>
-                <span>{{ publication.dislikesCount|default(0) }}</span>
+                <span class="{{ pubVote.dislike is defined ? 'text-red-600 font-bold' : '' }}">{{ publication.dislikesCount|default(0) }}</span>
             </span>
         </div>
     </div>
